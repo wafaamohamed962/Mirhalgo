@@ -1,0 +1,174 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/*
+ * Map the design tokens into the Tailwind theme (section 2: "Define all tokens
+ * once as CSS variables mapped into the Tailwind theme").
+ * The default Tailwind palette is removed, so ONLY MirhalGo colors exist:
+ *   bg-blue-600, text-heading, border-slate-200, shadow-md, rounded-lg ...
+ */
+@theme inline {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --color-navy-900: var(--navy-900);
+  --color-navy-700: var(--navy-700);
+  --color-blue-600: var(--blue-600);
+  --color-blue-700: var(--blue-700);
+  --color-blue-800: var(--blue-800);
+  --color-sky-400: var(--sky-400);
+  --color-blue-50: var(--blue-50);
+  --color-violet-600: var(--violet-600);
+  --color-violet-100: var(--violet-100);
+  --color-white: var(--white);
+  --color-slate-50: var(--slate-50);
+  --color-slate-200: var(--slate-200);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-error-hover: var(--error-hover);
+  --color-focus: var(--focus-ring-color);
+  --color-facebook: var(--brand-facebook);
+  --color-whatsapp: var(--brand-whatsapp);
+
+  /* text colors → text-heading, text-body, text-muted, text-on-dark ... */
+  --color-heading: var(--text-heading);
+  --color-body: var(--text-body);
+  --color-muted: var(--text-muted);
+  --color-on-dark: var(--text-on-dark);
+  --color-on-dark-muted: var(--text-on-dark-muted);
+  --color-link: var(--text-link);
+
+  /* typography → text-display, text-h1, text-h2, text-h3, text-base, text-small, text-caption */
+  --text-display: var(--fs-display);
+  --text-display--line-height: var(--lh-display);
+  --text-h1: var(--fs-h1);
+  --text-h1--line-height: var(--lh-h1);
+  --text-h2: var(--fs-h2);
+  --text-h2--line-height: var(--lh-h2);
+  --text-h3: var(--fs-h3);
+  --text-h3--line-height: var(--lh-h3);
+  --text-base: var(--fs-body);
+  --text-base--line-height: var(--lh-body);
+  --text-small: var(--fs-small);
+  --text-small--line-height: var(--lh-small);
+  --text-caption: var(--fs-caption);
+  --text-caption--line-height: var(--lh-caption);
+
+  --font-sans: var(--ff-english);
+  --font-arabic: var(--ff-arabic);
+  --font-english: var(--ff-english);
+
+  /* radius → rounded-sm (12), rounded-lg (20), rounded-full */
+  --radius-sm: var(--rad-sm);
+  --radius-lg: var(--rad-lg);
+  --radius-full: var(--rad-full);
+
+  /* shadows → shadow-sm / shadow-md / shadow-lg */
+  --shadow-sm: var(--elev-sm);
+  --shadow-md: var(--elev-md);
+  --shadow-lg: var(--elev-lg);
+
+  --container-site: var(--container-max);
+  --ease-out: var(--easing-out);
+
+  /* mobile drawer slides in from the inline-end side (mirrors in RTL) */
+  --animate-drawer-in: drawer-in var(--duration-slow) var(--easing-out);
+  --animate-drawer-in-rtl: drawer-in-rtl var(--duration-slow) var(--easing-out);
+  --animate-fade-in: fade-in var(--duration-base) var(--easing-out);
+
+  /* hero shipping routes (addition beyond the spec): very slow, calm, ease-in-out */
+  --animate-route-dash: route-dash 24s ease-in-out infinite;
+  --animate-route-travel: route-travel 30s ease-in-out infinite;
+}
+
+/* shift = 20 × the 14-unit dash pattern (2 + 12), so the loop is seamless */
+@keyframes route-dash {
+  to {
+    stroke-dashoffset: -280;
+  }
+}
+/* travel along the CSS offset-path; fade at both ends so the restart is invisible */
+@keyframes route-travel {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  12%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes drawer-in-rtl {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ── Base styles ─────────────────────────────────── */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--ff-english);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    font-weight: var(--fw-body);
+    color: var(--text-body);
+    background: var(--white);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Arabic → Cairo, English → Inter (set by <html lang>) */
+  html[lang='ar'] body {
+    font-family: var(--ff-arabic);
+  }
+
+  h1,
+  h2,
+  h3 {
+    color: var(--text-heading);
+    font-weight: var(--fw-heading);
+  }
+
+  a {
+    color: var(--text-link);
+  }
+
+  :focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+  }
+}
+
+/* Motion: respect prefers-reduced-motion (section 2.5) */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

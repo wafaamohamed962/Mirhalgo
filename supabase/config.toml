@@ -1,0 +1,3 @@
+# Supabase CLI config (MW_001). Schema changes ONLY via supabase/migrations.
+# Remote project: mirhalgo_v1 (eu-central-1), linked with `supabase link`.
+project_id = "mirhalgo"

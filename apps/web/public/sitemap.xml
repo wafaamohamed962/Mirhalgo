@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- TODO (deploy): replace https://mirhalgo.com with the production domain. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://mirhalgo.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://mirhalgo.com/signup</loc><priority>0.8</priority></url>
+  <url><loc>https://mirhalgo.com/signup/customer</loc><priority>0.7</priority></url>
+  <url><loc>https://mirhalgo.com/signup/company</loc><priority>0.5</priority></url>
+  <url><loc>https://mirhalgo.com/login</loc><priority>0.6</priority></url>
+  <url><loc>https://mirhalgo.com/forgot-password</loc><priority>0.3</priority></url>
+</urlset>

@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+dist-e2e/
+test-results/
+playwright-report/
+coverage/
+*.tsbuildinfo
+
+# env — never commit real secrets (section 8.6)
+.env
+.env.*
+!.env.example
+
+# supabase local
+supabase/.temp/
+supabase/.branches/
+
+# editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# logs
+*.log

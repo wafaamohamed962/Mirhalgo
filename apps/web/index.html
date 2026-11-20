@@ -1,0 +1,61 @@
+<!doctype html>
+<!-- Default language is Arabic (spec 8.1); i18n switches lang/dir at runtime -->
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#0B1B35" />
+
+    <!-- SEO defaults (spec 8.5). Each page updates title/description/OG via usePageMeta. -->
+    <title>مرحال جو | قارن عروض أسعار الشحن من شركات موثوقة</title>
+    <meta
+      name="description"
+      content="قدّم طلب شحن واحد واستقبل عروض أسعار تنافسية من شركات شحن وتخليص جمركي موثّقة في مصر."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="MirhalGo" />
+    <meta property="og:title" content="مرحال جو | قارن عروض أسعار الشحن من شركات موثوقة" />
+    <meta
+      property="og:description"
+      content="قدّم طلب شحن واحد واستقبل عروض أسعار تنافسية من شركات شحن وتخليص جمركي موثّقة في مصر."
+    />
+    <meta property="og:locale" content="ar_EG" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <!-- TODO (deploy): add og:url + og:image (1200×630 PNG) once the domain and images exist -->
+    <meta name="twitter:card" content="summary" />
+
+    <!-- Hero image preload (spec 3.4). Files come from `npm run images` (public/images). -->
+    <link
+      rel="preload"
+      as="image"
+      type="image/avif"
+      imagesrcset="/images/hero-640.avif 640w, /images/hero-1280.avif 1280w, /images/hero-1920.avif 1920w, /images/hero-3840.avif 3840w"
+      imagesizes="100vw"
+      fetchpriority="high"
+    />
+
+    <!-- Fonts: Cairo (AR) + Inter (EN), display=swap, loaded without blocking render (spec 2.4, 8.5) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Inter:wght@400;600;800&display=swap"
+      onload="
+        this.onload = null;
+        this.rel = 'stylesheet';
+      "
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Inter:wght@400;600;800&display=swap"
+      />
+    </noscript>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

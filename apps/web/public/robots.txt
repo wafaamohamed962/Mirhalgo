@@ -1,0 +1,7 @@
+# MirhalGo. TODO (deploy): replace https://mirhalgo.com with the production domain.
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /verify-email
+
+Sitemap: https://mirhalgo.com/sitemap.xml

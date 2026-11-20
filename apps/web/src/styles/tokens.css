@@ -1,0 +1,108 @@
+/*
+ * MirhalGo design tokens — section 2 of MW_001.
+ * This is the ONLY place hex values are allowed.
+ * Components use them through Tailwind classes (see globals.css).
+ */
+
+:root {
+  /* ── 2.1 Color palette ───────────────────────────── */
+  --navy-900: #0b1b35; /* headings, solid navbar, hero overlay, dark sections */
+  --navy-700: #16305c; /* dark cards, footer bottom bar, hover on dark */
+  --blue-600: #2563eb; /* PRIMARY: buttons, links, active nav item */
+  --blue-700: #1d4ed8; /* primary hover */
+  --blue-800: #1e40af; /* primary active/pressed */
+  --sky-400: #38bdf8; /* icons, secondary highlights, gradients */
+  --blue-50: #eff5ff; /* light sections, chips, input focus bg */
+  --violet-600: #7c3aed; /* ACCENT: badges, hero eyebrow */
+  --violet-100: #ede9fe; /* accent backgrounds */
+  --white: #ffffff;
+  --slate-50: #f8fafc; /* alternate section bg */
+  --slate-200: #e2e8f0; /* borders, dividers */
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --error: #dc2626;
+  --error-hover: #b91c1c; /* danger button hover ("darker red") */
+
+  /* social brand colors (spec 3.5: "Social icons keep their brand colors") */
+  --brand-facebook: #1877f2;
+  --brand-whatsapp: #25d366;
+  --brand-instagram: linear-gradient(45deg, #f58529, #dd2a7b, #8134af);
+
+  /* ── 2.2 Text colors ─────────────────────────────── */
+  --text-heading: var(--navy-900);
+  --text-body: #334155;
+  --text-muted: #64748b;
+  --text-on-dark: #ffffff;
+  --text-on-dark-muted: #cbd5e1;
+  --text-link: var(--blue-600);
+
+  /* ── Gradients ───────────────────────────────────── */
+  --gradient-hero: linear-gradient(
+    to top right,
+    rgb(11 27 53 / 0.85),
+    rgb(11 27 53 / 0.55)
+  ); /* navy-900 85% → 55%, darker at left/bottom */
+  /* RTL: mirrored, so the darker side stays behind the (right-aligned) Arabic text */
+  --gradient-hero-rtl: linear-gradient(to top left, rgb(11 27 53 / 0.85), rgb(11 27 53 / 0.55));
+  --gradient-brand: linear-gradient(90deg, var(--blue-600), var(--sky-400));
+  --gradient-footer: linear-gradient(135deg, var(--blue-50), var(--violet-100));
+
+  /* ── 2.3 Buttons ─────────────────────────────────── */
+  --btn-height: 44px;
+  --focus-ring-color: #93c5fd;
+  --focus-ring-width: 3px;
+
+  /* ── 2.4 Typography ──────────────────────────────── */
+  --ff-arabic: 'Cairo', system-ui, sans-serif;
+  --ff-english: 'Inter', system-ui, sans-serif;
+
+  /* mobile sizes first: Display 34, H1 30, H2 26 */
+  --fs-display: 34px;
+  --fs-h1: 30px;
+  --fs-h2: 26px;
+  --fs-h3: 24px;
+  --fs-body: 16px;
+  --fs-small: 14px;
+  --fs-caption: 12px;
+
+  /* line-height ratios = desktop scale (56/48, 48/40, 40/32, 32/24, 26/16, 22/14, 18/12) */
+  --lh-display: 1.1667;
+  --lh-h1: 1.2;
+  --lh-h2: 1.25;
+  --lh-h3: 1.3333;
+  --lh-body: 1.625;
+  --lh-small: 1.5714;
+  --lh-caption: 1.5;
+
+  --fw-heading: 800;
+  --fw-label: 600;
+  --fw-body: 400;
+
+  /* ── 2.5 Other tokens ────────────────────────────── */
+  --rad-sm: 12px; /* inputs, small cards, buttons inside forms */
+  --rad-lg: 20px; /* service cards, modals */
+  --rad-full: 9999px; /* pills, CTAs */
+
+  --elev-sm: 0 1px 2px rgb(11 27 53 / 0.08);
+  --elev-md: 0 4px 16px rgb(11 27 53 / 0.1);
+  --elev-lg: 0 12px 32px rgb(11 27 53 / 0.16);
+
+  --container-max: 1200px;
+  --section-py: 64px; /* mobile */
+  --navbar-height: 72px;
+
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --easing-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* desktop typography + spacing */
+@media (min-width: 768px) {
+  :root {
+    --fs-display: 48px;
+    --fs-h1: 40px;
+    --fs-h2: 32px;
+    --section-py: 96px;
+  }
+}
