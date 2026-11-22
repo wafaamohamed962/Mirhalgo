@@ -3,6 +3,8 @@
  * the landing page and navigation keep working, and only the features that need
  * Supabase or the API show a translated "not available" error (errors.CONFIG_MISSING).
  */
+import { isSupabaseProjectUrl } from '@mirhalgo/shared';
+
 type PublicEnvKey = 'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY' | 'VITE_API_URL';
 
 // Static property access so Vite can inline the values at build time.
@@ -12,7 +14,15 @@ const values: Record<PublicEnvKey, string | undefined> = {
   VITE_API_URL: import.meta.env.VITE_API_URL,
 };
 
-const missing = (keys: PublicEnvKey[]) => keys.filter((key) => !values[key]?.trim());
+const isUsable = (key: PublicEnvKey) => {
+  const value = values[key]?.trim();
+  if (!value) return false;
+  // A REST URL (…/rest/v1/) breaks every Supabase call: treat it like a missing value.
+  return key !== 'VITE_SUPABASE_URL' || isSupabaseProjectUrl(value);
+};
+
+/** Keys that are missing or invalid. */
+const missing = (keys: PublicEnvKey[]) => keys.filter((key) => !isUsable(key));
 
 /** Needed by the session (AuthProvider) and the dashboard. */
 export const missingSupabaseEnv = missing(['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY']);
@@ -37,13 +47,23 @@ export function assertConfigured(missingKeys: string[]) {
   if (missingKeys.length > 0) throw new ConfigError(missingKeys);
 }
 
+/**
+ * Feature flags (MW_002 decisions 17 + 18). Customer portal data comes from MSW mocks until
+ * the real API exists; company names in the directory can be hidden with one switch.
+ */
+export const flags = {
+  useMocks: import.meta.env.VITE_USE_MOCKS === 'true',
+  showCompanyIdentity: import.meta.env.VITE_SHOW_COMPANY_IDENTITY !== 'false',
+};
+
 /** One clear console message at startup naming every missing variable. */
 export function reportMissingEnv() {
   const all = [...missingSupabaseEnv, ...missingApiEnv];
   if (all.length === 0) return;
   console.error(
-    `[MirhalGo] Missing environment variable(s): ${all.join(', ')}. ` +
-      'Copy .env.example to apps/web/.env, fill them in and restart the dev server. ' +
+    `[MirhalGo] Missing or invalid environment variable(s): ${all.join(', ')}. ` +
+      'Copy .env.example to apps/web/.env, fill them in (VITE_SUPABASE_URL = project URL only, ' +
+      'no /rest/v1) and restart the dev server. ' +
       'Until then sign up, login and the contact form are unavailable.',
   );
 }

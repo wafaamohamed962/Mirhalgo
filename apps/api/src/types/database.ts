@@ -1,4 +1,11 @@
-import type { Gender, OtpPurpose } from '@mirhalgo/shared';
+import type {
+  ApplicationStatus,
+  DocumentType,
+  Gender,
+  OtpPurpose,
+  StatusActorType,
+  UserRole,
+} from '@mirhalgo/shared';
 
 /**
  * Typed view of the tables in supabase/migrations (hand-written, keep in sync).
@@ -15,10 +22,11 @@ type Table<Row, Insert, Update = Partial<Insert>> = {
 
 export type ProfileRow = {
   id: string;
-  role: 'customer' | 'company' | 'admin';
-  first_name: string;
-  last_name: string;
-  gender: Gender;
+  role: UserRole;
+  /** null for companies (MW_002), required for customers (check constraint) */
+  first_name: string | null;
+  last_name: string | null;
+  gender: Gender | null;
   email: string;
   phone: string;
   email_verified_at: Timestamp | null;
@@ -52,6 +60,46 @@ export type ContactMessageRow = {
   created_at: Timestamp;
 };
 
+export type CompanyDocumentRow = {
+  id: string;
+  company_id: string;
+  type: DocumentType;
+  storage_bucket: string;
+  storage_path: string;
+  original_name: string;
+  mime_type: string;
+  size_bytes: number;
+  uploaded_at: Timestamp;
+};
+
+export type CompanyApplicationRow = {
+  id: string;
+  company_id: string;
+  reference_number: string;
+  status: ApplicationStatus;
+  submitted_at: Timestamp;
+  declaration_accepted_at: Timestamp;
+  terms_version: string;
+  terms_accepted_at: Timestamp;
+  submit_ip: string | null;
+  user_agent: string | null;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+/** The columns the API reads (uniqueness pre-check, notification email). */
+export type CompanyRow = {
+  id: string;
+  legal_name: string;
+  governorate: string;
+  activities: string[];
+  commercial_register_number: string;
+  tax_number: string;
+};
+
+/** A stored file: bucket + path (from list_expired_company_registrations / company_documents). */
+export type StoredFile = { bucket: string; path: string };
+
 export type ClaimOtpStatus = 'ok' | 'none' | 'expired' | 'exhausted';
 
 export type Database = {
@@ -75,6 +123,10 @@ export type Database = {
         Omit<ContactMessageRow, 'id' | 'email_sent' | 'created_at'>,
         Partial<Pick<ContactMessageRow, 'email_sent'>>
       >;
+      // MW_002: written only through create_company_registration(); read by the backend.
+      companies: Table<CompanyRow, never, never>;
+      company_documents: Table<CompanyDocumentRow, never, never>;
+      company_applications: Table<CompanyApplicationRow, never, never>;
     };
     Views: Record<never, never>;
     Functions: {
@@ -88,9 +140,49 @@ export type Database = {
           attempts: number | null;
         }>;
       };
+      create_company_registration: {
+        Args: {
+          p_user_id: string;
+          p_email: string;
+          p_phone: string;
+          p_company: Record<string, unknown>;
+          p_services: Record<string, unknown>;
+          p_documents: Array<
+            Pick<
+              CompanyDocumentRow,
+              | 'type'
+              | 'storage_bucket'
+              | 'storage_path'
+              | 'original_name'
+              | 'mime_type'
+              | 'size_bytes'
+            >
+          >;
+          p_consent: { terms_version: string; submit_ip: string | null; user_agent: string | null };
+        };
+        Returns: Array<{ application_id: string; reference_number: string }>;
+      };
+      transition_application_status: {
+        Args: {
+          p_application_id: string;
+          p_to: ApplicationStatus;
+          p_actor_type: StatusActorType;
+          p_actor_id?: string | null;
+          p_note?: string | null;
+        };
+        Returns: ApplicationStatus;
+      };
+      list_expired_company_registrations: {
+        Args: { p_older_than?: string; p_limit?: number };
+        Returns: Array<{ user_id: string; documents: StoredFile[] }>;
+      };
+      revoke_user_sessions: { Args: { p_user_id: string }; Returns: number };
     };
     Enums: {
-      user_role: ProfileRow['role'];
+      user_role: UserRole;
+      application_status: ApplicationStatus;
+      status_actor_type: StatusActorType;
+      company_document_type: DocumentType;
       gender: Gender;
       otp_purpose: OtpPurpose;
     };

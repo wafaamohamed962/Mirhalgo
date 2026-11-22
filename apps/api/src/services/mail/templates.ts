@@ -202,3 +202,75 @@ export function contactEmail(input: ContactInput): MailContent {
     text: [...rows.map(([label, value]) => `${label}: ${value}`), '', input.message].join('\n'),
   };
 }
+
+// ── Company registration (MW_002) ─────────────────────────────────────────
+
+function referenceBox(referenceNumber: string): string {
+  return `<div style="margin:20px 0;padding:14px;background:${COLORS.blue50};border:2px solid ${COLORS.blue};border-radius:12px;text-align:center;">
+      <span dir="ltr" style="font-family:Consolas,Menlo,monospace;font-size:22px;font-weight:800;letter-spacing:2px;color:${COLORS.blue};">${escapeHtml(referenceNumber)}</span>
+    </div>`;
+}
+
+/** To the company after its email is verified: the application is now pending review. */
+export function companyApplicationReceivedEmail({
+  referenceNumber,
+  legalName,
+}: {
+  referenceNumber: string;
+  legalName: string;
+}): MailContent {
+  const subject = 'Application received | تم استلام طلبك — MirhalGo';
+  // `name` is HTML-escaped for the html part and raw for the plain-text part.
+  const copy = (name: string): [LocalizedBlock, LocalizedBlock] => [
+    {
+      title: 'استلمنا طلب انضمام شركتك',
+      paragraphs: [
+        `شكراً لتسجيل "${name}" في مرحال جو. رقم الطلب: ${referenceNumber}`,
+        'فريقنا هيراجع طلبك خلال 48 ساعة، وهنبعتلك إيميل بالنتيجة.',
+      ],
+    },
+    {
+      title: 'We received your application',
+      paragraphs: [
+        `Thank you for registering "${name}" on MirhalGo. Your reference number: ${referenceNumber}`,
+        "Our team will review your application within 48 hours. We'll email you with the result.",
+      ],
+    },
+  ];
+  const { html } = bilingual(
+    subject,
+    ...copy(escapeHtml(legalName)),
+    referenceBox(referenceNumber),
+  );
+  const { text } = bilingual(subject, ...copy(legalName));
+  return { subject, html, text };
+}
+
+/** Short notice to the team inbox (decision 12). Never contains documents or links to them. */
+export function newCompanyApplicationEmail(details: {
+  referenceNumber: string;
+  legalName: string;
+  email: string;
+  governorate: string;
+  activities: readonly string[];
+}): MailContent {
+  const rows: Array<[string, string]> = [
+    ['Reference / رقم الطلب', details.referenceNumber],
+    ['Company / الشركة', details.legalName],
+    ['Email / البريد', details.email],
+    ['Governorate / المحافظة', details.governorate],
+    ['Activities / الأنشطة', details.activities.join(', ')],
+  ];
+  const table = rows
+    .map(
+      ([label, value]) =>
+        `<tr><td style="padding:6px 12px 6px 0;color:${COLORS.muted};white-space:nowrap;">${label}</td><td dir="auto" style="padding:6px 0;color:${COLORS.navy};font-weight:600;">${escapeHtml(value)}</td></tr>`,
+    )
+    .join('');
+  return {
+    subject: `New company application — ${details.referenceNumber}`,
+    html: layout(`${block('en', { title: 'New company application / طلب انضمام شركة جديد', paragraphs: ['Pending review. Documents are only available in the admin panel.'] })}
+      <table role="presentation" style="margin:16px 0;font-size:15px;">${table}</table>`),
+    text: rows.map(([label, value]) => `${label}: ${value}`).join('\n'),
+  };
+}

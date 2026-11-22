@@ -4,6 +4,7 @@ import cors from 'cors';
 import { config } from './config.js';
 import { HttpError, errorHandler, notFound } from './middleware/errorHandler.js';
 import { authRouter } from './routes/auth.js';
+import { companiesRouter } from './routes/companies.js';
 import { contactRouter } from './routes/contact.js';
 import { healthRouter } from './routes/health.js';
 
@@ -29,6 +30,7 @@ export function createApp() {
 
   app.use('/api/health', healthRouter);
   app.use('/api/auth', authRouter);
+  app.use('/api/companies', companiesRouter);
   app.use('/api/contact', contactRouter);
 
   app.use(notFound);

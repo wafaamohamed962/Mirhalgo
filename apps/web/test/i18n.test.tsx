@@ -5,6 +5,8 @@ import { LanguageSwitch } from '../src/components/layout/LanguageSwitch';
 import i18n from '../src/i18n';
 import ar from '../src/i18n/ar.json';
 import en from '../src/i18n/en.json';
+import portalAr from '../src/i18n/portal/ar.json';
+import portalEn from '../src/i18n/portal/en.json';
 
 type Tree = { [key: string]: string | Tree };
 
@@ -16,6 +18,10 @@ const keys = (tree: Tree, prefix = ''): string[] =>
 describe('i18n', () => {
   it('ar.json and en.json have exactly the same keys', () => {
     expect(keys(ar).sort()).toEqual(keys(en).sort());
+  });
+
+  it('the customer-portal bundles (portal/*.json) have the same keys too', () => {
+    expect(keys(portalAr).sort()).toEqual(keys(portalEn).sort());
   });
 
   it('has a translation for every shared validation message and API error code', async () => {

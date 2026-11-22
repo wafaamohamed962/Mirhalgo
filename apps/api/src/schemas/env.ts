@@ -1,10 +1,11 @@
+import { SUPABASE_URL_RULE, isSupabaseProjectUrl } from '@mirhalgo/shared';
 import { z } from 'zod';
 
 /** Backend environment (spec 8.6). Validated once at startup; values are never logged. */
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
-  SUPABASE_URL: z.string().url(),
+  SUPABASE_URL: z.string().url().refine(isSupabaseProjectUrl, SUPABASE_URL_RULE),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().positive(),

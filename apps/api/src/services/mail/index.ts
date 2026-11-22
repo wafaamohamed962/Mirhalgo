@@ -4,7 +4,9 @@ import { config } from '../../config.js';
 import { HttpError } from '../../middleware/errorHandler.js';
 import {
   accountExistsEmail,
+  companyApplicationReceivedEmail,
   contactEmail,
+  newCompanyApplicationEmail,
   otpEmail,
   phoneTakenEmail,
   type MailContent,
@@ -49,6 +51,13 @@ export const mail = {
   phoneTaken: (to: string) => send(to, phoneTakenEmail()),
   /** To the team inbox; Reply-To = the customer (spec 3.5). */
   contact: (input: ContactInput) => send(config.CONTACT_TO, contactEmail(input), input.email),
+  companyApplicationReceived: (
+    to: string,
+    details: Parameters<typeof companyApplicationReceivedEmail>[0],
+  ) => send(to, companyApplicationReceivedEmail(details)),
+  /** To the team inbox (decision 12). */
+  newCompanyApplication: (details: Parameters<typeof newCompanyApplicationEmail>[0]) =>
+    send(config.CONTACT_TO, newCompanyApplicationEmail(details)),
 };
 
 /** Startup check of the SMTP credentials (logs only, never blocks the API). */

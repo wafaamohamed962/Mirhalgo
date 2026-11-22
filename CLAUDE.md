@@ -8,7 +8,11 @@ Context for Claude Code. Read this first in every session.
 shipping request and receives price quotes from verified shipping / customs-clearance
 companies.
 
-**Current task: MW_001**: Landing page + Customer Sign Up (email OTP) + Login +
+**Current task: MW_002** (branch `feature/mw-002`, spec `docs/MW_002.md`, see §14):
+Part A company registration (full stack) + Part B customer portal (frontend only, MSW mocks).
+MW_002 builds on MW_001 and does not override its design system, stack, security or OTP rules.
+
+**Previous task: MW_001** (on `main`): Landing page + Customer Sign Up (email OTP) + Login +
 Forgot password + persistent session.
 
 - **The full spec is `docs/MW_001.md`. It is the single source of truth.** Follow it exactly.
@@ -55,7 +59,9 @@ apps/web/src/
   i18n/              ar.json, en.json
   styles/            tokens.css, globals.css
   assets/images/     optimized AVIF/WebP + srcset sizes (logo SVGs in assets/images/logo/)
-apps/api/src/        routes/, services/ (otp, mail), middleware/, schemas/
+  services/api/      customer-portal service layer + TanStack Query hooks (MW_002 B)
+  mocks/             MSW handlers + fixtures (customer portal, until the real API exists)
+apps/api/src/        routes/, services/ (otp, mail, companies, storage), middleware/, schemas/
 packages/shared/     Zod schemas + types shared by web & api  (package name: @mirhalgo/shared)
 supabase/migrations/
 docs/                MW_001.md (spec), image-credits.md
@@ -412,7 +418,240 @@ Priorities: **Clean Code + High Performance + Readability + Maintainability + Re
     existing refresh tokens when the Admin API changes a password.)
   - Production domain (robots.txt, sitemap.xml, og:url) and an OG share image.
 - `zod` 3.x has advisory GHSA-mrhx-c7xc-m3w5 (oversized collections). Not reachable here
-  (no array schemas, 10 kb body limit); upgrading to zod 4 is a separate migration.
+  (10 kb JSON limit; MW_002 arrays all have `.max()` and the multipart `application` field is
+  capped at 16 kb); upgrading to zod 4 is a separate migration.
 - OTP email header uses a text wordmark: Gmail does not render SVG. A hosted PNG logo can
   replace it later.
 - Screenshots 1, 2 and 3 referenced by the spec are not available yet.
+
+## 14. MW_002: Company registration + Customer portal
+
+**Spec:** `docs/MW_002.md` (copied from the developer's spec folder on 2026-11-21). Status:
+**planning, waiting for approval. No code yet.**
+
+**Scope**
+
+- **Part A, full stack:** `/signup/company` 4-step wizard (Account & company → Services
+  (conditional, skipped if only "Other") → Documents → Review) → email OTP (reuses
+  `verify-email` / `resend-otp`, purpose `signup`) → "Application submitted" screen + email.
+  `POST /api/companies/register` (multipart, shared Zod, magic-byte file checks, all-or-nothing
+  with compensation, 3/hour/IP). Structured, queryable service data. Private bucket
+  `company-documents`, UUID file names, no public URLs. Status lifecycle
+  `pending_verification → pending_review → approved | rejected | changes_requested` + history
+  log. Role-based routing; company accounts never reach `/app/*`; company sees an
+  "Application status" page after login.
+- **Part B, frontend only:** `/app/*` customer portal (sidebar / top bar / mobile bottom nav;
+  New Request, My Orders + details, Companies directory + profile + rating, Account (7
+  sections), Notifications, Help & Support). Data via `services/api` + TanStack Query, backed by
+  **MSW** fixtures (~400 ms). Function names and response shapes must match the future real API.
+- **Out of scope:** company login screen/portal, admin review UI, service request forms, real
+  backend for Part B, payments, SMS.
+
+**Decisions (2026-11-21, by the developer, PENDING final Team Lead confirmation; list them
+as assumptions in the PR)**
+
+Security
+
+1. Duplicate email/phone → neutral response (same as MW_001 signup). Duplicate commercial
+   register or tax number → explicit `COMPANY_ALREADY_REGISTERED` error.
+2. Email exists but unverified: a company application in `pending_verification` → delete the
+   old application, rows and files, accept the new one. A customer account → neutral response,
+   change nothing.
+3. Role: `app_metadata.role` is the source of truth, mirrored to `profiles.role`, written only
+   by the backend.
+4. Logo: private bucket until approval (no public bucket for now).
+5. Files: magic bytes + size for all files; images re-encoded with `sharp` (API); PDFs checked
+   by signature + size only, never parsed. Virus scanning is out of scope (future item).
+6. No auto-login after the company OTP; show the "Application submitted" screen.
+7. Draft in `localStorage`: never passwords, files, commercial register number or tax number;
+   expires after 7 days; cleared on submit and on logout.
+8. MW_001 follow-up: after a password reset, sign out all other sessions.
+
+Data
+
+9. Reference number `MG-C-YYYY-000123` from a DB sequence, generated at registration, shown
+   after the OTP and in the emails.
+10. Unverified applications: cleanup function deletes user, rows and files after 7 days
+    (created now, scheduled later).
+11. `TERMS_VERSION = "2026-11-21"`; Terms/Privacy pages stay placeholders.
+12. Confirmation email to the company + short "new company application" notice to `CONTACT_TO`
+    (no documents attached).
+13. Free email providers (Gmail, Yahoo…) are allowed.
+14. Ranges: commercial register 1–10 digits, landline 7–12 digits, years in business 0–100,
+    fleet size 0–10000, website `http` or `https`.
+15. "Other" vehicle type / "Other" China site → required text field (3–100 chars).
+    "All governorates" is a boolean flag.
+16. Served areas = the `COUNTRIES` list + regions: Gulf, Middle East, Europe, China, East Asia,
+    North America, Africa.
+
+Part B
+
+17. MSW enabled on the deployed preview via an env flag; unhandled requests pass through (real
+    auth).
+18. `VITE_SHOW_COMPANY_IDENTITY` defaults to `true` (directory shows names; offers stay
+    anonymous).
+19. "Send to all in category" uses 1 request attempt, max 10 companies.
+20. Top-bar search: orders by reference number only.
+21. Date format options: `DD/MM/YYYY` (default) and `YYYY-MM-DD`.
+22. **(2026-11-22, by the developer) Own identity is real, not MSW.** The logged-in user's
+    first/last name, gender, email and phone come from their real `profiles` row (RLS owner
+    select) via `services/api/ownProfile.ts` behind `portalApi.getMe` / `updateProfile` (same
+    `Me` shape). Used by the welcome banner, the avatar menu and Account › Profile. Saving
+    name/gender updates the real row (RLS/column grants: owner, those 3 columns only). Only the
+    avatar image stays mocked (`GET/POST /me/avatar` in MSW; a failure falls back to initials).
+    Email/phone are read-only: the mocked "Change email/phone" buttons are hidden
+    (`CONTACT_CHANGE_ENABLED = false` in `ProfileSection.tsx`, code kept). Everything else stays
+    mocked. The query cache is cleared whenever the signed-in user changes (`providers.tsx`).
+
+Implementation choices (proposed in the plan, not contradicted; confirm in review)
+
+- Company `profiles` rows: `first_name` / `last_name` / `gender` become nullable for
+  `role = company` (check constraint); the representative name lives in `companies`.
+- Phone unique across all accounts through `profiles.phone`; WhatsApp/landline not unique.
+- Storage path `{company_id}/{uuid}.{ext}`; status history with `actor_type` + `actor_id`.
+- Validation messages follow the MW_001 convention: one fixed `validation.*` key per rule.
+- Libraries: `multer` v2 (API) and `sharp` (API, decision 5) for Part A; `msw` and
+  `react-easy-crop` for Part B. Magic bytes are checked by hand-written signatures.
+
+**Progress**
+
+- **Phase A1 done** (shared): `packages/shared/src/company.ts` (enums/ids, `TERMS_VERSION`,
+  limits), `files.ts` (`FILE_RULES`, `checkFile`, `detectMime` magic bytes),
+  `schemas/company.ts` (one schema per wizard step + `companyRegistrationSchema`; stale hidden
+  values are dropped by `z.preprocess` before validation), new `fields.ts` helpers, new
+  `ErrorCode`s. Tests: `packages/shared/test/company.test.ts`.
+- **Phase A2 done** (migrations `supabase/migrations/2026112100000{1..5}_*.sql`), pushed to
+  `mirhalgo_v1` on 2026-11-21 (+ `…06_revoke_user_sessions.sql` from A3):
+  1. `profiles`: names/gender nullable unless `role = customer`; only customers update their
+     profile; backfill `app_metadata.role` for MW_001 users.
+  2. `companies` (legal numbers unique, named constraints `companies_commercial_register_number_key`
+     / `companies_tax_number_key` for decision 1), `company_services` (enum arrays + GIN),
+     `company_documents` (owner reads metadata only, never `storage_path`).
+  3. `company_applications` (reference default `next_company_reference()`),
+     `application_status_history` written by an AFTER trigger that also validates
+     transitions; `transition_application_status(id, to, actor_type, actor_id, note)`.
+  4. `create_company_registration(...)` (security definer, service_role only): every row in one
+     transaction, checks `app_metadata.role = company` and the 2 required documents.
+     `list_expired_company_registrations(interval, limit)` for the cleanup (decision 10).
+  5. Private buckets `company-documents` (5 MB, pdf/jpeg/png) + `company-logos` (2 MB,
+     png/jpeg/webp) + a RESTRICTIVE storage policy denying anon/authenticated on both.
+     Verified on PGlite with Supabase-like stubs (50 behavioural checks: atomicity, duplicates,
+     constraints, lifecycle + actor, RLS/column grants, storage, cleanup, reference > 999999).
+- **Phase A3 done** (API, `multer` v2 + `sharp` approved):
+  - `POST /api/companies/register` (`routes/companies.ts`): `companyRegisterLimit` (3/h/IP,
+    before parsing) → `middleware/upload.ts` (multer memory, 1 file per document type, 4 files,
+    5 MB, one `application` field ≤ 16 kb; multer errors → API codes) → `parseApplicationField`
+    → `validateBody(companyRegistrationSchema)` → `services/companies.ts`.
+  - `services/companyFiles.ts`: magic bytes + per-type size; images re-encoded with sharp
+    (EXIF/appended data removed, ≤ 4000 px, ≤ 50 MP input), logo → 512×512 WEBP; PDFs untouched;
+    UTF-8 file names recovered from busboy's latin1. `services/storage.ts`: UUID paths,
+    upload (self-cleaning on failure), best-effort `removeFiles`.
+  - `registerCompany` order: files checked → verified email (account-exists mail, neutral) →
+    unverified non-company or non-replaceable (neutral, untouched) → legal numbers (409) →
+    phone (phone-taken mail, neutral) → replace own pending application (files, then user) →
+    create user (`app_metadata.role = company`) → upload → RPC → OTP. Any failure after the
+    user exists → files + user deleted (`rollback`); unique violations mapped by constraint name.
+  - `verify-email` → `completeCompanyVerification` (status first, then email confirm; both
+    idempotent): `pending_review` + confirmation email + team notice; returns
+    `VerifyEmailResult` with the reference. Login returns `role` (app_metadata, profile
+    fallback, none → INVALID_CREDENTIALS). Customer signup never touches an unverified company.
+    Reset password → `revoke_user_sessions` (decision 8). Customers get `app_metadata.role`.
+  - Cleanup: `cleanupExpiredRegistrations()` + `npm run cleanup:companies -w apps/api` (not
+    scheduled).
+  - Tests: `companyFiles`, `companies`, `companiesHttp`, `authRoles` (+ existing).
+  - Real backend (Supabase + Gmail, 2026-11-21, 16 checks, run twice): register, storage
+    (private, UUID names, EXIF stripped, logo WEBP), verify → pending_review + history, login
+    role (email/phone), company RLS + storage denied, CR/tax 409, email/phone neutral, replace
+    pending, unverified customer untouched, EXE/missing file rejected, cleanup, reset revokes
+    the refresh token. Logs: no passwords/codes/full emails. Test data deleted. OTP delivery was
+    simulated by planting a known hash (the real emails were also sent). Script kept outside
+    the repo (scratchpad `e2e-company.mjs`).
+- **Phase A4 done** (web wizard, `react-easy-crop` approved):
+  - UI kit: `Modal`, `ConfirmDialog`, `CheckboxGroup` / `RadioGroup` (cards or chips), `Switch`,
+    `FileUpload` (drag & drop, preview, replace/remove), `ProgressBar`, `Stepper`. Focus trap
+    shared in `lib/useModalBehavior.ts` (MobileDrawer uses it too). `PhoneInput` shows a value set
+    from outside (`splitE164` in shared). `apiUpload` (XHR, upload progress) in `lib/apiClient.ts`.
+  - `features/companyRegistration/`: `model.ts` (step schemas = shared schemas + file presence;
+    the resolver follows the current step), `draft.ts` (decision 7: no passwords, legal numbers,
+    files or consents; 7 days; cleared on submit + logout), `api.ts` (multipart + `checkPickedFile`:
+    magic bytes in the browser too), `options.ts`, steps in `components/`, `LogoCropper` (own
+    chunk, 512 px PNG), pages `CompanyRegistrationPage` (`/signup/company`, guest only) and
+    `ApplicationSubmittedPage` (`/signup/company/submitted`). Leave guard: `useBlocker` +
+    `beforeunload`. Submit errors jump to the step of the first invalid field; file errors →
+    Documents.
+  - `/verify-email`: role `company` → submitted screen with the reference (no login, decision 6).
+    `pendingVerification` stores the kind (customer/company). The "Coming soon" page was removed.
+  - "Countries served" = `COUNTRIES` without Egypt.
+  - Tests: `test/companyDraft.test.ts`, `test/companyRegistration.test.tsx` (Next validates one
+    step, skip, Back keeps data, renamed EXE rejected, submit payload, draft restore, leave
+    dialog); E2E company flow (desktop + mobile). Real check: browser → API → Supabase → OTP →
+    submitted screen.
+- **Phase A5 done** (role routing, spec A6): `features/auth/roles.ts` (`roleOf(session)` from the
+  JWT `app_metadata.role`, `homePath(role)`: customer → `/app`, company → `/application-status`),
+  `ProtectedRoute allow={[…]}` (other roles → their home), `HomeRedirect` on `/dashboard`, login
+  and verify navigate by role. `features/companyPortal/ApplicationStatusPage` reads its own
+  application through RLS (`company_applications` + `companies(legal_name)`). `LogoutButton`.
+- **Phase A6 done**: README (MW_002, env flags, buckets, cleanup, mocks, security), real checks:
+  company logs in → `/application-status` "Pending review", `/app/*` and `/dashboard` bounce
+  back; customer logs in through the MSW passthrough → mocked portal; reload keeps the session.
+- **Part B done** (`msw` 3, treated as approved: spec + decision 17):
+  - Contract: `packages/shared/src/portal.ts` (every response type + constants) and
+    `schemas/portal.ts` (profile, address, reason, question, review, ticket, password, delete).
+  - Service layer `apps/web/src/services/api/portal.ts` (`portalApi.*`, authenticated
+    `apiRequest` with the Bearer token) + `queries.ts` (query keys, hooks, `useApiMutation` =
+    success/error toasts + cache sync).
+  - Mocks `apps/web/src/mocks`: `fixtures.ts` (fictional companies/people), `db.ts` (in-memory
+    state, reset on reload), `handlers.ts` (`createHandlers(db, { latency })`, 400 ms),
+    `browser.ts` (worker, `onUnhandledFrame: 'bypass'`). Started in `main.tsx` only when
+    `VITE_USE_MOCKS=true` (own chunk). Demo codes: OTP `123456`, password `wrong` = error.
+  - Flags in `lib/env.ts`: `flags.useMocks`, `flags.showCompanyIdentity`
+    (`VITE_SHOW_COMPANY_IDENTITY`, default true; off → "MirhalGo Partner #NNN" with a stable
+    number, `features/portal/components/companyIdentity.ts`). Offers are always anonymous.
+  - Shell `features/portal/layout/PortalLayout`: sidebar on the start side (right in AR),
+    collapsible (saved in localStorage; collapsed by default < 1280 px), top bar (title from the
+    route `handle`, order search → `/app/orders?search=`, bell, avatar menu), mobile bottom nav +
+    "More" drawer. Portal copy is its own chunk: `i18n/portal/{ar,en}.json` (imported by the
+    layout).
+  - Pages (lazy, routes in `app/router.tsx` via `portal(path, title, load)`): `requests/`
+    (New Request, service placeholder `/app/new-request/:service`, `RequestSuccessModal` ready
+    for later), `orders/` (list with tabs/counts/search/sort/load more; details with Details ·
+    Offers · Timeline, accept/reject/ask/compare/cancel), `companies/` (directory, bulk bar, send
+    to category ≤ 10, profile, reviews, rating only after a completed order), `account/` (7
+    sections; profile with avatar crop + change email/phone OTP UI + unsaved guard), `notifications/`,
+    `support/` (FAQ search, contact, tickets + conversation).
+  - New UI kit: Skeleton, QueryState/EmptyState/ErrorState, Tabs (+ `tabPanel.ts`), Popover,
+    Avatar, StarRating(+Input), Accordion. Shared: `components/ImageCropper` (logo + avatar),
+    `lib/useUnsavedChangesGuard`, `lib/useDebouncedValue`, `lib/dateFormat` (decision 21),
+    `lib/money`.
+  - Tests: `apps/web/test/portal/*` (MSW node server, same handlers, latency 0: 24 tests) +
+    `e2e/portal.spec.ts` (second Playwright build with mocks on, port 4174: RTL/LTR sidebar side,
+    mobile bottom nav, no overflow on 10 pages, walk-through).
+  - Main web chunk: 428 kB raw / 138 kB gzip (portal copy split out). The MSW chunk (≈ 290 kB) only loads when
+    mocks are on.
+
+- **Fix (2026-11-22): forgot-password 500 `PGRST125`.** Cause: `SUPABASE_URL` in `apps/api/.env`
+  (and both URLs in `.env.example`) ended in `/rest/v1/`; supabase-js appends that path itself, so
+  every query hit `/rest/v1/rest/v1/<table>` and every sign-in failed with no error code (logged as
+  `no_session`). Fixed the env files; `isSupabaseProjectUrl` (`packages/shared/src/env.ts`) now
+  makes the API refuse to start and the web treat `VITE_SUPABASE_URL` as missing when it has a
+  path. Tests: `packages/shared/test/env.test.ts`, `apps/api/test/env.test.ts`,
+  `apps/web/test/missing-env.test.tsx`. Real backend (29 checks): legacy customer without
+  `app_metadata.role` login email/phone, forgot → reset → old token revoked, signup → resend →
+  verify → login, both real MW_001 customers have the role backfilled. Test data deleted.
+
+**Open items**
+
+- Team Lead confirmation of decisions 1–21.
+- Lighthouse mobile ≥ 90 (landing + portal) still not measured: Lighthouse hangs locally →
+  measure on the deployed preview. With mocks on, the MSW chunk is part of the portal load.
+- Mock state is in-memory (a reload resets it), as spec B2 says "for the session".
+- Mocked content still contains the fixture customer's name: a review the user writes is
+  listed as "منى ع." (the mock builds the author from its fixture) and one support-ticket reply
+  greets "منى". The real API will use the real name; change the mock only if the demo needs it.
+- E2E: with MSW on, Supabase requests go through the service worker, so `mockSupabase` uses
+  `context.route` + `PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1` (set in
+  `playwright.config.ts`).
+- Rollback after an RPC failure was verified with unit tests + PGlite, not on the real backend
+  (the pre-checks prevent that failure path there).
+- Ticket attachments are metadata only in the mock (the real API will need multipart).
+- Not committed yet: everything is on `feature/mw-002` as working-tree changes.

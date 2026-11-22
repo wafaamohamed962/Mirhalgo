@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import type { Session } from '@supabase/supabase-js';
 import type { SessionTokens } from '@mirhalgo/shared';
 import { ConfigError } from '../../lib/env';
+import { clearCompanyDraft } from '../companyRegistration/draft';
 import { AuthContext, type AuthContextValue } from './authContext';
+import { roleOf } from './roles';
 
 /**
  * supabase-js is loaded after the first paint (its own chunk) to keep the initial
@@ -54,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     const supabase = await loadSupabase();
     await supabase.auth.signOut();
+    clearCompanyDraft(); // MW_002 decision 7
     setSignedOut(true); // spec 4.5: logout → `/` (ProtectedRoute uses this)
     setSession(null);
   }, []);
@@ -63,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       loading,
       isVerified: Boolean(session?.user.email_confirmed_at),
+      role: roleOf(session),
       signIn,
       signOut,
       signedOut,

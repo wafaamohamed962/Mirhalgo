@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
-import { COUNTRIES, DEFAULT_COUNTRY, toE164, type Country } from '@mirhalgo/shared';
+import { COUNTRIES, DEFAULT_COUNTRY, splitE164, toE164, type Country } from '@mirhalgo/shared';
 import { Field } from './Field';
 import { controlClasses } from './styles';
 import { useField } from './useField';
@@ -29,8 +29,10 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(function
 ) {
   const { t, i18n } = useTranslation();
   const { fieldId, errorId, hintId, ariaProps } = useField({ id, error });
-  const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY);
-  const [national, setNational] = useState('');
+  // a value set from outside (restored draft) is shown; afterwards the input owns the text
+  const [initial] = useState(() => splitE164(value));
+  const [country, setCountry] = useState<Country>(initial?.country ?? DEFAULT_COUNTRY);
+  const [national, setNational] = useState(initial?.national ?? '');
 
   // Clear the local text when the form is reset from outside.
   useEffect(() => {

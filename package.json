@@ -26,6 +26,6 @@
     "*.{ts,tsx,js,jsx,json,css,md}": "prettier --write"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12"
   }
 }

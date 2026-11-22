@@ -12,25 +12,85 @@ export class ApiRequestError extends Error {
   }
 }
 
-/** Small typed fetch wrapper: unwraps `{ ok, data }` and maps failures to ApiRequestError. */
-export async function apiPost<T>(path: `/${string}`, body: unknown): Promise<T> {
+/** Unwraps `{ ok, data }`; anything else becomes an ApiRequestError. */
+function unwrap<T>(json: ApiResponse<T> | null, status: number): T {
+  if (!json) throw new ApiRequestError('INTERNAL', 'Invalid server response', status);
+  if (!json.ok) throw new ApiRequestError(json.error.code, json.error.message, status);
+  return json.data;
+}
+
+type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+
+/** The logged-in user's access token (supabase-js is loaded lazily, see AuthProvider). */
+async function accessToken(): Promise<string | null> {
+  const { supabase } = await import('./supabase');
+  return (await supabase.auth.getSession()).data.session?.access_token ?? null;
+}
+
+/**
+ * Typed fetch wrapper: unwraps `{ ok, data }` and maps failures to ApiRequestError.
+ * `auth` sends the session as a Bearer token (customer portal endpoints).
+ */
+export async function apiRequest<T>(
+  method: Method,
+  path: `/${string}`,
+  { body, auth = false }: { body?: unknown; auth?: boolean } = {},
+): Promise<T> {
   assertConfigured(missingApiEnv);
+  const headers: Record<string, string> = {};
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (auth) {
+    const token = await accessToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
 
   let response: Response;
   try {
     response = await fetch(`${env.apiUrl}/api${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
     throw new ApiRequestError('NETWORK_ERROR', 'Network error', 0);
   }
 
   const json = (await response.json().catch(() => null)) as ApiResponse<T> | null;
-  if (!json) throw new ApiRequestError('INTERNAL', 'Invalid server response', response.status);
-  if (!json.ok) throw new ApiRequestError(json.error.code, json.error.message, response.status);
-  return json.data;
+  return unwrap(json, response.status);
+}
+
+/** Public JSON POST (auth flows, contact form). */
+export const apiPost = <T>(path: `/${string}`, body: unknown) =>
+  apiRequest<T>('POST', path, { body });
+
+/**
+ * multipart/form-data POST with upload progress (0–100). Uses XMLHttpRequest because
+ * fetch cannot report upload progress.
+ */
+export function apiUpload<T>(
+  path: `/${string}`,
+  body: FormData,
+  onProgress?: (percent: number) => void,
+): Promise<T> {
+  assertConfigured(missingApiEnv);
+
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${env.apiUrl}/api${path}`);
+    xhr.responseType = 'json';
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.((event.loaded / event.total) * 100);
+    };
+    xhr.onerror = () => reject(new ApiRequestError('NETWORK_ERROR', 'Network error', 0));
+    xhr.onload = () => {
+      try {
+        resolve(unwrap(xhr.response as ApiResponse<T> | null, xhr.status));
+      } catch (error) {
+        reject(error);
+      }
+    };
+    xhr.send(body);
+  });
 }
 
 /** i18n key for any error thrown by an API call (or by missing configuration). */

@@ -5,9 +5,18 @@ import { cn } from '../../lib/utils';
 
 /**
  * Logo mark + the name "MirhalGo" (spec 3.1). `onDark` uses the white mark
- * (hero / navy navbar), otherwise the navy mark (light backgrounds).
+ * (hero / navy navbar), otherwise the navy mark (light backgrounds). `compact` shows the
+ * mark only (collapsed sidebar).
  */
-export function Logo({ onDark = false, className }: { onDark?: boolean; className?: string }) {
+export function Logo({
+  onDark = false,
+  compact = false,
+  className,
+}: {
+  onDark?: boolean;
+  compact?: boolean;
+  className?: string;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -17,6 +26,7 @@ export function Logo({ onDark = false, className }: { onDark?: boolean; classNam
         className={cn(
           'text-h3 leading-none font-extrabold',
           onDark ? 'text-white' : 'text-heading',
+          compact && 'sr-only',
         )}
       >
         {t('common.brand')}

@@ -1,25 +1,29 @@
 import {
-  OTP_RESEND_COOLDOWN_SECONDS,
+  USER_ROLES,
   type LoginResult,
   type OtpPurpose,
   type OtpSentResult,
   type ResetPasswordInput,
   type SignupInput,
+  type UserRole,
   type VerifyEmailInput,
+  type VerifyEmailResult,
   loginIdentifierSchema,
 } from '@mirhalgo/shared';
 import type { z } from 'zod';
 import { logEvent } from '../lib/logger.js';
 import { createSignInClient } from '../lib/supabase.js';
 import { HttpError } from '../middleware/errorHandler.js';
+import { completeCompanyVerification } from './companies.js';
 import { assertMailConfigured, mail } from './mail/index.js';
-import { issueOtp, verifyOtp } from './otp.js';
+import { issueOtp, otpSentResult, verifyOtp } from './otp.js';
 import {
   confirmEmail,
   createCustomer,
   findProfileByEmail,
   findProfileByPhone,
   refreshUnverifiedCustomer,
+  revokeSessions,
   setPassword,
   type WriteCustomerResult,
 } from './users.js';
@@ -32,10 +36,7 @@ import {
 
 type Ctx = { ip?: string };
 
-const neutral = (email: string): OtpSentResult => ({
-  email,
-  cooldownSeconds: OTP_RESEND_COOLDOWN_SECONDS,
-});
+const neutral = otpSentResult;
 
 /** Creates the customer, or refreshes the unverified one with this email. Phone must be free. */
 async function writeCustomer(
@@ -57,6 +58,13 @@ export async function signup(input: SignupInput, { ip }: Ctx): Promise<OtpSentRe
   if (existing?.email_verified_at) {
     await mail.accountExists(input.email);
     logEvent('signup_existing_email', ip, { userId: existing.id });
+    return neutral(input.email);
+  }
+
+  // An unverified account of another kind (a company application) is never touched by a
+  // customer sign up (MW_002 decision 2).
+  if (existing && existing.role !== 'customer') {
+    logEvent('signup_existing_email', ip, { userId: existing.id, reason: existing.role });
     return neutral(input.email);
   }
 
@@ -93,15 +101,34 @@ export async function sendOtpIfEligible(
   return neutral(email);
 }
 
-/** POST /auth/verify-email (spec 4.3). The client then logs in with the password it kept. */
-export async function verifyEmail({ email, code }: VerifyEmailInput, { ip }: Ctx) {
+/**
+ * POST /auth/verify-email (spec 4.3). A customer then logs in with the password the client
+ * kept. A company application moves to pending_review first (MW_002 A2), and the company is
+ * not logged in (decision 6).
+ */
+export async function verifyEmail(
+  { email, code }: VerifyEmailInput,
+  { ip }: Ctx,
+): Promise<VerifyEmailResult> {
   const userId = await verifyOtp({ email, code, purpose: 'signup', ip });
+  const profile = await findProfileByEmail(email);
+
+  // Company: status first, then the email. Both steps are idempotent, so if confirming fails
+  // the user can request a new code and verify again.
+  const application =
+    profile?.role === 'company' ? await completeCompanyVerification(userId, email, { ip }) : null;
   await confirmEmail(userId);
   logEvent('email_verified', ip, { userId });
-  return { verified: true as const };
+
+  return application
+    ? { verified: true, role: 'company', application }
+    : { verified: true, role: 'customer' };
 }
 
 type LoginIdentifier = z.output<typeof loginIdentifierSchema>;
+
+const isRole = (value: unknown): value is UserRole =>
+  typeof value === 'string' && (USER_ROLES as readonly string[]).includes(value);
 
 const invalidCredentials = () =>
   new HttpError(401, 'INVALID_CREDENTIALS', 'Invalid email/phone or password');
@@ -133,9 +160,17 @@ export async function login(
     throw invalidCredentials();
   }
 
-  logEvent('login_success', ip, { userId: data.user.id });
+  // app_metadata.role is the source of truth (decision 3); the profile is the mirror.
+  const metadataRole: unknown = data.user.app_metadata?.role;
+  const role = isRole(metadataRole) ? metadataRole : (await findProfileByEmail(email))?.role;
+  if (!role) {
+    logEvent('login_failed', ip, { userId: data.user.id, reason: 'no_role' });
+    throw invalidCredentials();
+  }
+
+  logEvent('login_success', ip, { userId: data.user.id, reason: role });
   const { access_token, refresh_token } = data.session;
-  return { status: 'authenticated', session: { access_token, refresh_token } };
+  return { status: 'authenticated', session: { access_token, refresh_token }, role };
 }
 
 /** POST /auth/reset-password (spec 4.6). */
@@ -143,5 +178,8 @@ export async function resetPassword({ email, code, password }: ResetPasswordInpu
   const userId = await verifyOtp({ email, code, purpose: 'reset_password', ip });
   await setPassword(userId, password);
   logEvent('password_reset', ip, { userId });
+  // Decision 8: sign out every existing session (the reset flow has none of its own).
+  await revokeSessions(userId);
+  logEvent('sessions_revoked', ip, { userId });
   return null;
 }

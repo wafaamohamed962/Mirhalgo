@@ -4,6 +4,7 @@ node_modules/
 # builds
 dist/
 dist-e2e/
+dist-e2e-portal/
 test-results/
 playwright-report/
 coverage/

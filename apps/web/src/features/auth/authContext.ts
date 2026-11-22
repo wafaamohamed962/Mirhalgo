@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import type { SessionTokens } from '@mirhalgo/shared';
+import type { SessionTokens, UserRole } from '@mirhalgo/shared';
 
 export type AuthContextValue = {
   session: Session | null;
@@ -8,6 +8,8 @@ export type AuthContextValue = {
   loading: boolean;
   /** Session exists and its email is confirmed (required for /dashboard). */
   isVerified: boolean;
+  /** From the JWT; null when logged out (or a token without a role). */
+  role: UserRole | null;
   signIn: (tokens: SessionTokens) => Promise<void>;
   signOut: () => Promise<void>;
   /** True after the user logged out in this tab: guards send them to `/`, not `/login`. */

@@ -51,3 +51,15 @@ export function normalizePhone(raw: string): string | null {
   else if (!value.startsWith('+')) value = `+${value}`;
   return isValidPhone(value) ? value : null;
 }
+
+/**
+ * Splits an E.164 number into one of `COUNTRIES` and the national digits, so a saved value
+ * can be shown again ("+201012345678" → Egypt + "1012345678"). Unknown codes → null.
+ */
+export function splitE164(e164: string): { country: Country; national: string } | null {
+  if (!e164.startsWith('+')) return null;
+  const country = [...COUNTRIES]
+    .sort((a, b) => b.dial.length - a.dial.length)
+    .find((c) => e164.startsWith(`+${c.dial}`));
+  return country ? { country, national: e164.slice(country.dial.length + 1) } : null;
+}

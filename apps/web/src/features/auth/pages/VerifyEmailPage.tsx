@@ -12,13 +12,15 @@ import { AuthCard } from '../components/AuthCard';
 import { ResendCode } from '../components/ResendCode';
 import { useLogin } from '../hooks/useLogin';
 import { clearPendingVerification, getPendingVerification } from '../pendingVerification';
+import { homePath } from '../roles';
+import type { SubmittedState } from '../../companyRegistration/pages/ApplicationSubmittedPage';
 import type { LoginFlash } from './LoginPage';
 
 type VerifyState = { cooldown?: number; notice?: 'unverified' } | null;
 
 /**
  * /verify-email (spec 4.3): 6-digit code → POST /api/auth/verify-email → automatic
- * login with the password kept in memory → /dashboard. The guard guarantees a pending email.
+ * login with the password kept in memory → the customer portal. The guard guarantees a pending email.
  */
 export default function VerifyEmailPage() {
   const { t } = useTranslation();
@@ -37,7 +39,7 @@ export default function VerifyEmailPage() {
       const result = await login.mutateAsync({ identifier: email, password }).catch(() => null);
       if (result?.status === 'authenticated') {
         toast.success(t('auth.verify.success'));
-        return navigate('/dashboard', { replace: true });
+        return navigate(homePath(result.role), { replace: true });
       }
     }
     // password lost (page reload) or login failed: log in manually
@@ -47,7 +49,13 @@ export default function VerifyEmailPage() {
 
   const verify = useMutation({
     mutationFn: (value: string) => authApi.verifyEmail({ email, code: value }),
-    onSuccess: finish,
+    onSuccess: (result) => {
+      if (result.role !== 'company') return finish();
+      // companies are not logged in (MW_002 decision 6): show the application screen
+      clearPendingVerification();
+      const state: SubmittedState = { referenceNumber: result.application.referenceNumber };
+      navigate('/signup/company/submitted', { replace: true, state });
+    },
     onError: (error) => {
       // wrong code: clear the boxes so the user can type again
       if (error instanceof ApiRequestError && error.code === 'OTP_INVALID') setCode('');
@@ -66,9 +74,15 @@ export default function VerifyEmailPage() {
         />
       }
       footer={
-        <Link to="/signup/customer" className="font-semibold">
-          {t('auth.verify.changeEmail')}
-        </Link>
+        pending?.kind === 'company' ? (
+          <Link to="/signup/company" className="font-semibold">
+            {t('auth.verify.changeEmailCompany')}
+          </Link>
+        ) : (
+          <Link to="/signup/customer" className="font-semibold">
+            {t('auth.verify.changeEmail')}
+          </Link>
+        )
       }
     >
       <form

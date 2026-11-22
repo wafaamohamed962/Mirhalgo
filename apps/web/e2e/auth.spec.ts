@@ -1,5 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
-import { fail, loginSuccess, mockApi, mockSupabase, ok, otpSent, USER, setLanguage } from './mocks';
+import {
+  fail,
+  loginSuccess,
+  me,
+  mockApi,
+  mockSupabase,
+  ok,
+  otpSent,
+  USER,
+  setLanguage,
+} from './mocks';
 
 const PASSWORD = 'Str0ng!pass';
 
@@ -13,7 +23,7 @@ test.beforeEach(async ({ page }) => {
   await mockSupabase(page);
 });
 
-test('customer sign up → OTP → logged in → dashboard → logout', async ({ page }) => {
+test('customer sign up → OTP → logged in → customer portal → logout', async ({ page }) => {
   const calls = await mockApi(page, {
     '/auth/signup': (body) => ({
       status: 201,
@@ -24,6 +34,7 @@ test('customer sign up → OTP → logged in → dashboard → logout', async ({
         ? { status: 200, body: ok({ verified: true }) }
         : { status: 400, body: fail('OTP_INVALID') },
     '/auth/login': loginSuccess,
+    '/me': me,
   });
 
   await page.goto('/');
@@ -49,8 +60,8 @@ test('customer sign up → OTP → logged in → dashboard → logout', async ({
   await expect(page.getByText('The code is incorrect.')).toBeVisible();
   await fillCode(page, '123456'); // auto-submits when complete
 
-  await expect(page).toHaveURL('/dashboard');
-  await expect(page.getByRole('heading', { name: 'Welcome, Ali!' })).toBeVisible();
+  await expect(page).toHaveURL('/app/new-request');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ali' })).toBeVisible();
   expect(calls.find((c) => c.path === '/auth/login')?.body).toEqual({
     identifier: USER.email,
     password: PASSWORD,
@@ -58,13 +69,16 @@ test('customer sign up → OTP → logged in → dashboard → logout', async ({
 
   // session persists across reloads (supabase-js persistSession)
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Welcome, Ali!' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ali' })).toBeVisible();
 
-  // logged-in users visiting /login go to the dashboard
+  // logged-in users visiting /login (or the MW_001 /dashboard URL) go to their home
   await page.goto('/login');
-  await expect(page).toHaveURL('/dashboard');
+  await expect(page).toHaveURL('/app/new-request');
+  await page.goto('/dashboard');
+  await expect(page).toHaveURL('/app/new-request');
 
-  await page.getByRole('button', { name: 'Log out' }).click();
+  await page.getByRole('button', { name: /Account menu/ }).click();
+  await page.locator('[data-popover-panel]').getByRole('button', { name: 'Log out' }).click();
   await expect(page).toHaveURL('/');
   await page.goto('/dashboard');
   await expect(page).toHaveURL('/login');
@@ -76,6 +90,7 @@ test('login with phone; errors are generic', async ({ page }) => {
       body.password === PASSWORD
         ? loginSuccess(body)
         : { status: 401, body: fail('INVALID_CREDENTIALS') },
+    '/me': me,
   });
 
   await page.goto('/login');
@@ -86,8 +101,10 @@ test('login with phone; errors are generic', async ({ page }) => {
 
   await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL('/dashboard');
-  expect(calls.at(-1)?.body.identifier).toBe('01012345678');
+  await expect(page).toHaveURL('/app/new-request');
+  expect(
+    calls.find((c) => c.path === '/auth/login' && c.body.password === PASSWORD)?.body.identifier,
+  ).toBe('01012345678');
 });
 
 test('unverified login → fresh code → verify page', async ({ page }) => {
@@ -149,10 +166,83 @@ test('forgot password end to end', async ({ page }) => {
   expect(calls.at(-1)?.body).toMatchObject({ email: USER.email, code: '654321' });
 });
 
-test('company sign up shows "Coming soon"', async ({ page }) => {
+test('company registration → OTP → "Application submitted" (no login)', async ({ page }) => {
+  const calls = await mockApi(page, {
+    '/companies/register': () => ({
+      status: 201,
+      body: ok({ email: 'ops@nile.com', cooldownSeconds: 60 }),
+    }),
+    '/auth/verify-email': () => ({
+      status: 200,
+      body: ok({
+        verified: true,
+        role: 'company',
+        application: { referenceNumber: 'MG-C-2026-000042', status: 'pending_review' },
+      }),
+    }),
+  });
+
   await page.goto('/signup');
   await page.getByRole('link', { name: /Join as a Shipping Company/ }).click();
-  await expect(page.getByRole('heading', { name: 'Coming soon' })).toBeVisible();
+  await expect(page).toHaveURL('/signup/company');
+
+  // Step 1 ("Other" only → Services is skipped)
+  await page.getByLabel(/Legal company name/).fill('Nile Shipping');
+  await page.getByLabel(/Representative full name/).fill('Ahmed Hassan');
+  await page.getByLabel(/Representative job title/).fill('Owner');
+  await page.getByLabel(/Business email/).fill('ops@nile.com');
+  await page.getByLabel(/Mobile phone/).fill('1012345678');
+  await page.getByLabel(/Governorate/).selectOption('giza');
+  await page.getByLabel(/City \/ Area/).fill('Dokki');
+  await page.getByLabel(/Street address/).fill('5 Tahrir Street');
+  await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);
+  await page.getByLabel(/^Confirm password/).fill(PASSWORD);
+  await page.getByText('Other', { exact: true }).click();
+  await page.getByLabel(/Describe the other activity/).fill('Warehousing');
+  await page.getByRole('button', { name: 'Next' }).click();
+
+  // Step 3: a renamed EXE is refused by content, real PDFs are accepted
+  await page.getByLabel(/Commercial register number/).fill('123');
+  await page.getByLabel(/Tax card number/).fill('123456789');
+  await expect(page.getByLabel(/Tax card number/)).toHaveValue('123-456-789');
+  const register = page.getByLabel(/Commercial register copy/);
+  await register.setInputFiles({
+    name: 'cr.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('MZ fake'),
+  });
+  await expect(page.getByText('Upload a PDF, JPG or PNG file')).toBeVisible();
+  await register.setInputFiles({
+    name: 'cr.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-1.7'),
+  });
+  await page.getByLabel(/Tax card copy/).setInputFiles({
+    name: 'tax.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-1.4'),
+  });
+  await page.getByRole('button', { name: 'Next' }).click();
+
+  // Step 4: review + confirmations
+  await expect(page.getByText('Nile Shipping')).toBeVisible();
+  await page.getByLabel(/I confirm that all information/).check();
+  await page.getByLabel(/I agree to the Terms/).check();
+  await page.getByRole('button', { name: 'Submit application' }).click();
+
+  await expect(page).toHaveURL('/verify-email');
+  const sent = calls.find((c) => c.path === '/companies/register')!.raw;
+  expect(sent).toContain('name="application"');
+  expect(sent).toContain('filename="cr.pdf"');
+  expect(sent).toContain('filename="tax.pdf"');
+  await expect(page.getByRole('link', { name: /Start the registration again/ })).toBeVisible();
+
+  await fillCode(page, '123456');
+  await expect(page).toHaveURL('/signup/company/submitted');
+  await expect(page.getByRole('heading', { name: 'Application submitted' })).toBeVisible();
+  await expect(page.getByText('MG-C-2026-000042')).toBeVisible();
+  await expect(page.getByText('Pending review')).toBeVisible();
+  expect(calls.some((c) => c.path === '/auth/login')).toBe(false); // decision 6
 });
 
 test('unknown route shows the 404 page', async ({ page }) => {

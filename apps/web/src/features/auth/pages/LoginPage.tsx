@@ -8,6 +8,7 @@ import { usePageMeta } from '../../../lib/usePageMeta';
 import { AuthCard } from '../components/AuthCard';
 import { useLogin } from '../hooks/useLogin';
 import { setPendingVerification } from '../pendingVerification';
+import { homePath } from '../roles';
 
 /** Messages other pages can show here via navigation state. */
 export type LoginFlash = 'resetSuccess' | 'verifiedLogin';
@@ -35,7 +36,9 @@ export default function LoginPage() {
     const input: LoginInput = getValues();
     login.mutate(input, {
       onSuccess: (result) => {
-        if (result.status === 'authenticated') return navigate('/dashboard', { replace: true });
+        if (result.status === 'authenticated') {
+          return navigate(homePath(result.role), { replace: true }); // by role (MW_002 A6)
+        }
         // right password, unverified email: a fresh code was sent (spec 4.4)
         setPendingVerification(result.email, input.password);
         navigate('/verify-email', { state: { notice: 'unverified' } });

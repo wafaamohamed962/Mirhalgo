@@ -33,6 +33,15 @@ describe('missing environment variables', () => {
     expect(error.mock.calls[0]?.[0]).not.toContain('VITE_SUPABASE_ANON_KEY');
   });
 
+  // Regression: a REST URL (…/rest/v1/) made every Supabase call fail with PGRST125.
+  it('treats a Supabase REST URL as an invalid VITE_SUPABASE_URL', async () => {
+    const { env } = await loadWithEnv({
+      VITE_SUPABASE_URL: 'https://example.supabase.co/rest/v1/',
+      VITE_SUPABASE_ANON_KEY: 'anon-key',
+    });
+    expect(env.missingSupabaseEnv).toEqual(['VITE_SUPABASE_URL']);
+  });
+
   it('API calls fail with a translatable CONFIG_MISSING error instead of crashing', async () => {
     const { api } = await loadWithEnv({ VITE_API_URL: '' });
     const failure = await api.apiPost('/contact', {}).catch((e: unknown) => e);

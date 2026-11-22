@@ -1,14 +1,13 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { SECTION_IDS } from '../../lib/navigation';
+import { useModalBehavior } from '../../lib/useModalBehavior';
 import { cn } from '../../lib/utils';
 import { LanguageSwitch } from './LanguageSwitch';
 import { NavActions } from './NavActions';
 import { SectionLink } from './SectionLink';
-
-const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 type MobileDrawerProps = { id: string; active: string | null; onClose: () => void };
 
@@ -21,35 +20,7 @@ export function MobileDrawer({ id, active, onClose }: MobileDrawerProps) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
-    const panel = panelRef.current;
-    const { overflow } = document.body.style;
-    document.body.style.overflow = 'hidden';
-    panel?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') return onClose();
-      if (event.key !== 'Tab' || !panel) return;
-      const items = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)];
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last?.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first?.focus();
-      }
-    };
-    document.addEventListener('keydown', onKeyDown);
-
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = overflow;
-      opener?.focus();
-    };
-  }, [onClose]);
+  useModalBehavior(panelRef, onClose);
 
   return createPortal(
     <div className="fixed inset-0 z-50 md:hidden">

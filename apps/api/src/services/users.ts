@@ -1,14 +1,21 @@
-import type { SignupInput } from '@mirhalgo/shared';
+import type { SignupInput, UserRole } from '@mirhalgo/shared';
 import { db } from '../lib/supabase.js';
 
 /*
  * Supabase Auth (Admin API) + profiles. Supabase stores and hashes passwords;
  * users are created with the email unconfirmed, so Supabase sends no emails.
+ * The role is written to app_metadata (source of truth, in the JWT, only the service role
+ * can change it) and mirrored to profiles.role (MW_002 decision 3).
  */
 
-const UNIQUE_VIOLATION = '23505';
+export const UNIQUE_VIOLATION = '23505';
 
-export type ProfileRef = { id: string; email: string; email_verified_at: string | null };
+export type ProfileRef = {
+  id: string;
+  email: string;
+  role: UserRole;
+  email_verified_at: string | null;
+};
 
 type CustomerDetails = Pick<
   SignupInput,
@@ -22,7 +29,7 @@ export type WriteCustomerResult =
 async function findProfile(column: 'email' | 'phone', value: string): Promise<ProfileRef | null> {
   const { data, error } = await db
     .from('profiles')
-    .select('id, email, email_verified_at')
+    .select('id, email, role, email_verified_at')
     .eq(column, value)
     .maybeSingle();
   if (error) throw error;
@@ -45,6 +52,7 @@ export async function createCustomer(input: CustomerDetails): Promise<WriteCusto
     email: input.email,
     password: input.password,
     email_confirm: false,
+    app_metadata: { role: 'customer' satisfies UserRole },
   });
   if (created.error) throw created.error;
   const userId = created.data.user.id;
@@ -53,7 +61,7 @@ export async function createCustomer(input: CustomerDetails): Promise<WriteCusto
     .from('profiles')
     .insert({ id: userId, email: input.email, ...profileFields(input) });
   if (error) {
-    await db.auth.admin.deleteUser(userId);
+    await db.auth.admin.deleteUser(userId); // best effort rollback
     if (error.code === UNIQUE_VIOLATION) return { ok: false, reason: 'phone_taken' };
     throw error;
   }
@@ -86,5 +94,17 @@ export async function confirmEmail(userId: string) {
 
 export async function setPassword(userId: string, password: string) {
   const { error } = await db.auth.admin.updateUserById(userId, { password });
+  if (error) throw error;
+}
+
+/** Deletes the auth user; every row cascades (profile, company, OTPs…). Files are not rows. */
+export async function deleteUser(userId: string) {
+  const { error } = await db.auth.admin.deleteUser(userId);
+  if (error) throw error;
+}
+
+/** Signs the user out everywhere (refresh tokens + sessions), e.g. after a password reset. */
+export async function revokeSessions(userId: string) {
+  const { error } = await db.rpc('revoke_user_sessions', { p_user_id: userId });
   if (error) throw error;
 }

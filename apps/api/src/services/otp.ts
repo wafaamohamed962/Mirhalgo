@@ -6,6 +6,7 @@ import {
   OTP_RESEND_COOLDOWN_SECONDS,
   OTP_TTL_MINUTES,
   type OtpPurpose,
+  type OtpSentResult,
 } from '@mirhalgo/shared';
 import { config } from '../config.js';
 import { logEvent } from '../lib/logger.js';
@@ -22,6 +23,15 @@ import { mail } from './mail/index.js';
  */
 
 const MINUTE = 60_000;
+
+/**
+ * The neutral answer of every flow that may send a code (signup, company registration,
+ * resend, forgot password): identical whether or not an email was sent (no enumeration).
+ */
+export const otpSentResult = (email: string): OtpSentResult => ({
+  email,
+  cooldownSeconds: OTP_RESEND_COOLDOWN_SECONDS,
+});
 
 export function generateOtpCode(): string {
   return randomInt(0, 10 ** OTP_LENGTH)

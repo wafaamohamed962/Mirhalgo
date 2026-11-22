@@ -24,7 +24,7 @@
     },
     "signupCompany": {
       "title": "انضم كشركة شحن | مرحال جو",
-      "description": "تسجيل شركات الشحن قريباً."
+      "description": "سجّل شركة الشحن أو التخليص الجمركي بتاعتك في مرحال جو واستقبل طلبات الشحن."
     },
     "verifyEmail": {
       "title": "تأكيد البريد الإلكتروني | مرحال جو",
@@ -34,13 +34,17 @@
       "title": "استعادة كلمة المرور | مرحال جو",
       "description": "غيّر كلمة المرور بكود هيوصلك على بريدك الإلكتروني."
     },
-    "dashboard": {
-      "title": "لوحة التحكم | مرحال جو",
-      "description": "لوحة التحكم الخاصة بك في مرحال جو."
-    },
     "notFound": {
       "title": "الصفحة غير موجودة | مرحال جو",
       "description": "الصفحة اللي بتدور عليها مش موجودة."
+    },
+    "applicationSubmitted": {
+      "title": "تم إرسال الطلب | مرحال جو",
+      "description": "طلب انضمام شركة الشحن بتاعتك اتبعت وتحت المراجعة."
+    },
+    "applicationStatus": {
+      "title": "حالة الطلب | مرحال جو",
+      "description": "حالة طلب انضمام شركة الشحن بتاعتك."
     }
   },
   "lang": {
@@ -151,11 +155,6 @@
       "haveAccount": "عندك حساب بالفعل؟",
       "login": "سجّل الدخول"
     },
-    "companySoon": {
-      "title": "قريباً",
-      "text": "تسجيل شركات الشحن هيكون متاح قريباً. استنونا!",
-      "back": "العودة لإنشاء حساب"
-    },
     "signup": {
       "title": "إنشاء حساب عميل",
       "subtitle": "مش هياخد منك غير دقيقة.",
@@ -184,7 +183,8 @@
       "resent": "كود جديد في الطريق إليك.",
       "success": "تم تأكيد بريدك. أهلاً بيك في مرحال جو!",
       "verifiedLogin": "تم تأكيد بريدك. سجّل الدخول من فضلك.",
-      "changeEmail": "البريد غلط؟ سجّل من جديد"
+      "changeEmail": "البريد غلط؟ سجّل من جديد",
+      "changeEmailCompany": "الإيميل غلط؟ ابدأ التسجيل من جديد"
     },
     "login": {
       "title": "أهلاً بيك تاني",
@@ -211,11 +211,6 @@
       "resetSubmit": "تغيير كلمة المرور",
       "changeEmail": "استخدم بريد تاني",
       "back": "العودة لتسجيل الدخول"
-    },
-    "dashboard": {
-      "title": "لوحة التحكم",
-      "welcome": "أهلاً يا {{name}}!",
-      "placeholder": "لوحة التحكم جاية قريباً. هتقدر من هنا تعمل طلبات شحن وتقارن عروض الأسعار."
     }
   },
   "notFound": {
@@ -235,7 +230,39 @@
     "passwordMismatch": "كلمتا المرور مش متطابقتين",
     "terms": "لازم توافق على الشروط وسياسة الخصوصية",
     "otp": "اكتب الكود المكوّن من ٦ أرقام",
-    "messageLength": "الرسالة لازم تكون من ١٠ لـ ٢٠٠٠ حرف"
+    "messageLength": "الرسالة لازم تكون من ١٠ لـ ٢٠٠٠ حرف",
+    "invalidChars": "فيه رموز غير مسموح بيها",
+    "duplicate": "كل اختيار ينفع يتحدد مرة واحدة بس",
+    "selectAtLeastOne": "اختار اختيار واحد على الأقل",
+    "companyNameLength": "لازم يكون من ٢ لـ ١٢٠ حرف",
+    "representativeNameLength": "لازم يكون من ٣ لـ ٨٠ حرف",
+    "jobTitleLength": "لازم يكون من ٢ لـ ٦٠ حرف",
+    "cityLength": "لازم يكون من ٢ لـ ٦٠ حرف",
+    "streetLength": "لازم يكون من ٥ لـ ٢٠٠ حرف",
+    "otherActivityLength": "لازم يكون من ٣ لـ ١٥٠ حرف",
+    "otherOptionLength": "لازم يكون من ٣ لـ ١٠٠ حرف",
+    "landline": "اكتب من ٧ لـ ١٢ رقم",
+    "url": "اكتب لينك صحيح بيبدأ بـ http:// أو https://",
+    "commercialRegister": "اكتب من ١ لـ ١٠ أرقام",
+    "taxNumber": "اكتب رقم البطاقة الضريبية (٩ أرقام)",
+    "yearsInBusiness": "اكتب رقم صحيح من ٠ لـ ١٠٠",
+    "fleetSize": "اكتب رقم صحيح من ٠ لـ ١٠٬٠٠٠",
+    "notesLength": "الملاحظات لحد ١٠٠٠ حرف",
+    "declaration": "لازم تأكد إن البيانات صحيحة",
+    "termsVersion": "الشروط اتحدّثت. اعمل تحديث للصفحة وراجعها تاني.",
+    "fileRequired": "المستند ده مطلوب",
+    "fileType": "ارفع ملف PDF أو JPG أو PNG",
+    "fileSize": "حجم الملف لازم يكون ٥ ميجا أو أقل",
+    "logoType": "ارفع صورة PNG أو JPG أو WEBP",
+    "logoSize": "حجم الصورة لازم يكون ٢ ميجا أو أقل",
+    "addressLabelLength": "لازم يكون من ٢ لـ ٤٠ حرف",
+    "landmarkLength": "لازم يكون من ٢ لـ ١٢٠ حرف",
+    "reasonLength": "لحد ٥٠٠ حرف",
+    "questionLength": "لازم يكون من ٥ لـ ١٠٠٠ حرف",
+    "rating": "اختار تقييم من ١ لـ ٥ نجوم",
+    "reviewLength": "لحد ٥٠٠ حرف",
+    "subjectLength": "لازم يكون من ٣ لـ ١٢٠ حرف",
+    "typeDelete": "اكتب DELETE بالحروف الكبيرة"
   },
   "errors": {
     "VALIDATION_ERROR": "راجع الحقول المحددة من فضلك.",
@@ -253,7 +280,12 @@
     "INTERNAL": "حصلت مشكلة. حاول تاني.",
     "NETWORK_ERROR": "مش قادرين نوصل للسيرفر. اتأكد من الاتصال وحاول تاني.",
     "CONFIG_MISSING": "الخاصية دي مش متاحة دلوقتي لأن إعدادات الموقع ناقصة. حاول تاني بعد شوية.",
-    "MAIL_NOT_CONFIGURED": "مش قادرين نبعت إيميلات دلوقتي (خدمة الإيميل لسه مش متظبطة). حاول تاني بعد شوية."
+    "MAIL_NOT_CONFIGURED": "مش قادرين نبعت إيميلات دلوقتي (خدمة الإيميل لسه مش متظبطة). حاول تاني بعد شوية.",
+    "COMPANY_ALREADY_REGISTERED": "فيه شركة متسجلة بالفعل بنفس رقم السجل التجاري أو البطاقة الضريبية.",
+    "FILE_REQUIRED": "من فضلك ارفع كل المستندات المطلوبة.",
+    "FILE_TYPE_NOT_ALLOWED": "نوع أحد الملفات غير مسموح.",
+    "FILE_TOO_LARGE": "أحد الملفات حجمه كبير.",
+    "TOO_MANY_FILES": "عدد الملفات المبعوتة كتير."
   },
   "ui": {
     "showPassword": "إظهار كلمة المرور",
@@ -277,6 +309,264 @@
     "phonePlaceholder": "10 1234 5678",
     "otpDigit": "الرقم {{index, number}} من {{total, number}}",
     "scrollToTop": "الرجوع لأعلى",
-    "opensInNewTab": "(يفتح في تبويب جديد)"
+    "opensInNewTab": "(يفتح في تبويب جديد)",
+    "close": "إغلاق",
+    "stepSkipped": "مش مطلوبة",
+    "stepCompleted": "خلصت",
+    "file": {
+      "choose": "اختار ملف",
+      "orDrop": "أو اسحبه هنا",
+      "replace": "استبدال الملف",
+      "remove": "حذف الملف"
+    },
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "retry": "حاول تاني",
+    "loading": "جاري التحميل…",
+    "crop": {
+      "logoTitle": "اقصص اللوجو",
+      "avatarTitle": "اقصص صورتك",
+      "description": "اسحب الصورة عشان تظبط مكانها واستخدم الشريط للتكبير.",
+      "zoom": "تكبير",
+      "apply": "استخدم الصورة دي",
+      "cancel": "إلغاء"
+    },
+    "leave": {
+      "title": "تسيب الصفحة؟",
+      "text": "التعديلات اللي محفظتهاش هتضيع.",
+      "stay": "خليك",
+      "leave": "امشي"
+    },
+    "rating": {
+      "outOf": "التقييم {{value}} من ٥",
+      "labels": {
+        "1": "ضعيف",
+        "2": "مقبول",
+        "3": "جيد",
+        "4": "جيد جداً",
+        "5": "ممتاز"
+      }
+    }
+  },
+  "options": {
+    "governorate": {
+      "cairo": "القاهرة",
+      "giza": "الجيزة",
+      "alexandria": "الإسكندرية",
+      "qalyubia": "القليوبية",
+      "sharqia": "الشرقية",
+      "dakahlia": "الدقهلية",
+      "gharbia": "الغربية",
+      "monufia": "المنوفية",
+      "beheira": "البحيرة",
+      "kafr_el_sheikh": "كفر الشيخ",
+      "damietta": "دمياط",
+      "port_said": "بورسعيد",
+      "ismailia": "الإسماعيلية",
+      "suez": "السويس",
+      "north_sinai": "شمال سيناء",
+      "south_sinai": "جنوب سيناء",
+      "red_sea": "البحر الأحمر",
+      "faiyum": "الفيوم",
+      "beni_suef": "بني سويف",
+      "minya": "المنيا",
+      "asyut": "أسيوط",
+      "sohag": "سوهاج",
+      "qena": "قنا",
+      "luxor": "الأقصر",
+      "aswan": "أسوان",
+      "new_valley": "الوادي الجديد",
+      "matrouh": "مطروح"
+    },
+    "activity": {
+      "international": "شحن دولي وتخليص جمركي",
+      "domestic": "شحن بري داخلي",
+      "china": "شحن من المواقع الصينية",
+      "other": "نشاط تاني"
+    },
+    "activityDescription": {
+      "international": "جوي أو بحري أو بري، استيراد وتصدير",
+      "domestic": "بين المحافظات والمدن جوه مصر",
+      "china": "شي إن، علي بابا، 1688، تاوباو…",
+      "other": "اكتب نشاطك"
+    },
+    "internationalMode": {
+      "air": "جوي",
+      "sea": "بحري",
+      "land": "بري دولي"
+    },
+    "internationalScope": {
+      "shipping": "شحن بس",
+      "customs": "تخليص جمركي بس",
+      "both": "الاتنين"
+    },
+    "region": {
+      "gulf": "الخليج",
+      "middle_east": "الشرق الأوسط",
+      "europe": "أوروبا",
+      "china": "الصين",
+      "east_asia": "شرق آسيا",
+      "north_america": "أمريكا الشمالية",
+      "africa": "أفريقيا"
+    },
+    "vehicle": {
+      "pickup": "ربع نقل",
+      "box_truck": "نص نقل صندوق",
+      "trailer": "تريلا",
+      "refrigerated": "مبرّدة",
+      "other": "نوع تاني"
+    },
+    "chinaSite": {
+      "1688": "1688",
+      "shein": "شي إن",
+      "alibaba": "علي بابا",
+      "taobao": "تاوباو",
+      "other": "موقع تاني"
+    },
+    "chinaService": {
+      "purchasing": "الشراء بالنيابة",
+      "consolidation": "تجميع الشحنات",
+      "shipping_to_egypt": "الشحن لمصر"
+    },
+    "document": {
+      "commercial_register": "صورة السجل التجاري",
+      "tax_card": "صورة البطاقة الضريبية",
+      "customs_license": "رخصة مخلّص جمركي",
+      "logo": "لوجو الشركة"
+    }
+  },
+  "company": {
+    "register": {
+      "title": "انضم كشركة شحن",
+      "subtitle": "سجّل شركتك عشان تستقبل طلبات الشحن من عملاء مرحال جو.",
+      "stepsLabel": "خطوات التسجيل",
+      "stepOf": "خطوة {{current, number}} من {{total, number}}",
+      "steps": {
+        "account": "الحساب والشركة",
+        "services": "الخدمات",
+        "documents": "المستندات",
+        "review": "المراجعة والإرسال"
+      },
+      "draft": {
+        "title": "تكمّل طلبك؟",
+        "text": "حفظنا اللي كتبته على الجهاز ده يوم {{date, datetime}}. كلمات المرور والأرقام القانونية والملفات عمرها ما بتتحفظ.",
+        "continue": "كمّل",
+        "startOver": "ابدأ من جديد"
+      },
+      "leave": {
+        "title": "تسيب التسجيل؟",
+        "text": "النصوص اللي كتبتها محفوظة على الجهاز ده لمدة 7 أيام، بس كلمة المرور والأرقام القانونية والملفات هتضيع.",
+        "stay": "خليك",
+        "leave": "امشي"
+      },
+      "next": "التالي",
+      "back": "رجوع",
+      "submit": "إرسال الطلب",
+      "uploading": "جاري الرفع… {{percent, number}}٪",
+      "uploadProgress": "تقدّم الرفع",
+      "haveAccount": "متسجل قبل كده؟",
+      "login": "سجّل الدخول",
+      "sections": {
+        "company": "الشركة",
+        "contact": "بيانات التواصل",
+        "address": "العنوان",
+        "account": "كلمة مرور الحساب",
+        "activities": "الأنشطة الأساسية",
+        "international": "شحن دولي وتخليص جمركي",
+        "domestic": "شحن بري داخلي",
+        "china": "شحن من المواقع الصينية",
+        "general": "عام",
+        "legal": "البيانات القانونية",
+        "documents": "المستندات",
+        "notes": "ملاحظات إضافية"
+      },
+      "fields": {
+        "legalName": "الاسم القانوني للشركة",
+        "representativeName": "الاسم الكامل للممثل",
+        "representativeTitle": "المسمى الوظيفي للممثل",
+        "representativeTitleHint": "مثلاً: المالك، المدير العام",
+        "email": "إيميل الشركة",
+        "phone": "رقم الموبايل",
+        "whatsappSame": "رقم الواتساب هو نفس رقم الموبايل",
+        "whatsapp": "رقم الواتساب",
+        "landline": "التليفون الأرضي",
+        "website": "الموقع / صفحة الفيسبوك",
+        "websiteHint": "مثلاً: https://facebook.com/yourcompany",
+        "governorate": "المحافظة",
+        "governoratePlaceholder": "اختار المحافظة",
+        "city": "المدينة / المنطقة",
+        "street": "العنوان بالتفصيل",
+        "password": "كلمة المرور",
+        "confirmPassword": "تأكيد كلمة المرور",
+        "activities": "شركتك بتشتغل في إيه؟",
+        "otherActivity": "اكتب النشاط التاني",
+        "modes": "طرق الشحن",
+        "scope": "الخدمات اللي بتقدّمها",
+        "countries": "أهم الدول اللي بتخدمها",
+        "regions": "أهم المناطق اللي بتخدمها",
+        "servedHint": "اختياري",
+        "allGovernorates": "كل المحافظات",
+        "governorates": "المحافظات اللي بتغطيها",
+        "vehicleTypes": "أنواع العربيات",
+        "vehicleTypeOther": "نوع العربية التاني",
+        "fleetSize": "حجم الأسطول (تقريباً)",
+        "sites": "المواقع اللي بتتعامل معاها",
+        "siteOther": "الموقع التاني",
+        "chinaServices": "الخدمات",
+        "yearsInBusiness": "عدد سنين الخبرة",
+        "commercialRegisterNumber": "رقم السجل التجاري",
+        "taxNumber": "رقم البطاقة الضريبية",
+        "taxNumberHint": "٩ أرقام",
+        "customsRecommended": "يُفضّل ترفعها لأنك بتقدّم خدمة تخليص جمركي.",
+        "notes": "فيه حاجة تانية عايزنا نعرفها؟ (اختياري)",
+        "notesCounter": "{{count, number}} / {{max, number}}",
+        "declaration": "أقر إن كل البيانات والمستندات صحيحة وتخص الشركة دي.",
+        "terms": "أوافق على <terms>شروط الاستخدام</terms> و<privacy>سياسة الخصوصية</privacy>."
+      },
+      "files": {
+        "documentHint": "PDF أو JPG أو PNG · لحد ٥ ميجا",
+        "logoHint": "PNG أو JPG أو WEBP · لحد ٢ ميجا · هيتقص مربع"
+      },
+      "review": {
+        "intro": "راجع بياناتك قبل الإرسال. تقدر تعدّل أي جزء.",
+        "edit": "تعديل",
+        "editSection": "تعديل {{section}}",
+        "empty": "—",
+        "notUploaded": "متحملش",
+        "hidden": "مخفية لحمايتك"
+      },
+      "errors": {
+        "documents": "من فضلك راجع المستندات."
+      }
+    },
+    "submitted": {
+      "title": "تم إرسال طلبك",
+      "reference": "رقم الطلب",
+      "text": "فريقنا هيراجع طلبك خلال ٤٨ ساعة، وهنبعتلك إيميل بالنتيجة.",
+      "email": "وبعتنالك كمان إيميل تأكيد فيه رقم الطلب ده.",
+      "noReference": "بعتنالك إيميل تأكيد فيه رقم الطلب.",
+      "status": "الحالة",
+      "pendingReview": "تحت المراجعة",
+      "home": "الرجوع للرئيسية"
+    }
+  },
+  "companyStatus": {
+    "title": "حالة الطلب",
+    "submittedAt": "تاريخ الإرسال",
+    "error": "معرفناش نحمّل طلبك. حاول تاني.",
+    "status": {
+      "pending_verification": "الإيميل لسه متأكدش",
+      "pending_review": "تحت المراجعة",
+      "approved": "اتقبل",
+      "rejected": "اترفض",
+      "changes_requested": "مطلوب تعديلات"
+    },
+    "text": {
+      "pending_verification": "أكّد إيميلك عشان الطلب يتبعت للمراجعة.",
+      "pending_review": "فريقنا هيراجع طلبك خلال ٤٨ ساعة، وهنبعتلك إيميل بالنتيجة.",
+      "approved": "شركتك اتقبلت. بوابة الشركات قريب.",
+      "rejected": "للأسف طلبك متقبلش. بعتنالك التفاصيل على الإيميل.",
+      "changes_requested": "فريقنا طالب شوية تعديلات. بعتنالك التفاصيل على الإيميل."
+    }
   }
 }

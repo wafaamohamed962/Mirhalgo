@@ -1,0 +1,519 @@
+{
+  "portal": {
+    "brand": "MirhalGo",
+    "skipToContent": "Skip to content",
+    "mainNav": "Customer portal",
+    "more": "More",
+    "language": "Language",
+    "userMenu": "Account menu {{name}}",
+    "collapseSidebar": "Collapse the sidebar",
+    "expandSidebar": "Expand the sidebar",
+    "partner": "MirhalGo Partner #{{number}}",
+    "nav": {
+      "newRequest": "New Request",
+      "orders": "My Orders",
+      "companies": "Companies",
+      "account": "Account",
+      "support": "Help & Support",
+      "notifications": "Notifications",
+      "newOffersBadge": "orders with new offers"
+    },
+    "navShort": {
+      "newRequest": "Request",
+      "orders": "Orders",
+      "companies": "Companies",
+      "account": "Account"
+    },
+    "search": {
+      "label": "Search orders by reference number",
+      "placeholder": "Order number, e.g. MG-R-2026-000118"
+    },
+    "services": {
+      "international": {
+        "title": "International Shipping & Customs",
+        "text": "Sea, air or land, import or export, with customs clearance."
+      },
+      "domestic": {
+        "title": "Domestic Land Shipping",
+        "text": "Move your shipments between governorates and cities in Egypt."
+      },
+      "china": {
+        "title": "Shipping from SHEIN & Chinese sites",
+        "text": "Purchasing, consolidation and shipping from China to your door."
+      }
+    },
+    "newRequest": {
+      "welcome": "Welcome, {{name}}",
+      "intro": "Send one request and receive offers from verified companies.",
+      "chooseService": "What do you want to ship?",
+      "start": "Start request",
+      "draftTitle": "You have an unfinished request",
+      "draftText": "{{service}} · last saved {{date}}",
+      "continue": "Continue",
+      "discard": "Discard",
+      "draftDiscarded": "The draft was discarded.",
+      "sendingTo": "Sending to:",
+      "removeCompany": "Remove {{name}}",
+      "placeholder": "The request form for this service is coming soon.",
+      "selectedCount": "Selected companies: {{formatted}}",
+      "back": "Back to New Request"
+    },
+    "attempts": {
+      "label": "Remaining requests",
+      "remaining": "Remaining requests: {{remaining}} of {{total}}",
+      "details": "How it works",
+      "none": "You have no requests left this month, so sending is disabled. Your balance renews at the start of next month."
+    },
+    "success": {
+      "title": "Request sent",
+      "text": "Companies will send you their offers soon. We'll notify you.",
+      "reference": "Reference number",
+      "companies": "Sent to",
+      "allMatching": "All matching companies",
+      "print": "Print",
+      "download": "Download",
+      "viewOrders": "View my orders"
+    },
+    "orderStatus": {
+      "awaiting_offers": "Awaiting offers",
+      "offers_received": "Offers received",
+      "awaiting_approval": "Awaiting final approval",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "rejected": "Rejected"
+    },
+    "orders": {
+      "search": "Search by order number",
+      "sort": "Sort",
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "tabsLabel": "Order status",
+      "tabs": {
+        "all": "All",
+        "awaiting_offers": "Awaiting offers",
+        "offers_received": "Offers received",
+        "awaiting_approval": "Awaiting approval",
+        "in_progress": "In progress",
+        "completed": "Completed",
+        "closed": "Cancelled / Rejected"
+      },
+      "resultCount": "Orders: {{count}}",
+      "loadMore": "Load more",
+      "empty": "No orders here yet",
+      "emptyText": "Your shipping requests will appear here.",
+      "noResults": "No matching orders",
+      "noResultsText": "No order matches \"{{search}}\".",
+      "newOffers": "New offers: {{count}}",
+      "created": "Created",
+      "updated": "Last update",
+      "offers": "Offers",
+      "details": "Details",
+      "viewOffers": "View offers",
+      "detailsOf": "Details of order {{reference}}",
+      "viewOffersOf": "View the offers for order {{reference}}",
+      "back": "Back to My Orders",
+      "detailTitle": "Order details",
+      "detailTabs": "Order sections",
+      "detailTab": {
+        "details": "Details",
+        "offers": "Offers",
+        "timeline": "Timeline"
+      },
+      "reference": "Reference number",
+      "service": "Service",
+      "cancel": "Cancel request",
+      "cancelTitle": "Cancel this request?",
+      "cancelText": "Companies will stop sending offers. You can tell us why (optional).",
+      "reason": "Reason (optional)",
+      "cancelled": "The request was cancelled.",
+      "cancelledBanner": "This request was cancelled.",
+      "reasonWas": "Reason: {{reason}}"
+    },
+    "orderFields": {
+      "route": "Route",
+      "mode": "Shipping mode",
+      "goods": "Goods",
+      "weight": "Weight / volume",
+      "customs": "Customs clearance",
+      "vehicle": "Vehicle",
+      "pickupDate": "Pickup date",
+      "sites": "Sites",
+      "items": "Items",
+      "service": "Service",
+      "delivery": "Delivery address"
+    },
+    "offers": {
+      "none": "No offers yet",
+      "noneText": "Verified companies are reviewing your request. We'll notify you when offers arrive.",
+      "selectedBanner": "You selected {{partner}}. Your selection is preliminary until final approval.",
+      "approvedBanner": "{{partner}} was approved. Your shipment is in progress.",
+      "compare": "Compare offers",
+      "showCards": "Show cards",
+      "partner": "Partner",
+      "total": "Total cost",
+      "transit": "Transit time",
+      "days": "{{formatted}} days",
+      "includes": {
+        "freight": "Freight",
+        "customs": "Customs clearance",
+        "insurance": "Insurance",
+        "door_delivery": "Door delivery"
+      },
+      "validUntil": "Valid until",
+      "status": {
+        "pending": "Waiting for your decision",
+        "selected": "Selected (awaiting approval)",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "lowest": "Lowest",
+      "accept": "Accept",
+      "acceptTitle": "Accept the offer from {{partner}}?",
+      "acceptText": "Your selection is preliminary until final approval.",
+      "accepted": "Offer selected. Waiting for final approval.",
+      "reject": "Reject",
+      "rejectTitle": "Reject the offer from {{partner}}?",
+      "rejectText": "You can tell the company why (optional).",
+      "rejected": "Offer rejected.",
+      "ask": "Ask a question",
+      "askTitle": "Ask a question",
+      "askText": "The company answers through MirhalGo. You'll get a notification.",
+      "question": "Your question",
+      "send": "Send",
+      "questionSent": "Your question was sent."
+    },
+    "timeline": {
+      "submitted": "Submitted",
+      "under_review": "Under review",
+      "offers_received": "Offers received",
+      "selected": "Offer selected",
+      "approved": "Approved",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "pending": "Not yet",
+      "closed": {
+        "cancelled": "The request was cancelled.",
+        "rejected": "The request was rejected by our team."
+      }
+    },
+    "companies": {
+      "introTitle": "Verified shipping partners",
+      "introText": "Every company on MirhalGo is reviewed by our team. Choose companies to send your request to, or let us match it for you.",
+      "search": "Search companies",
+      "sort": "Sort",
+      "sorts": {
+        "top_rated": "Top rated",
+        "most_completed": "Most completed",
+        "name": "Name"
+      },
+      "filter": "Category",
+      "all": "All",
+      "categories": {
+        "international": "International",
+        "customs": "Customs clearance",
+        "china": "SHEIN / China",
+        "domestic": "Domestic"
+      },
+      "count": "Companies: {{formatted}}",
+      "empty": "No companies found",
+      "emptyText": "Try another search or category.",
+      "topRated": "Top rated",
+      "reviews": "Reviews: {{formatted}}",
+      "completed": "Completed orders: {{formatted}}",
+      "viewProfile": "View profile",
+      "sendRequest": "Send request",
+      "select": "Select {{name}}",
+      "bulkLabel": "Selected companies",
+      "selected": "Selected: {{formatted}}",
+      "tooMany": "You can send one request to up to {{max}} companies.",
+      "clear": "Clear",
+      "sendSelected": "Send request to selected",
+      "sendToCategory": "Send to all {{category}} companies (up to {{max}})",
+      "back": "Back to Companies",
+      "profileTitle": "Company profile",
+      "stats": {
+        "rating": "Rating",
+        "reviewsCount": "Reviews",
+        "completedOrders": "Completed orders"
+      },
+      "services": "Services",
+      "years": "Years in business: {{formatted}}",
+      "areas": "Covered areas",
+      "allEgypt": "All governorates of Egypt"
+    },
+    "companyServices": {
+      "door_to_door": "Door to door",
+      "tracking": "Shipment tracking",
+      "insurance": "Insurance",
+      "sea_freight": "Sea freight",
+      "air_freight": "Air freight",
+      "customs_clearance": "Customs clearance",
+      "same_day": "Same-day delivery",
+      "purchasing": "Purchasing on behalf",
+      "consolidation": "Consolidation",
+      "documents": "Import / export documents"
+    },
+    "reviews": {
+      "title": "Reviews",
+      "sort": "Sort reviews",
+      "newest": "Newest",
+      "top": "Most helpful",
+      "empty": "No reviews yet.",
+      "likeCount": "Helpful ({{count}})",
+      "dislikeCount": "Not helpful ({{count}})"
+    },
+    "rate": {
+      "title": "Rate this company",
+      "locked": "You can rate a company after it completes an order for you.",
+      "stars": "Your rating",
+      "comment": "Comment (optional)",
+      "submit": "Submit rating",
+      "thanks": "Thank you for your rating!",
+      "done": "You rated this company {{rating}} / 5. Thank you!"
+    },
+    "account": {
+      "nav": "Account sections",
+      "back": "Back to Account",
+      "sections": {
+        "profile": "Profile",
+        "security": "Security",
+        "notifications": "Notifications",
+        "addresses": "Saved addresses",
+        "balance": "Requests balance",
+        "preferences": "Language & preferences",
+        "privacy": "Privacy & data"
+      }
+    },
+    "profile": {
+      "changeAvatar": "Change photo",
+      "avatarSaved": "Your photo was updated.",
+      "saved": "Your profile was saved.",
+      "change": {
+        "email": "Change email",
+        "phone": "Change phone",
+        "valueText": "We'll send a 6-digit code to confirm it.",
+        "codeText": "Enter the 6-digit code we sent."
+      },
+      "newEmail": "New email",
+      "newPhone": "New phone number",
+      "sendCode": "Send code",
+      "demoCode": "Demo: the code is 123456.",
+      "emailChanged": "Your email was changed.",
+      "phoneChanged": "Your phone number was changed."
+    },
+    "security": {
+      "changePassword": "Change password",
+      "current": "Current password",
+      "new": "New password",
+      "passwordChanged": "Your password was changed.",
+      "sessions": "Active sessions",
+      "thisDevice": "This device",
+      "lastActive": "last active {{date}}",
+      "logoutOthers": "Log out of other devices",
+      "loggedOut": "You were logged out of your other devices.",
+      "activity": "Recent login activity",
+      "cols": {
+        "date": "Date",
+        "device": "Device",
+        "location": "Location",
+        "result": "Result"
+      },
+      "success": "Successful",
+      "failed": "Failed",
+      "twoFactor": "Two-factor authentication",
+      "twoFactorText": "An extra code when you log in from a new device.",
+      "enable": "Enable"
+    },
+    "prefs": {
+      "event": "Event",
+      "inApp": "In-app",
+      "email": "Email",
+      "alwaysOn": "Always on",
+      "saved": "Preferences saved.",
+      "events": {
+        "new_offer": "New offer",
+        "order_status": "Order status change",
+        "question_reply": "Replies to my questions",
+        "security": "Account & security alerts",
+        "news": "News & promotions"
+      },
+      "dateFormat": "Date format",
+      "dateFormats": {
+        "dmy": "DD/MM/YYYY",
+        "ymd": "YYYY-MM-DD"
+      },
+      "example": "Example: {{date}}"
+    },
+    "addresses": {
+      "add": "Add address",
+      "edit": "Edit address",
+      "editShort": "Edit",
+      "empty": "No saved addresses yet",
+      "default": "Default",
+      "setDefault": "Set as default",
+      "defaultSet": "Default address updated.",
+      "delete": "Delete",
+      "deleteTitle": "Delete \"{{label}}\"?",
+      "deleted": "The address was deleted.",
+      "saved": "The address was saved.",
+      "fields": {
+        "label": "Label",
+        "labelHint": "e.g. Home, Warehouse",
+        "landmark": "Landmark (optional)",
+        "phone": "Contact phone",
+        "default": "Use as my default address"
+      },
+      "editNamed": "Edit {{label}}",
+      "deleteNamed": "Delete {{label}}"
+    },
+    "balance": {
+      "howTitle": "How requests work",
+      "how": {
+        "one": "Each new shipping request uses 1 request, even when it goes to several companies.",
+        "refund": "A request cancelled before any offer arrives is given back.",
+        "monthly": "You get {{total}} requests every month."
+      },
+      "cols": {
+        "date": "Date",
+        "order": "Order",
+        "type": "Type",
+        "change": "Before → after",
+        "reason": "Reason"
+      },
+      "types": {
+        "request": "Request",
+        "refund": "Refund",
+        "bonus": "Bonus"
+      },
+      "reasons": {
+        "new_request": "New shipping request",
+        "cancelled_before_offers": "Cancelled before offers",
+        "welcome": "Welcome balance"
+      }
+    },
+    "privacy": {
+      "exportTitle": "Download my data",
+      "exportText": "We'll email you a copy of your account data within 48 hours.",
+      "export": "Request my data",
+      "exportRequested": "Request received. We'll email you your data.",
+      "dangerZone": "Danger zone",
+      "dangerText": "Deleting your account removes your requests, offers and saved data. This cannot be undone.",
+      "delete": "Delete account",
+      "deleteTitle": "Delete your account?",
+      "deleteText": "Type DELETE and your password to confirm.",
+      "typeDelete": "Type {{word}}",
+      "deleteConfirm": "Delete my account",
+      "deleteRequested": "Your deletion request was received."
+    },
+    "notifications": {
+      "bell": "Notifications",
+      "bellUnread": "Notifications, {{count}} unread",
+      "markAll": "Mark all as read",
+      "viewAll": "View all",
+      "empty": "No notifications",
+      "error": "Couldn't load notifications.",
+      "unread": "Unread",
+      "filter": "Filter notifications",
+      "all": "All",
+      "unreadTab": "Unread",
+      "text": {
+        "new_offer": "New offer on your request {{reference}}",
+        "order_status": "Your request {{reference}} has a new status",
+        "question_reply": "A company replied to your question on {{reference}}",
+        "security": "New login to your account",
+        "news": "New: shipping from 1688 is now available"
+      }
+    },
+    "support": {
+      "faq": "Frequently asked questions",
+      "faqSearch": "Search the questions",
+      "faqEmpty": "No question matches your search.",
+      "contact": "Contact us",
+      "contactText": "Our team answers every day from 9 AM to 9 PM.",
+      "myTickets": "My tickets",
+      "newTicket": "New ticket",
+      "noTickets": "You have no support tickets",
+      "subject": "Subject",
+      "category": "Category",
+      "categoryPlaceholder": "Select a category",
+      "categories": {
+        "order": "A request or order",
+        "offer": "An offer",
+        "payment": "Payment",
+        "account": "My account",
+        "other": "Other"
+      },
+      "relatedOrder": "Related order (optional)",
+      "noOrder": "No order",
+      "message": "Message",
+      "attachment": "Attachment (optional)",
+      "send": "Send",
+      "ticketCreated": "Your ticket was sent. We'll reply soon.",
+      "status": {
+        "open": "Open",
+        "in_progress": "In progress",
+        "resolved": "Resolved"
+      },
+      "back": "Back to Help & Support",
+      "ticketTitle": "Support ticket",
+      "conversation": "Conversation",
+      "you": "You",
+      "team": "MirhalGo support",
+      "reply": "Your reply",
+      "replySent": "Your reply was sent."
+    },
+    "faq": {
+      "requests": {
+        "0": {
+          "q": "How does a shipping request work?",
+          "a": "Choose a service, describe your shipment and send. Verified companies send you offers, you compare them and choose one."
+        },
+        "1": {
+          "q": "Can I send a request to specific companies?",
+          "a": "Yes. In Companies, select up to 10 companies and choose \"Send request to selected\"."
+        }
+      },
+      "attempts": {
+        "0": {
+          "q": "What are requests (attempts)?",
+          "a": "You can send 5 requests per month. Each request uses one, even if it goes to several companies."
+        },
+        "1": {
+          "q": "Do I get a request back if I cancel?",
+          "a": "Yes, if you cancel before any offer arrives."
+        }
+      },
+      "offers": {
+        "0": {
+          "q": "Why are offers anonymous?",
+          "a": "So you compare offers only on price and service. The company is revealed after final approval."
+        },
+        "1": {
+          "q": "Is accepting an offer final?",
+          "a": "No. Your selection is preliminary until our team gives the final approval."
+        }
+      },
+      "payments": {
+        "0": {
+          "q": "How do I pay?",
+          "a": "You pay the company directly as agreed in the offer. MirhalGo doesn't charge customers."
+        },
+        "1": {
+          "q": "Are there hidden fees?",
+          "a": "No. The offer shows the total cost and what it includes."
+        }
+      },
+      "cancellation": {
+        "0": {
+          "q": "How do I cancel a request?",
+          "a": "Open the order, then Details › Cancel request. You can cancel until an offer is approved."
+        },
+        "1": {
+          "q": "Can a company cancel?",
+          "a": "If a company can't continue, our team helps you choose another offer."
+        }
+      }
+    }
+  }
+}

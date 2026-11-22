@@ -24,7 +24,7 @@
     },
     "signupCompany": {
       "title": "Join as a shipping company | MirhalGo",
-      "description": "Shipping-company registration is coming soon."
+      "description": "Register your shipping or customs-clearance company on MirhalGo and receive shipping requests."
     },
     "verifyEmail": {
       "title": "Verify your email | MirhalGo",
@@ -34,13 +34,17 @@
       "title": "Reset password | MirhalGo",
       "description": "Reset your MirhalGo password with a code sent to your email."
     },
-    "dashboard": {
-      "title": "Dashboard | MirhalGo",
-      "description": "Your MirhalGo dashboard."
-    },
     "notFound": {
       "title": "Page not found | MirhalGo",
       "description": "The page you are looking for does not exist."
+    },
+    "applicationSubmitted": {
+      "title": "Application submitted | MirhalGo",
+      "description": "Your shipping company application was submitted and is pending review."
+    },
+    "applicationStatus": {
+      "title": "Application status | MirhalGo",
+      "description": "The status of your shipping company application."
     }
   },
   "lang": {
@@ -151,11 +155,6 @@
       "haveAccount": "Already have an account?",
       "login": "Log in"
     },
-    "companySoon": {
-      "title": "Coming soon",
-      "text": "Registration for shipping companies is coming soon. Stay tuned!",
-      "back": "Back to sign up"
-    },
     "signup": {
       "title": "Create a customer account",
       "subtitle": "It only takes a minute.",
@@ -184,7 +183,8 @@
       "resent": "A new code is on its way.",
       "success": "Email verified. Welcome to MirhalGo!",
       "verifiedLogin": "Email verified. Please log in.",
-      "changeEmail": "Wrong email? Sign up again"
+      "changeEmail": "Wrong email? Sign up again",
+      "changeEmailCompany": "Wrong email? Start the registration again"
     },
     "login": {
       "title": "Welcome back",
@@ -211,11 +211,6 @@
       "resetSubmit": "Reset password",
       "changeEmail": "Use a different email",
       "back": "Back to log in"
-    },
-    "dashboard": {
-      "title": "Dashboard",
-      "welcome": "Welcome, {{name}}!",
-      "placeholder": "Your dashboard is coming soon. You will be able to create shipping requests and compare quotes here."
     }
   },
   "notFound": {
@@ -235,7 +230,39 @@
     "passwordMismatch": "Passwords don't match",
     "terms": "You must accept the Terms and Privacy Policy",
     "otp": "Enter the 6-digit code",
-    "messageLength": "Message must be 10–2000 characters"
+    "messageLength": "Message must be 10–2000 characters",
+    "invalidChars": "Contains characters that are not allowed",
+    "duplicate": "Each option can be selected only once",
+    "selectAtLeastOne": "Select at least one option",
+    "companyNameLength": "Must be 2–120 characters",
+    "representativeNameLength": "Must be 3–80 characters",
+    "jobTitleLength": "Must be 2–60 characters",
+    "cityLength": "Must be 2–60 characters",
+    "streetLength": "Must be 5–200 characters",
+    "otherActivityLength": "Must be 3–150 characters",
+    "otherOptionLength": "Must be 3–100 characters",
+    "landline": "Enter 7–12 digits",
+    "url": "Enter a valid link starting with http:// or https://",
+    "commercialRegister": "Enter 1–10 digits",
+    "taxNumber": "Enter the 9-digit tax card number",
+    "yearsInBusiness": "Enter a whole number from 0 to 100",
+    "fleetSize": "Enter a whole number from 0 to 10,000",
+    "notesLength": "Notes can be up to 1000 characters",
+    "declaration": "You must confirm that the information is accurate",
+    "termsVersion": "The Terms have been updated. Reload the page and review them again.",
+    "fileRequired": "This document is required",
+    "fileType": "Upload a PDF, JPG or PNG file",
+    "fileSize": "The file must be 5 MB or less",
+    "logoType": "Upload a PNG, JPG or WEBP image",
+    "logoSize": "The image must be 2 MB or less",
+    "addressLabelLength": "Must be 2–40 characters",
+    "landmarkLength": "Must be 2–120 characters",
+    "reasonLength": "Up to 500 characters",
+    "questionLength": "Must be 5–1000 characters",
+    "rating": "Choose a rating from 1 to 5 stars",
+    "reviewLength": "Up to 500 characters",
+    "subjectLength": "Must be 3–120 characters",
+    "typeDelete": "Type DELETE in capital letters"
   },
   "errors": {
     "VALIDATION_ERROR": "Please check the highlighted fields.",
@@ -253,7 +280,12 @@
     "INTERNAL": "Something went wrong. Please try again.",
     "NETWORK_ERROR": "Can't reach the server. Check your connection and try again.",
     "CONFIG_MISSING": "This feature is not available right now because the app is not fully configured. Please try again later.",
-    "MAIL_NOT_CONFIGURED": "Emails can't be sent right now (email service not configured yet). Please try again later."
+    "MAIL_NOT_CONFIGURED": "Emails can't be sent right now (email service not configured yet). Please try again later.",
+    "COMPANY_ALREADY_REGISTERED": "A company with this commercial register or tax card number is already registered.",
+    "FILE_REQUIRED": "Please upload all required documents.",
+    "FILE_TYPE_NOT_ALLOWED": "One of the files is not an allowed type.",
+    "FILE_TOO_LARGE": "One of the files is too large.",
+    "TOO_MANY_FILES": "Too many files were sent."
   },
   "ui": {
     "showPassword": "Show password",
@@ -277,6 +309,264 @@
     "phonePlaceholder": "10 1234 5678",
     "otpDigit": "Digit {{index, number}} of {{total, number}}",
     "scrollToTop": "Scroll to top",
-    "opensInNewTab": "(opens in a new tab)"
+    "opensInNewTab": "(opens in a new tab)",
+    "close": "Close",
+    "stepSkipped": "not needed",
+    "stepCompleted": "completed",
+    "file": {
+      "choose": "Choose a file",
+      "orDrop": "or drag it here",
+      "replace": "Replace file",
+      "remove": "Remove file"
+    },
+    "cancel": "Cancel",
+    "save": "Save",
+    "retry": "Try again",
+    "loading": "Loading…",
+    "crop": {
+      "logoTitle": "Crop your logo",
+      "avatarTitle": "Crop your photo",
+      "description": "Drag to position the image and use the slider to zoom.",
+      "zoom": "Zoom",
+      "apply": "Use this image",
+      "cancel": "Cancel"
+    },
+    "leave": {
+      "title": "Leave this page?",
+      "text": "Your unsaved changes will be lost.",
+      "stay": "Stay",
+      "leave": "Leave"
+    },
+    "rating": {
+      "outOf": "Rated {{value}} out of 5",
+      "labels": {
+        "1": "Poor",
+        "2": "Fair",
+        "3": "Good",
+        "4": "Very good",
+        "5": "Excellent"
+      }
+    }
+  },
+  "options": {
+    "governorate": {
+      "cairo": "Cairo",
+      "giza": "Giza",
+      "alexandria": "Alexandria",
+      "qalyubia": "Qalyubia",
+      "sharqia": "Sharqia",
+      "dakahlia": "Dakahlia",
+      "gharbia": "Gharbia",
+      "monufia": "Monufia",
+      "beheira": "Beheira",
+      "kafr_el_sheikh": "Kafr El Sheikh",
+      "damietta": "Damietta",
+      "port_said": "Port Said",
+      "ismailia": "Ismailia",
+      "suez": "Suez",
+      "north_sinai": "North Sinai",
+      "south_sinai": "South Sinai",
+      "red_sea": "Red Sea",
+      "faiyum": "Faiyum",
+      "beni_suef": "Beni Suef",
+      "minya": "Minya",
+      "asyut": "Asyut",
+      "sohag": "Sohag",
+      "qena": "Qena",
+      "luxor": "Luxor",
+      "aswan": "Aswan",
+      "new_valley": "New Valley",
+      "matrouh": "Matrouh"
+    },
+    "activity": {
+      "international": "International shipping & customs",
+      "domestic": "Domestic land shipping",
+      "china": "Shipping from Chinese sites",
+      "other": "Other"
+    },
+    "activityDescription": {
+      "international": "Air, sea or land, import and export",
+      "domestic": "Between governorates and cities in Egypt",
+      "china": "SHEIN, Alibaba, 1688, Taobao…",
+      "other": "Describe your activity"
+    },
+    "internationalMode": {
+      "air": "Air",
+      "sea": "Sea",
+      "land": "International land"
+    },
+    "internationalScope": {
+      "shipping": "Shipping only",
+      "customs": "Customs clearance only",
+      "both": "Both"
+    },
+    "region": {
+      "gulf": "Gulf",
+      "middle_east": "Middle East",
+      "europe": "Europe",
+      "china": "China",
+      "east_asia": "East Asia",
+      "north_america": "North America",
+      "africa": "Africa"
+    },
+    "vehicle": {
+      "pickup": "Pickup",
+      "box_truck": "Box truck",
+      "trailer": "Trailer",
+      "refrigerated": "Refrigerated",
+      "other": "Other"
+    },
+    "chinaSite": {
+      "1688": "1688",
+      "shein": "SHEIN",
+      "alibaba": "Alibaba",
+      "taobao": "Taobao",
+      "other": "Other"
+    },
+    "chinaService": {
+      "purchasing": "Purchasing on behalf",
+      "consolidation": "Consolidation",
+      "shipping_to_egypt": "Shipping to Egypt"
+    },
+    "document": {
+      "commercial_register": "Commercial register copy",
+      "tax_card": "Tax card copy",
+      "customs_license": "Customs broker license",
+      "logo": "Company logo"
+    }
+  },
+  "company": {
+    "register": {
+      "title": "Join as a shipping company",
+      "subtitle": "Register your company to receive shipping requests from MirhalGo customers.",
+      "stepsLabel": "Registration steps",
+      "stepOf": "Step {{current, number}} of {{total, number}}",
+      "steps": {
+        "account": "Account & company",
+        "services": "Services",
+        "documents": "Documents",
+        "review": "Review & submit"
+      },
+      "draft": {
+        "title": "Continue your application?",
+        "text": "We saved what you typed on this device on {{date, datetime}}. Passwords, legal numbers and files are never saved.",
+        "continue": "Continue",
+        "startOver": "Start over"
+      },
+      "leave": {
+        "title": "Leave the registration?",
+        "text": "Your text is saved on this device for 7 days, but passwords, legal numbers and files will be lost.",
+        "stay": "Stay",
+        "leave": "Leave"
+      },
+      "next": "Next",
+      "back": "Back",
+      "submit": "Submit application",
+      "uploading": "Uploading… {{percent, number}}%",
+      "uploadProgress": "Upload progress",
+      "haveAccount": "Already registered?",
+      "login": "Log in",
+      "sections": {
+        "company": "Company",
+        "contact": "Contact details",
+        "address": "Address",
+        "account": "Account password",
+        "activities": "Main activities",
+        "international": "International shipping & customs",
+        "domestic": "Domestic land shipping",
+        "china": "Shipping from Chinese sites",
+        "general": "General",
+        "legal": "Legal information",
+        "documents": "Documents",
+        "notes": "Additional notes"
+      },
+      "fields": {
+        "legalName": "Legal company name",
+        "representativeName": "Representative full name",
+        "representativeTitle": "Representative job title",
+        "representativeTitleHint": "e.g. Owner, General Manager",
+        "email": "Business email",
+        "phone": "Mobile phone",
+        "whatsappSame": "WhatsApp is the same as the mobile number",
+        "whatsapp": "WhatsApp number",
+        "landline": "Landline",
+        "website": "Website / Facebook page",
+        "websiteHint": "e.g. https://facebook.com/yourcompany",
+        "governorate": "Governorate",
+        "governoratePlaceholder": "Select a governorate",
+        "city": "City / Area",
+        "street": "Street address",
+        "password": "Password",
+        "confirmPassword": "Confirm password",
+        "activities": "What does your company do?",
+        "otherActivity": "Describe the other activity",
+        "modes": "Shipping modes",
+        "scope": "Services offered",
+        "countries": "Main countries served",
+        "regions": "Main regions served",
+        "servedHint": "Optional",
+        "allGovernorates": "All governorates",
+        "governorates": "Covered governorates",
+        "vehicleTypes": "Vehicle types",
+        "vehicleTypeOther": "Other vehicle type",
+        "fleetSize": "Fleet size (approx.)",
+        "sites": "Supported sites",
+        "siteOther": "Other site",
+        "chinaServices": "Services",
+        "yearsInBusiness": "Years in business",
+        "commercialRegisterNumber": "Commercial register number",
+        "taxNumber": "Tax card number",
+        "taxNumberHint": "9 digits",
+        "customsRecommended": "Recommended because you offer customs clearance.",
+        "notes": "Anything else we should know? (optional)",
+        "notesCounter": "{{count, number}} / {{max, number}}",
+        "declaration": "I confirm that all information and documents are accurate and belong to this company.",
+        "terms": "I agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>."
+      },
+      "files": {
+        "documentHint": "PDF, JPG or PNG · up to 5 MB",
+        "logoHint": "PNG, JPG or WEBP · up to 2 MB · cropped to a square"
+      },
+      "review": {
+        "intro": "Check your information before submitting. You can edit any section.",
+        "edit": "Edit",
+        "editSection": "Edit {{section}}",
+        "empty": "—",
+        "notUploaded": "Not uploaded",
+        "hidden": "Hidden for your security"
+      },
+      "errors": {
+        "documents": "Please check your documents."
+      }
+    },
+    "submitted": {
+      "title": "Application submitted",
+      "reference": "Reference number",
+      "text": "Our team will review your application within 48 hours. We'll email you with the result.",
+      "email": "We also sent you a confirmation email with this reference number.",
+      "noReference": "We sent you a confirmation email with your reference number.",
+      "status": "Status",
+      "pendingReview": "Pending review",
+      "home": "Back to home"
+    }
+  },
+  "companyStatus": {
+    "title": "Application status",
+    "submittedAt": "Submitted on",
+    "error": "We couldn't load your application. Please try again.",
+    "status": {
+      "pending_verification": "Email not verified",
+      "pending_review": "Pending review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "changes_requested": "Changes requested"
+    },
+    "text": {
+      "pending_verification": "Verify your email to send the application for review.",
+      "pending_review": "Our team will review your application within 48 hours. We'll email you with the result.",
+      "approved": "Your company is approved. The company portal is coming soon.",
+      "rejected": "Unfortunately your application was not approved. We emailed you the details.",
+      "changes_requested": "Our team asked for some changes. We emailed you the details."
+    }
   }
 }
