@@ -322,7 +322,7 @@ describe('account (B6)', () => {
   it('addresses: add (validated) and delete', async () => {
     const user = userEvent.setup();
     renderPortal('/app/account/addresses');
-    await main().findAllByText('البيت');
+    await main().findAllByText('المنزل');
     await user.click(main().getByRole('button', { name: 'Add address' }));
     const dialog = screen.getByRole('dialog', { name: 'Add address' });
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));

@@ -9,15 +9,24 @@ import { mockSupabase, seedCustomerSession, setLanguage, USER } from './mocks';
 
 const PAGES = [
   '/app/new-request',
+  '/app/new-request/international',
   '/app/orders',
+  '/app/orders/ord_118?tab=details',
   '/app/orders/ord_118?tab=offers',
+  '/app/orders/ord_118?tab=timeline',
   '/app/companies',
   '/app/companies/co_nile',
   '/app/account/profile',
   '/app/account/security',
+  // regression: sr-only switch labels escaped the table scroller and widened the page
+  '/app/account/notifications',
+  '/app/account/addresses',
   '/app/account/balance',
+  '/app/account/preferences',
+  '/app/account/privacy',
   '/app/notifications',
   '/app/support',
+  '/app/support/tickets/tk_21',
 ];
 
 test.beforeEach(async ({ page }) => {
@@ -33,7 +42,7 @@ test('Arabic by default: RTL, sidebar on the right (desktop) / bottom navigation
   await expect(page).toHaveURL('/app/new-request');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.getByRole('heading', { level: 1, name: 'طلب جديد' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: `أهلاً يا ${USER.firstName}` })).toBeVisible();
+  await expect(page.getByRole('heading', { name: `مرحبًا، ${USER.firstName}` })).toBeVisible();
 
   const sidebar = page.locator('aside');
   const bottomNav = page.locator('nav.fixed');
@@ -58,6 +67,7 @@ test('English: LTR, sidebar on the left', async ({ page, isMobile }) => {
 });
 
 test('no horizontal overflow on any portal page', async ({ page }) => {
+  test.setTimeout(120_000); // ~18 pages
   for (const path of PAGES) {
     await page.goto(path);
     await expect(page.locator('main')).not.toHaveAttribute('aria-busy', 'true');

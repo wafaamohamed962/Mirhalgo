@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FormProvider, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router';
@@ -15,15 +15,10 @@ import { setPendingVerification } from '../../auth/pendingVerification';
 import { registerCompany } from '../api';
 import { AccountStep } from '../components/AccountStep';
 import { DocumentsStep } from '../components/DocumentsStep';
+import { DraftRestoredNotice } from '../components/DraftRestoredNotice';
 import { ReviewStep } from '../components/ReviewStep';
 import { ServicesStep } from '../components/ServicesStep';
-import {
-  clearCompanyDraft,
-  loadCompanyDraft,
-  saveCompanyDraft,
-  withDraft,
-  type CompanyDraft,
-} from '../draft';
+import { clearCompanyDraft, loadCompanyDraft, saveCompanyDraft, withDraft } from '../draft';
 import {
   EMPTY_VALUES,
   STEP_IDS,
@@ -48,8 +43,9 @@ export default function CompanyRegistrationPage() {
 
   const [step, setStep] = useState<StepId>('account');
   const [completed, setCompleted] = useState<ReadonlySet<StepId>>(new Set());
-  const [draft, setDraft] = useState<CompanyDraft | null>(loadCompanyDraft);
-  const [formKey, setFormKey] = useState(0); // remounts inputs after a draft is restored
+  const [initialDraft] = useState(loadCompanyDraft); // read once, on arrival
+  const [showRestored, setShowRestored] = useState(initialDraft !== null);
+  const [formKey, setFormKey] = useState(0); // remounts inputs after a reset
   const [progress, setProgress] = useState(0);
 
   // The resolver follows the current step (read through a ref: the form is created once).
@@ -72,11 +68,20 @@ export default function CompanyRegistrationPage() {
   );
   const index = visibleSteps.indexOf(step);
 
-  // ── autosave (text only, see draft.ts); paused while the "continue?" prompt is open ──
+  // ── draft (decision 24): restored automatically on arrival, before the first paint. Same
+  // reset as the old "Continue" button, so the form is dirty (leave guard) exactly as before.
+  useLayoutEffect(() => {
+    if (!initialDraft) return;
+    form.reset(withDraft(EMPTY_VALUES, initialDraft.values), { keepDefaultValues: true });
+    setFormKey((key) => key + 1);
+  }, [form, initialDraft]);
+
+  // ── autosave (text only, see draft.ts) after each edit. Resets (restore, start over) have
+  // no field name and are not edits, so they never write a draft.
   useEffect(() => {
-    if (draft) return;
     let timer: ReturnType<typeof setTimeout>;
-    const subscription = form.watch(() => {
+    const subscription = form.watch((_values, { name }) => {
+      if (!name) return;
       clearTimeout(timer);
       timer = setTimeout(() => saveCompanyDraft(form.getValues()), AUTOSAVE_DELAY_MS);
     });
@@ -84,7 +89,18 @@ export default function CompanyRegistrationPage() {
       clearTimeout(timer);
       subscription.unsubscribe();
     };
-  }, [draft, form]);
+  }, [form]);
+
+  /** "Start over": drop the draft and give the user an empty form on the first step. */
+  const startOver = () => {
+    clearCompanyDraft();
+    form.reset(EMPTY_VALUES);
+    setFormKey((key) => key + 1);
+    setCompleted(new Set());
+    setStep('account');
+    setShowRestored(false);
+    requestAnimationFrame(() => form.setFocus('legalName'));
+  };
 
   // leaving with unsaved changes (spec A1)
   const leaveGuard = useUnsavedChangesGuard(isDirty, {
@@ -149,35 +165,8 @@ export default function CompanyRegistrationPage() {
         <div className="flex flex-col gap-6">
           <ServiceNotice needs="auth" />
 
-          {draft && (
-            <div className="flex flex-col gap-3 rounded-lg border border-blue-600 bg-blue-50 p-5">
-              <h2 className="text-h3">{t('company.register.draft.title')}</h2>
-              <p className="text-small text-body">
-                {t('company.register.draft.text', { date: new Date(draft.savedAt) })}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  shape="form"
-                  onClick={() => {
-                    form.reset(withDraft(EMPTY_VALUES, draft.values), { keepDefaultValues: true });
-                    setFormKey((key) => key + 1);
-                    setDraft(null);
-                  }}
-                >
-                  {t('company.register.draft.continue')}
-                </Button>
-                <Button
-                  variant="secondary"
-                  shape="form"
-                  onClick={() => {
-                    clearCompanyDraft();
-                    setDraft(null);
-                  }}
-                >
-                  {t('company.register.draft.startOver')}
-                </Button>
-              </div>
-            </div>
+          {showRestored && (
+            <DraftRestoredNotice onStartOver={startOver} onDismiss={() => setShowRestored(false)} />
           )}
 
           <Stepper

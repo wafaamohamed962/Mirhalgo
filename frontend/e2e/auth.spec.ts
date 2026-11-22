@@ -254,5 +254,5 @@ test('Arabic auth pages are RTL', async ({ page }) => {
   await setLanguage(page, 'ar');
   await page.goto('/login');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('أهلاً بيك تاني');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('مرحبًا بعودتك');
 });

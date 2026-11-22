@@ -168,8 +168,8 @@ describe('company registration wizard', () => {
     expect(sessionStorage.getItem('mirhalgo.pendingKind')).toBe('company');
   });
 
-  it('autosaves the text (never the password) and offers to continue', async () => {
-    const user = userEvent.setup();
+  /** Types a company name + password, waits for the autosave, then "comes back" to the page. */
+  async function saveDraftAndReturn(user: UserEvent) {
     renderWizard();
     await user.type(screen.getByLabelText(/Legal company name/), 'Delta Cargo');
     await user.type(screen.getByLabelText(/^Password/, { selector: 'input' }), 'Str0ng!pass');
@@ -177,13 +177,52 @@ describe('company registration wizard', () => {
       expect(localStorage.getItem('mirhalgo.companyDraft')).toContain('Delta Cargo'),
     );
     expect(localStorage.getItem('mirhalgo.companyDraft')).not.toContain('Str0ng');
+    document.body.innerHTML = '';
+    return renderWizard();
+  }
+
+  it('no draft: no restored notice', () => {
+    renderWizard();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Legal company name/)).toHaveValue('');
+  });
+
+  it('autosaves the text (never the password) and restores it automatically', async () => {
+    const user = userEvent.setup();
+    await saveDraftAndReturn(user);
+    // no "Continue your application?" prompt: the draft is already back, with a subtle notice
+    expect(screen.queryByRole('heading', { name: /Continue/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('We restored your saved progress.');
+    expect(screen.getByLabelText(/Legal company name/)).toHaveValue('Delta Cargo');
+    expect(screen.getByLabelText(/^Password/, { selector: 'input' })).toHaveValue('');
+
+    // restoring is not an edit: the stored draft is unchanged
+    const stored = localStorage.getItem('mirhalgo.companyDraft');
+    await new Promise((resolve) => setTimeout(resolve, 700)); // > autosave delay
+    expect(localStorage.getItem('mirhalgo.companyDraft')).toBe(stored);
+
+    await user.click(screen.getByRole('button', { name: 'Dismiss this notice' }));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Legal company name/)).toHaveValue('Delta Cargo'); // data kept
+  });
+
+  it('"Start over" clears the draft and resets the form', async () => {
+    const user = userEvent.setup();
+    await saveDraftAndReturn(user);
+    await user.click(screen.getByRole('button', { name: 'Start over' }));
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    const name = screen.getByLabelText(/Legal company name/);
+    expect(name).toHaveValue('');
+    await waitFor(() => expect(name).toHaveFocus());
+    expect(localStorage.getItem('mirhalgo.companyDraft')).toBeNull();
+    // the reset itself never writes an (empty) draft back
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    expect(localStorage.getItem('mirhalgo.companyDraft')).toBeNull();
 
     document.body.innerHTML = '';
     renderWizard();
-    expect(screen.getByRole('heading', { name: 'Continue your application?' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByLabelText(/Legal company name/)).toHaveValue('Delta Cargo');
-    expect(screen.getByLabelText(/^Password/, { selector: 'input' })).toHaveValue('');
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('asks before leaving with unsaved changes', async () => {

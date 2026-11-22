@@ -448,10 +448,9 @@
         "review": "Review & submit"
       },
       "draft": {
-        "title": "Continue your application?",
-        "text": "We saved what you typed on this device on {{date, datetime}}. Passwords, legal numbers and files are never saved.",
-        "continue": "Continue",
-        "startOver": "Start over"
+        "restored": "We restored your saved progress.",
+        "startOver": "Start over",
+        "dismiss": "Dismiss this notice"
       },
       "leave": {
         "title": "Leave the registration?",

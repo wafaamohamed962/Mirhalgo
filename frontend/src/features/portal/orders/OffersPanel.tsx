@@ -81,7 +81,7 @@ export function OffersPanel({ order }: { order: OrderDetails }) {
       )}
 
       {compare ? (
-        <div className="overflow-x-auto rounded-lg bg-white shadow-md">
+        <div className="relative overflow-x-auto rounded-lg bg-white shadow-md">
           <table className="w-full min-w-xl text-start text-small">
             <caption className="sr-only">{t('portal.offers.compare')}</caption>
             <thead>

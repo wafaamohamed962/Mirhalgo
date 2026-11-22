@@ -5,7 +5,7 @@ test.describe('landing page', () => {
   test('Arabic by default (RTL) and switches to English (LTR)', async ({ page, isMobile }) => {
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('اشحن أي حاجة لأي مكان');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('اشحن أي شيء إلى أي مكان');
     await expect(page).toHaveTitle(/مرحال جو/);
 
     if (isMobile) await page.getByRole('button', { name: 'فتح القائمة' }).click();

@@ -57,7 +57,7 @@ const company = (
   reviewsCount,
   completedOrders,
   topRated: rating >= 4.7 && reviewsCount >= 40,
-  about: 'شركة شحن وتخليص جمركي بتخدم المستوردين والتجار في مصر، بفريق متابعة لحد ما الشحنة توصل.',
+  about: 'شركة شحن وتخليص جمركي تخدم المستوردين والتجار في مصر، مع فريق متابعة حتى وصول الشحنة.',
   yearsInBusiness: 8,
   services: ['door_to_door', 'tracking', 'insurance'],
   coveredGovernorates: ['cairo', 'giza', 'alexandria'],
@@ -107,7 +107,7 @@ export const companies: CompanyProfile[] = [
 
 export const reviews: Record<string, Review[]> = {
   co_nile: [
-    review('r1', 'أحمد م.', 5, 'التخليص خلص في يومين والتواصل كان ممتاز.', 3 * DAY, 18, 1),
+    review('r1', 'أحمد م.', 5, 'اكتمل التخليص في يومين، وكان التواصل ممتازًا.', 3 * DAY, 18, 1),
     review(
       'r2',
       'Sara K.',
@@ -117,10 +117,18 @@ export const reviews: Record<string, Review[]> = {
       7,
       2,
     ),
-    review('r3', 'محمود ع.', 5, 'أفضل شركة تعاملت معاها في الشحن البحري.', 20 * DAY, 25, 0),
+    review('r3', 'محمود ع.', 5, 'أفضل شركة تعاملت معها في الشحن البحري.', 20 * DAY, 25, 0),
   ],
   co_dragon: [
-    review('r4', 'نور هـ.', 5, 'جمعوا طلبات شي إن في شحنة واحدة ووفروا عليا كتير.', 2 * DAY, 31, 0),
+    review(
+      'r4',
+      'نور هـ.',
+      5,
+      'جمعوا طلبات شي إن في شحنة واحدة ووفّروا عليّ الكثير.',
+      2 * DAY,
+      31,
+      0,
+    ),
     review('r5', 'Omar T.', 4, 'Reliable, but the consolidation took a week.', 15 * DAY, 4, 1),
   ],
 };
@@ -143,15 +151,15 @@ const DETAILS: Record<ServiceType, OrderDetails['details']> = {
   international: [
     { field: 'route', value: 'Shenzhen, China → Alexandria, Egypt' },
     { field: 'mode', value: 'Sea · LCL' },
-    { field: 'goods', value: 'قطع غيار موتوسيكلات' },
+    { field: 'goods', value: 'قطع غيار دراجات نارية' },
     { field: 'weight', value: '480 kg · 2.1 m³' },
     { field: 'customs', value: 'نعم، تخليص كامل' },
   ],
   domestic: [
     { field: 'route', value: 'القاهرة (مدينة نصر) → أسيوط' },
-    { field: 'goods', value: 'أجهزة منزلية (٦ كراتين)' },
+    { field: 'goods', value: 'أجهزة منزلية (٦ صناديق)' },
     { field: 'weight', value: '220 kg' },
-    { field: 'vehicle', value: 'نص نقل صندوق' },
+    { field: 'vehicle', value: 'شاحنة متوسطة بصندوق' },
     { field: 'pickupDate', value: '2026-11-25' },
   ],
   china: [
@@ -251,7 +259,7 @@ export const orders: OrderDetails[] = [
   order(114, 'international', 'in_progress', 12 * DAY, [offer('of_8', 2, 52000, 21, 'approved')]),
   order(113, 'china', 'completed', 30 * DAY, [offer('of_9', 5, 3800, 14, 'approved')]),
   order(112, 'international', 'completed', 48 * DAY, [offer('of_10', 1, 61000, 25, 'approved')]),
-  order(111, 'domestic', 'cancelled', 52 * DAY, [], { cancelReason: 'اتأجل ميعاد النقل.' }),
+  order(111, 'domestic', 'cancelled', 52 * DAY, [], { cancelReason: 'تأجّل موعد النقل.' }),
   order(110, 'china', 'rejected', 70 * DAY),
 ];
 
@@ -345,17 +353,17 @@ export const loginActivity: LoginActivity[] = [
 export const addresses: Address[] = [
   {
     id: 'ad_1',
-    label: 'البيت',
+    label: 'المنزل',
     governorate: 'cairo',
     city: 'مدينة نصر',
     street: '١٢ شارع عباس العقاد',
-    landmark: 'جنب سيتي ستارز',
+    landmark: 'بجوار سيتي ستارز',
     phone: '+201012345678',
     isDefault: true,
   },
   {
     id: 'ad_2',
-    label: 'المخزن',
+    label: 'المستودع',
     governorate: 'giza',
     city: '6th of October',
     street: 'Industrial Zone 3, Block 14',
@@ -419,14 +427,14 @@ export const tickets: Ticket[] = [
       {
         id: 'm1',
         from: 'customer',
-        body: 'الشحنة متأخرة يومين عن الميعاد، ممكن أعرف السبب؟',
+        body: 'تأخرت الشحنة يومين عن الموعد، هل يمكنني معرفة السبب؟',
         at: ago(DAY),
         attachment: null,
       },
       {
         id: 'm2',
         from: 'support',
-        body: 'أهلاً منى، كلمنا الشركة والشحنة في الجمرك وهتطلع خلال ٢٤ ساعة.',
+        body: 'مرحبًا منى، تواصلنا مع الشركة، والشحنة في الجمارك وسيتم الإفراج عنها خلال ٢٤ ساعة.',
         at: ago(5 * HOUR),
         attachment: null,
       },

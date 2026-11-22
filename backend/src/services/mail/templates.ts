@@ -85,17 +85,17 @@ function codeBox(code: string): string {
 }
 
 const IGNORE = {
-  ar: 'لو مطلبتش ده، تجاهل الإيميل ده.',
+  ar: 'إذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة.',
   en: "If you didn't request this, ignore this email.",
 };
 
 const OTP_COPY: Record<OtpPurpose, { subject: string; ar: LocalizedBlock; en: LocalizedBlock }> = {
   signup: {
-    subject: 'Verify your email | تأكيد بريدك الإلكتروني — MirhalGo',
+    subject: 'Verify your email | تأكيد البريد الإلكتروني — MirhalGo',
     ar: {
-      title: 'كود تأكيد البريد الإلكتروني',
+      title: 'رمز تأكيد البريد الإلكتروني',
       paragraphs: [
-        `استخدم الكود ده لتأكيد بريدك في مرحال جو. الكود صالح لمدة ${OTP_TTL_MINUTES} دقائق.`,
+        `استخدم هذا الرمز لتأكيد بريدك الإلكتروني في مرحال جو. الرمز صالح لمدة ${OTP_TTL_MINUTES} دقائق.`,
         IGNORE.ar,
       ],
     },
@@ -110,9 +110,9 @@ const OTP_COPY: Record<OtpPurpose, { subject: string; ar: LocalizedBlock; en: Lo
   reset_password: {
     subject: 'Reset your password | استعادة كلمة المرور — MirhalGo',
     ar: {
-      title: 'كود استعادة كلمة المرور',
+      title: 'رمز استعادة كلمة المرور',
       paragraphs: [
-        `استخدم الكود ده لتغيير كلمة المرور في مرحال جو. الكود صالح لمدة ${OTP_TTL_MINUTES} دقائق.`,
+        `استخدم هذا الرمز لتغيير كلمة المرور في مرحال جو. الرمز صالح لمدة ${OTP_TTL_MINUTES} دقائق.`,
         IGNORE.ar,
       ],
     },
@@ -136,12 +136,12 @@ export function otpEmail(code: string, purpose: OtpPurpose): MailContent {
 /** Sent instead of an OTP when someone signs up with an already verified email (no enumeration). */
 export function accountExistsEmail(): MailContent {
   return bilingual(
-    'You already have a MirhalGo account | عندك حساب بالفعل في مرحال جو',
+    'You already have a MirhalGo account | لديك حساب بالفعل في مرحال جو',
     {
-      title: 'عندك حساب بالفعل',
+      title: 'لديك حساب بالفعل',
       paragraphs: [
-        'حد حاول يعمل حساب جديد في مرحال جو بالبريد ده، بس البريد ده متسجل عندنا بالفعل.',
-        'تقدر تسجّل الدخول، ولو نسيت كلمة المرور استخدم "نسيت كلمة المرور؟" في صفحة تسجيل الدخول.',
+        'حاول شخص ما إنشاء حساب جديد في مرحال جو بهذا البريد الإلكتروني، لكنه مسجّل لدينا بالفعل.',
+        'يمكنك تسجيل الدخول، وإذا نسيت كلمة المرور فاستخدم "نسيت كلمة المرور؟" في صفحة تسجيل الدخول.',
         IGNORE.ar,
       ],
     },
@@ -163,8 +163,8 @@ export function phoneTakenEmail(): MailContent {
     {
       title: 'بخصوص تسجيلك في مرحال جو',
       paragraphs: [
-        'معرفناش نكمّل إنشاء حسابك لأن رقم الهاتف اللي استخدمته متسجل بحساب تاني.',
-        'لو الرقم ده بتاعك، سجّل الدخول بيه أو استخدم "نسيت كلمة المرور؟". غير كده، سجّل برقم تاني.',
+        'تعذّر إكمال إنشاء حسابك لأن رقم الهاتف الذي استخدمته مسجّل في حساب آخر.',
+        'إذا كان هذا الرقم يخصك، فسجّل الدخول به أو استخدم "نسيت كلمة المرور؟". وإلا فسجّل برقم آخر.',
         IGNORE.ar,
       ],
     },
@@ -184,7 +184,7 @@ export function contactEmail(input: ContactInput): MailContent {
   const name = `${input.firstName} ${input.lastName}`;
   const rows: Array<[string, string]> = [
     ['Name / الاسم', name],
-    ['Email / البريد', input.email],
+    ['Email / البريد الإلكتروني', input.email],
     ['Phone / الهاتف', input.phone],
   ];
   const table = rows
@@ -225,8 +225,8 @@ export function companyApplicationReceivedEmail({
     {
       title: 'استلمنا طلب انضمام شركتك',
       paragraphs: [
-        `شكراً لتسجيل "${name}" في مرحال جو. رقم الطلب: ${referenceNumber}`,
-        'فريقنا هيراجع طلبك خلال 48 ساعة، وهنبعتلك إيميل بالنتيجة.',
+        `شكرًا لتسجيل "${name}" في مرحال جو. رقم الطلب: ${referenceNumber}`,
+        'سيراجع فريقنا طلبك خلال 48 ساعة، وسنرسل إليك النتيجة عبر البريد الإلكتروني.',
       ],
     },
     {
@@ -257,7 +257,7 @@ export function newCompanyApplicationEmail(details: {
   const rows: Array<[string, string]> = [
     ['Reference / رقم الطلب', details.referenceNumber],
     ['Company / الشركة', details.legalName],
-    ['Email / البريد', details.email],
+    ['Email / البريد الإلكتروني', details.email],
     ['Governorate / المحافظة', details.governorate],
     ['Activities / الأنشطة', details.activities.join(', ')],
   ];

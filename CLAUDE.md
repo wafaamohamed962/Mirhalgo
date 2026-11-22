@@ -146,6 +146,11 @@ Available utilities:
   choice in `localStorage`.
 - **All UI text comes from `i18n/ar.json` and `i18n/en.json`.** No hard-coded strings.
   Format numbers and dates per locale.
+- **Arabic copy is simple Modern Standard Arabic (فصحى مبسطة), never Egyptian colloquial**
+  (decision 23): short, clear, professional. Fixed terms: تسجيل الدخول · إنشاء حساب ·
+  كلمة المرور · البريد الإلكتروني · رقم الهاتف · رمز التحقق (not "كود") · الشعار (not "لوجو") ·
+  المركبات (not "عربيات"). Imperatives in the masculine singular (أدخل، اختر، أرسل). Applies to
+  `ar.json`, `i18n/portal/ar.json`, the Arabic email templates, `index.html` meta and the mocks.
 - Every input: label, error message, `aria-invalid`, `aria-describedby`.
 - Every async action: loading, success and error states, and prevent double submit.
 - Forms: React Hook Form + Zod schemas imported from `@mirhalgo/shared`. **The same schema
@@ -505,6 +510,23 @@ Part B
     Email/phone are read-only: the mocked "Change email/phone" buttons are hidden
     (`CONTACT_CHANGE_ENABLED = false` in `ProfileSection.tsx`, code kept). Everything else stays
     mocked. The query cache is cleared whenever the signed-in user changes (`providers.tsx`).
+23. **(2026-11-22, by the developer) Arabic copy changed from the spec's colloquial wording to
+    MSA.** Every Arabic string (both `ar.json` files, Arabic email templates, `index.html`
+    title/description/OG, mock fixtures) was rewritten in simple Modern Standard Arabic. This
+    includes the spec's Arabic marketing copy (hero, about, services, footer), translated with the
+    same meaning, e.g. hero "اشحن أي حاجة لأي مكان" → "اشحن أي شيء إلى أي مكان", leave dialog
+    "امشي / خليك" → "مغادرة / البقاء". Same i18n keys and placeholders; English unchanged.
+    `docs/MW_001.md` / `docs/MW_002.md` still quote the original colloquial copy: the app's
+    `ar.json` is now the reference for Arabic wording.
+24. **(2026-11-22, by the developer) Company draft: auto-restore instead of the spec's
+    "Continue your application?" prompt.** On return the autosaved draft is restored
+    automatically and a subtle inline notice is shown above the stepper
+    (`components/DraftRestoredNotice.tsx`, `role="status"`, muted text + info icon): "تمت
+    استعادة البيانات المحفوظة من زيارتك السابقة." / "We restored your saved progress." with a
+    "البدء من جديد" / "Start over" link button (clears the draft, resets the form, back to step
+    1, focus on the first field) and a dismiss button. Autosave itself is unchanged (same
+    fields, 7 days, never passwords/legal numbers/files/consents, cleared on submit + logout);
+    it only reacts to field edits, so restoring or starting over never writes a draft.
 
 Implementation choices (proposed in the plan, not contradicted; confirm in review)
 
@@ -651,6 +673,10 @@ Implementation choices (proposed in the plan, not contradicted; confirm in revie
 - Mocked content still contains the fixture customer's name: a review the user writes is
   listed as "منى ع." (the mock builds the author from its fixture) and one support-ticket reply
   greets "منى". The real API will use the real name; change the mock only if the demo needs it.
+- Fix (2026-11-22): horizontal table scrollers must be `relative overflow-x-auto`. Without
+  `relative`, absolutely positioned children (`sr-only` switch labels, captions) escape the
+  scroller and widen the page (Account › Notifications overflowed 55–91 px on mobile, in both
+  languages). The portal "no horizontal overflow" E2E now covers 18 pages.
 - E2E: with MSW on, Supabase requests go through the service worker, so `mockSupabase` uses
   `context.route` + `PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1` (set in
   `playwright.config.ts`).
