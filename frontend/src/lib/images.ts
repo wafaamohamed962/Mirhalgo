@@ -2,7 +2,7 @@ import generated from './images.json';
 
 /**
  * Landing-page images (spec 3.4). Originals live in src/assets/images/ (never bundled);
- * `npm run images -w apps/web` exports AVIF + WebP at 640/1280/1920/3840 px (never upscaled)
+ * `npm run images` exports AVIF + WebP at 640/1280/1920/3840 px (never upscaled)
  * to public/images/ and writes images.json (intrinsic size + available widths).
  * Every image must be recorded in docs/image-credits.md.
  */

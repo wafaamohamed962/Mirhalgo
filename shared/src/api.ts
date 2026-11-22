@@ -32,7 +32,7 @@ export const ERROR_CODES = [
   'NOT_FOUND',
   'INTERNAL',
   'NETWORK_ERROR',
-  // client-side: a required VITE_* variable is missing (see apps/web/src/lib/env.ts)
+  // client-side: a required VITE_* variable is missing (see frontend/src/lib/env.ts)
   'CONFIG_MISSING',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];

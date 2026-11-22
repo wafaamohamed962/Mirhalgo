@@ -62,7 +62,7 @@ export function reportMissingEnv() {
   if (all.length === 0) return;
   console.error(
     `[MirhalGo] Missing or invalid environment variable(s): ${all.join(', ')}. ` +
-      'Copy .env.example to apps/web/.env, fill them in (VITE_SUPABASE_URL = project URL only, ' +
+      'Copy .env.example to frontend/.env, fill them in (VITE_SUPABASE_URL = project URL only, ' +
       'no /rest/v1) and restart the dev server. ' +
       'Until then sign up, login and the contact form are unavailable.',
   );

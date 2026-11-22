@@ -4,7 +4,7 @@ import { escapeHtml } from './escape.js';
 /*
  * Branded bilingual email templates (spec 4.3): navy header, blue code box,
  * Arabic (RTL) first, then English. Email clients ignore external CSS, so the
- * brand colors (mirroring apps/web/src/styles/tokens.css) are inlined here.
+ * brand colors (mirroring frontend/src/styles/tokens.css) are inlined here.
  * Only static copy is interpolated raw; all user content goes through escapeHtml.
  */
 const COLORS = {

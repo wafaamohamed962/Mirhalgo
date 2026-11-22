@@ -3,7 +3,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 /*
- * Regression: with no apps/web/.env, supabase-js threw "supabaseUrl is required",
+ * Regression: with no frontend/.env, supabase-js threw "supabaseUrl is required",
  * AuthProvider never finished loading and every guarded page (Sign Up, Login,
  * service cards) showed an endless spinner. Missing config must never block navigation.
  */

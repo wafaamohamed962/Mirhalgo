@@ -4,7 +4,7 @@
  * width are skipped. Output: public/images/<name>-<width>.<avif|webp> + src/lib/images.json
  * (intrinsic size + available widths, read by src/lib/images.ts).
  *
- * Run after adding or replacing an image:  npm run images -w apps/web
+ * Run after adding or replacing an image:  npm run images (or -w frontend)
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';

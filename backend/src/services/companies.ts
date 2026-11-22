@@ -302,7 +302,7 @@ export async function completeCompanyVerification(
 
 /**
  * Decision 10: deletes unverified applications older than 7 days (files, then the user;
- * rows cascade). Not scheduled yet: run `npm run cleanup:companies -w apps/api`.
+ * rows cascade). Not scheduled yet: run `npm run cleanup:companies -w backend`.
  */
 export async function cleanupExpiredRegistrations(): Promise<number> {
   const { data, error } = await db.rpc('list_expired_company_registrations', {});

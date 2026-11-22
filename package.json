@@ -3,18 +3,20 @@
   "private": true,
   "version": "0.1.0",
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "shared",
+    "backend",
+    "frontend"
   ],
   "scripts": {
-    "dev:web": "npm run dev -w apps/web",
-    "dev:api": "npm run dev -w apps/api",
-    "build": "npm run build -w packages/shared && npm run build -w apps/api && npm run build -w apps/web",
-    "lint": "npm run lint -w apps/web && npm run lint -w apps/api",
+    "dev:web": "npm run dev -w frontend",
+    "dev:api": "npm run dev -w backend",
+    "build": "npm run build -w shared && npm run build -w backend && npm run build -w frontend",
+    "lint": "npm run lint -w frontend && npm run lint -w backend",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "images": "npm run images -w frontend",
     "prepare": "husky || true",
-    "test": "npm test -w packages/shared && npm test -w apps/api && npm test -w apps/web"
+    "test": "npm test -w shared && npm test -w backend && npm test -w frontend"
   },
   "devDependencies": {
     "husky": "^9.1.7",

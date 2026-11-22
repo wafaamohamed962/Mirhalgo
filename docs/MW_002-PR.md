@@ -6,7 +6,7 @@
 - **Decision 22 (2026-11-22): the customer portal shows the user's real identity, not MSW.**
   First/last name, gender, email and phone come from the logged-in user's own `profiles` row
   (RLS owner select) through the service layer (`portalApi.getMe` / `updateProfile`, same `Me`
-  shape, implemented in `apps/web/src/services/api/ownProfile.ts`). This is used by the welcome
+  shape, implemented in `frontend/src/services/api/ownProfile.ts`). This is used by the welcome
   banner, the top-bar avatar menu and Account › Profile.
   - Saving name/gender in Account › Profile updates the real row. RLS and column grants allow
     the owner to update only `first_name`, `last_name` and `gender` (checked on the real

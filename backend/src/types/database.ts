@@ -8,7 +8,7 @@ import type {
 } from '@mirhalgo/shared';
 
 /**
- * Typed view of the tables in supabase/migrations (hand-written, keep in sync).
+ * Typed view of the tables in backend/supabase/migrations (hand-written, keep in sync).
  * Can be regenerated with `supabase gen types typescript --linked`.
  */
 type Timestamp = string;

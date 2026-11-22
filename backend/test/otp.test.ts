@@ -3,7 +3,7 @@ import { OTP_MAX_ATTEMPTS } from '@mirhalgo/shared';
 
 /*
  * Unit tests for the OTP service. Supabase and SMTP are mocked, so the statuses
- * returned by the SQL function claim_otp_attempt (supabase/migrations) are simulated.
+ * returned by the SQL function claim_otp_attempt (backend/supabase/migrations) are simulated.
  */
 
 const rpcResult = vi.fn();

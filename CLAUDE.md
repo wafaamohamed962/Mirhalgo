@@ -49,7 +49,7 @@ Supabase (Central EU, Frankfurt, eu-central-1): Auth + Postgres
 ## 3. Repository layout (spec 8.3)
 
 ```
-apps/web/src/
+frontend/src/
   app/               router, providers (Query, Auth, i18n)
   components/ui/     Button, Input, PasswordInput, PhoneInput, OtpInput, Select, Checkbox, Card, Badge, Toast
   components/layout/ Navbar, MobileDrawer, Footer, Container, Section, ScrollToTop, LanguageSwitch
@@ -61,27 +61,30 @@ apps/web/src/
   assets/images/     optimized AVIF/WebP + srcset sizes (logo SVGs in assets/images/logo/)
   services/api/      customer-portal service layer + TanStack Query hooks (MW_002 B)
   mocks/             MSW handlers + fixtures (customer portal, until the real API exists)
-apps/api/src/        routes/, services/ (otp, mail, companies, storage), middleware/, schemas/
-packages/shared/     Zod schemas + types shared by web & api  (package name: @mirhalgo/shared)
-supabase/migrations/
+backend/src/         routes/, services/ (otp, mail, companies, storage), middleware/, schemas/
+backend/supabase/    config.toml + migrations/ (Supabase CLI: run from backend/)
+shared/src/          Zod schemas + types shared by web & api  (package name: @mirhalgo/shared)
 docs/                MW_001.md (spec), image-credits.md
 ```
 
-npm workspaces monorepo: `apps/*`, `packages/*`.
+npm workspaces monorepo with top-level workspaces `shared`, `backend`, `frontend` (restructured
+from `apps/web`, `apps/api`, `packages/shared`, `supabase/` on 2026-11-22). Package names are
+unchanged (`@mirhalgo/web`, `@mirhalgo/api`, `@mirhalgo/shared`). The Supabase CLI runs from
+`backend/` (it finds `backend/supabase/`, including the link state in `.temp/`).
 
 ## 4. Commands
 
 ```bash
 npm install
-npm run build -w packages/shared   # REQUIRED before running web/api, and after editing shared
+npm run build -w shared   # REQUIRED before running web/api, and after editing shared
 npm run dev:api                    # http://localhost:4000/api/health
 npm run dev:web                    # http://localhost:5173
 npm run build                      # shared → api → web
 npm run lint                       # ESLint (web) + tsc --noEmit (api)
 npm run format                     # Prettier
 npm test                           # Vitest: shared + api + web
-npm run test:e2e -w apps/web       # Playwright (first: npx playwright install chromium)
-npm run images -w apps/web         # regenerate AVIF/WebP after changing a photo (sharp)
+npm run test:e2e -w frontend       # Playwright (first: npx playwright install chromium)
+npm run images -w frontend         # regenerate AVIF/WebP after changing a photo (sharp)
 ```
 
 Always run `npm run build` and `npm run lint` after changes, and make sure both pass.
@@ -106,7 +109,7 @@ No other libraries without asking first.
 
 ## 6. Design system rules (spec section 2)
 
-- **All tokens live in `apps/web/src/styles/tokens.css`.** It is the ONLY file allowed to
+- **All tokens live in `frontend/src/styles/tokens.css`.** It is the ONLY file allowed to
   contain hex values. `globals.css` maps the tokens into Tailwind with `@theme inline`.
 - **The default Tailwind palette is disabled** (`--color-*: initial`), so only MirhalGo colors
   exist. Never hard-code hex/rgb in components (this is an acceptance criterion).
@@ -148,10 +151,10 @@ Available utilities:
 - Forms: React Hook Form + Zod schemas imported from `@mirhalgo/shared`. **The same schema
   is used on the server.**
 - API responses are always `{ ok: true, data }` or `{ ok: false, error: { code, message } }`
-  (types `ApiResponse` / `ApiSuccess` / `ApiError` in `packages/shared/src/index.ts`).
+  (types `ApiResponse` / `ApiSuccess` / `ApiError` in `shared/src/index.ts`).
   Error codes are UPPER_SNAKE_CASE and i18n-ready.
 - API errors: throw `HttpError(status, code, message)` from
-  `apps/api/src/middleware/errorHandler.ts`. The global handler never leaks stack traces.
+  `backend/src/middleware/errorHandler.ts`. The global handler never leaks stack traces.
 - External links: `target="_blank" rel="noopener noreferrer"`.
 - Images: commercial-use licensed, 4K source, AVIF/WebP with `srcset` 640/1280/1920/3840,
   lazy-load below the hero, preload the hero image. Record every image in
@@ -162,7 +165,7 @@ Available utilities:
 Priorities: **Clean Code + High Performance + Readability + Maintainability + Reliability.**
 
 1. **Clean Code**: readable, simple, well-structured code with meaningful names.
-2. **DRY**: no duplicated logic. Shared rules go in `packages/shared`, shared UI in
+2. **DRY**: no duplicated logic. Shared rules go in `shared`, shared UI in
    `components/ui`, shared helpers in `lib/`.
 3. **SOLID**: apply where it fits. Example: routes stay thin and call services
    (`services/otp`, `services/mail`). Business logic does not live in route handlers.
@@ -197,14 +200,14 @@ Priorities: **Clean Code + High Performance + Readability + Maintainability + Re
 - Rate limits (`express-rate-limit`, per IP + per identifier): login 10/15 min · signup
   5/hour · OTP send/resend 5/hour/email · OTP verify 5 attempts/code · contact 5/hour.
 - HTTPS only, helmet, strict CORS allowlist (`CORS_ORIGINS`), JSON body limit 10kb.
-  (helmet, CORS and the body limit are already done in `apps/api/src/index.ts`.)
+  (helmet, CORS and the body limit are already done in `backend/src/index.ts`.)
 - **No user enumeration** on login, signup and forgot password. Login error is always
   "Invalid email/phone or password". Forgot password always answers "If an account exists,
   we sent a code".
 - Escape all user content placed in emails.
 - Log auth events (signup, login success/fail, OTP sent/failed, password reset) with
   timestamp + IP. **Never log passwords or OTP codes.**
-- Schema changes only through **Supabase migrations** in `supabase/migrations/`, never
+- Schema changes only through **Supabase migrations** in `backend/supabase/migrations/`, never
   manually in the dashboard.
 
 ### OTP rules (implement exactly)
@@ -220,8 +223,8 @@ Priorities: **Clean Code + High Performance + Readability + Maintainability + Re
 
 ## 10. Environment variables (spec 8.6, see `.env.example`)
 
-- `apps/web/.env`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
-- `apps/api/.env`: `PORT`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SMTP_HOST`,
+- `frontend/.env`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`
+- `backend/.env`: `PORT`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SMTP_HOST`,
   `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `CONTACT_TO`, `OTP_PEPPER`, `CORS_ORIGINS`
 - Commit `.env.example` only. **Never commit or print real secrets.** Never ask the user to
   paste the service-role key or SMTP password into chat.
@@ -234,7 +237,7 @@ Priorities: **Clean Code + High Performance + Readability + Maintainability + Re
 - React pinned to 18 (the Vite template shipped 19).
 - Tailwind v4. Its built-in logical utilities replace the `tailwindcss-rtl` plugin.
 - ESLint is used, as the spec asks (the template's oxlint was removed).
-- Logo: the official PNG was vectorised into 4 SVGs in `apps/web/src/assets/images/logo/`:
+- Logo: the official PNG was vectorised into 4 SVGs in `frontend/src/assets/images/logo/`:
   - `mirhalgo-mark-white.svg`: navbar (dark hero and navy navbar), with the text
     "MirhalGo" next to it
   - `mirhalgo-mark.svg`: light backgrounds and favicon (`public/favicon.svg`)
@@ -252,7 +255,7 @@ Priorities: **Clean Code + High Performance + Readability + Maintainability + Re
   (`COUNTRIES`), Egypt strict (10/11/12/15 + 8 digits), others generic E.164.
 - **Supabase "Allow new users to sign up": turn OFF** (the backend Admin API still works).
 - Validation error messages are i18n keys (`validation.*`); API error codes are the typed
-  `ErrorCode` union in `packages/shared/src/api.ts`, translated as `errors.<CODE>`.
+  `ErrorCode` union in `shared/src/api.ts`, translated as `errors.<CODE>`.
 
 ## 12. Status
 
@@ -265,10 +268,10 @@ Priorities: **Clean Code + High Performance + Readability + Maintainability + Re
   global error handler. Verified responses: 200 / 403 CORS / 404 / 413.
 - Shared API response types.
 - Logo SVGs + favicon, `.env.example`, `docs/image-credits.md`.
-- **Step 1, shared schemas** (`packages/shared/src`): `api.ts` (response types, typed
+- **Step 1, shared schemas** (`shared/src`): `api.ts` (response types, typed
   `ErrorCode`), `otp.ts` (OTP constants), `phone.ts` (countries, E.164 helpers),
   `password.ts` (rules + score for the strength meter), `schemas/fields.ts|auth.ts|contact.ts`.
-  Vitest tests in `packages/shared/test` (`npm test -w packages/shared`). `sideEffects: false`
+  Vitest tests in `shared/test` (`npm test -w shared`). `sideEffects: false`
   so unused schemas are tree-shaken.
 - **Step 2, UI kit** (`components/ui`): Button (+ `buttonClasses` for links), Input, Textarea,
   PasswordInput (+ PasswordStrength), PhoneInput, OtpInput, Select, Checkbox, Card, Badge,
@@ -287,7 +290,7 @@ Priorities: **Clean Code + High Performance + Readability + Maintainability + Re
 - **Step 5, landing**: `sections/` Hero, About, Services, Contact (RHF + shared Zod, honeypot,
   toast). `pages/LandingPage.tsx`, `pages/NotFoundPage.tsx`. Images: see "Images wired" below.
   Social brand colors are tokens (`--brand-*`).
-- **Step 6, migrations** (`supabase/migrations/2026112000000{1,2,3}_*.sql`): `profiles`
+- **Step 6, migrations** (`backend/supabase/migrations/2026112000000{1,2,3}_*.sql`): `profiles`
   (owner select; update ONLY first_name/last_name/gender via column grants), `email_otps`
   and `contact_messages` (RLS on, no policies, privileges revoked = backend only), SQL
   function `claim_otp_attempt` (row lock → atomic attempt counting; execute = service_role
@@ -300,7 +303,7 @@ Priorities: **Clean Code + High Performance + Readability + Maintainability + Re
   `mail/` (Nodemailer, bilingual templates, `escapeHtml`; every SMTP error → `MAIL_FAILED`),
   `users.ts`, `auth.ts`, `contact.ts`. `middleware/`: `validateBody`, `respond`, `rateLimit`
   (in-memory store, per IP + per identifier). `types/database.ts` = hand-written Supabase
-  types (keep in sync with migrations). Tests: `apps/api/test` (Vitest + supertest).
+  types (keep in sync with migrations). Tests: `backend/test` (Vitest + supertest).
 - Login returns `{ status: 'authenticated', session }` or
   `{ status: 'verification_required', email }` (correct password, unverified email).
 - **Step 8, web auth**: `lib/supabase.ts` (anon key, persistSession + autoRefreshToken),
@@ -312,9 +315,9 @@ Priorities: **Clean Code + High Performance + Readability + Maintainability + Re
   `components/AuthCard|ResendCode`, `pages/` Login, SignupRole, SignupCustomer,
   CompanyComingSoon, VerifyEmail, ForgotPassword. `pages/DashboardPage.tsx` (placeholder,
   reads own `first_name` through RLS, logout → `/`). `components/ui/Alert.tsx`.
-- **Step 9, tests + SEO**: web unit tests in `apps/web/test` (Vitest + RTL: i18n key parity,
+- **Step 9, tests + SEO**: web unit tests in `frontend/test` (Vitest + RTL: i18n key parity,
   language switch, OtpInput, PasswordInput, PhoneInput, a11y wiring, guards). Playwright in
-  `apps/web/e2e` (production build, API + Supabase mocked in `e2e/mocks.ts`; desktop + 360px
+  `frontend/e2e` (production build, API + Supabase mocked in `e2e/mocks.ts`; desktop + 360px
   mobile): landing, RTL/LTR, no horizontal overflow, nav scroll, drawer, social links, contact,
   signup → OTP → dashboard → reload → logout, phone login + generic errors, unverified login,
   6th attempt, forgot password, company, 404. SEO: `index.html` defaults + OG, per-page meta,
@@ -323,16 +326,16 @@ Priorities: **Clean Code + High Performance + Readability + Maintainability + Re
   replaceState): native hash jumps trigger a router POP whose scroll restoration cancels the
   smooth scroll. Navbar offset = each section's `scroll-margin-top` only.
 - **Step 10**: README (setup, env, Supabase, run, tests, deploy, images).
-- **Fix: missing web env no longer blocks navigation.** Without `apps/web/.env`, supabase-js
+- **Fix: missing web env no longer blocks navigation.** Without `frontend/.env`, supabase-js
   threw "supabaseUrl is required" inside the lazily loaded client, AuthProvider never left
   `loading`, and every guarded page (Sign Up, Login, service cards) spun forever. Now
   `lib/env.ts` checks the `VITE_*` values (one console message naming the missing ones),
   AuthProvider always finishes loading, `apiPost`/supabase throw `ConfigError` →
   `errors.CONFIG_MISSING` (translated), and `ServiceNotice` shows it on auth pages and the
-  contact form. Regression test: `apps/web/test/missing-env.test.tsx`.
-- **Task 2, real backend connected (2026-11-20)**: `apps/web/.env` + `apps/api/.env` exist
+  contact form. Regression test: `frontend/test/missing-env.test.tsx`.
+- **Task 2, real backend connected (2026-11-20)**: `frontend/.env` + `backend/.env` exist
   (git-ignored; `OTP_PEPPER` generated, rotated once after being pasted in chat). Migrations
-  pushed to `mirhalgo_v1` (`npx supabase migration list --remote` = 3/3). Verified on the real
+  pushed to `mirhalgo_v1` (`cd backend && npx supabase migration list --remote` = 3/3). Verified on the real
   DB (21 behavioural checks): RLS, column privileges, backend-only tables/function, constraints.
   Real API + browser flows pass: login email/phone, generic errors, persistent session after
   reopening the browser, logout, OTP verify / reuse / expiry / 5 attempts / reset (email delivery
@@ -366,7 +369,7 @@ Priorities: **Clean Code + High Performance + Readability + Maintainability + Re
 - **Images wired.** Originals in `assets/images/` (never bundled): `hero/hero.jpg` 5098×3399,
   `about/about.jpg` 6120×8160 (portrait), `services/international.jpg` 4032×3024,
   `services/domestic.jpg` 5021×3085, `services/china.jpg` 2160×3840 (portrait, < 3840 wide →
-  exports stop at 1920). `npm run images -w apps/web` (`scripts/optimize-images.mjs`, `sharp`
+  exports stop at 1920). `npm run images -w frontend` (`scripts/optimize-images.mjs`, `sharp`
   devDependency, approved) → `public/images/<name>-<w>.{avif,webp}` + `src/lib/images.json`
   (size + widths) read by `lib/images.ts`. `ResponsiveImage` no longer has a placeholder mode.
   Hero preload (AVIF, `imagesrcset`) in `index.html`; hero eager + `fetchpriority=high`, the rest
@@ -515,12 +518,12 @@ Implementation choices (proposed in the plan, not contradicted; confirm in revie
 
 **Progress**
 
-- **Phase A1 done** (shared): `packages/shared/src/company.ts` (enums/ids, `TERMS_VERSION`,
+- **Phase A1 done** (shared): `shared/src/company.ts` (enums/ids, `TERMS_VERSION`,
   limits), `files.ts` (`FILE_RULES`, `checkFile`, `detectMime` magic bytes),
   `schemas/company.ts` (one schema per wizard step + `companyRegistrationSchema`; stale hidden
   values are dropped by `z.preprocess` before validation), new `fields.ts` helpers, new
-  `ErrorCode`s. Tests: `packages/shared/test/company.test.ts`.
-- **Phase A2 done** (migrations `supabase/migrations/2026112100000{1..5}_*.sql`), pushed to
+  `ErrorCode`s. Tests: `shared/test/company.test.ts`.
+- **Phase A2 done** (migrations `backend/supabase/migrations/2026112100000{1..5}_*.sql`), pushed to
   `mirhalgo_v1` on 2026-11-21 (+ `…06_revoke_user_sessions.sql` from A3):
   1. `profiles`: names/gender nullable unless `role = customer`; only customers update their
      profile; backfill `app_metadata.role` for MW_001 users.
@@ -556,7 +559,7 @@ Implementation choices (proposed in the plan, not contradicted; confirm in revie
     `VerifyEmailResult` with the reference. Login returns `role` (app_metadata, profile
     fallback, none → INVALID_CREDENTIALS). Customer signup never touches an unverified company.
     Reset password → `revoke_user_sessions` (decision 8). Customers get `app_metadata.role`.
-  - Cleanup: `cleanupExpiredRegistrations()` + `npm run cleanup:companies -w apps/api` (not
+  - Cleanup: `cleanupExpiredRegistrations()` + `npm run cleanup:companies -w backend` (not
     scheduled).
   - Tests: `companyFiles`, `companies`, `companiesHttp`, `authRoles` (+ existing).
   - Real backend (Supabase + Gmail, 2026-11-21, 16 checks, run twice): register, storage
@@ -595,12 +598,12 @@ Implementation choices (proposed in the plan, not contradicted; confirm in revie
   company logs in → `/application-status` "Pending review", `/app/*` and `/dashboard` bounce
   back; customer logs in through the MSW passthrough → mocked portal; reload keeps the session.
 - **Part B done** (`msw` 3, treated as approved: spec + decision 17):
-  - Contract: `packages/shared/src/portal.ts` (every response type + constants) and
+  - Contract: `shared/src/portal.ts` (every response type + constants) and
     `schemas/portal.ts` (profile, address, reason, question, review, ticket, password, delete).
-  - Service layer `apps/web/src/services/api/portal.ts` (`portalApi.*`, authenticated
+  - Service layer `frontend/src/services/api/portal.ts` (`portalApi.*`, authenticated
     `apiRequest` with the Bearer token) + `queries.ts` (query keys, hooks, `useApiMutation` =
     success/error toasts + cache sync).
-  - Mocks `apps/web/src/mocks`: `fixtures.ts` (fictional companies/people), `db.ts` (in-memory
+  - Mocks `frontend/src/mocks`: `fixtures.ts` (fictional companies/people), `db.ts` (in-memory
     state, reset on reload), `handlers.ts` (`createHandlers(db, { latency })`, 400 ms),
     `browser.ts` (worker, `onUnhandledFrame: 'bypass'`). Started in `main.tsx` only when
     `VITE_USE_MOCKS=true` (own chunk). Demo codes: OTP `123456`, password `wrong` = error.
@@ -623,19 +626,19 @@ Implementation choices (proposed in the plan, not contradicted; confirm in revie
     Avatar, StarRating(+Input), Accordion. Shared: `components/ImageCropper` (logo + avatar),
     `lib/useUnsavedChangesGuard`, `lib/useDebouncedValue`, `lib/dateFormat` (decision 21),
     `lib/money`.
-  - Tests: `apps/web/test/portal/*` (MSW node server, same handlers, latency 0: 24 tests) +
+  - Tests: `frontend/test/portal/*` (MSW node server, same handlers, latency 0: 24 tests) +
     `e2e/portal.spec.ts` (second Playwright build with mocks on, port 4174: RTL/LTR sidebar side,
     mobile bottom nav, no overflow on 10 pages, walk-through).
   - Main web chunk: 428 kB raw / 138 kB gzip (portal copy split out). The MSW chunk (≈ 290 kB) only loads when
     mocks are on.
 
-- **Fix (2026-11-22): forgot-password 500 `PGRST125`.** Cause: `SUPABASE_URL` in `apps/api/.env`
+- **Fix (2026-11-22): forgot-password 500 `PGRST125`.** Cause: `SUPABASE_URL` in `backend/.env`
   (and both URLs in `.env.example`) ended in `/rest/v1/`; supabase-js appends that path itself, so
   every query hit `/rest/v1/rest/v1/<table>` and every sign-in failed with no error code (logged as
-  `no_session`). Fixed the env files; `isSupabaseProjectUrl` (`packages/shared/src/env.ts`) now
+  `no_session`). Fixed the env files; `isSupabaseProjectUrl` (`shared/src/env.ts`) now
   makes the API refuse to start and the web treat `VITE_SUPABASE_URL` as missing when it has a
-  path. Tests: `packages/shared/test/env.test.ts`, `apps/api/test/env.test.ts`,
-  `apps/web/test/missing-env.test.tsx`. Real backend (29 checks): legacy customer without
+  path. Tests: `shared/test/env.test.ts`, `backend/test/env.test.ts`,
+  `frontend/test/missing-env.test.tsx`. Real backend (29 checks): legacy customer without
   `app_metadata.role` login email/phone, forgot → reset → old token revoked, signup → resend →
   verify → login, both real MW_001 customers have the role backfilled. Test data deleted.
 
