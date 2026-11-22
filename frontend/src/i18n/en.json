@@ -279,7 +279,11 @@
     "rating": "Choose a rating from 1 to 5 stars",
     "reviewLength": "Up to 500 characters",
     "subjectLength": "Must be 3–120 characters",
-    "typeDelete": "Type DELETE in capital letters"
+    "typeDelete": "Type DELETE in capital letters",
+    "orderFileType": "Upload a PDF, Word, Excel, CSV or image file (JPG, PNG, WEBP)",
+    "screenshotType": "Upload an image (JPG, PNG or WEBP)",
+    "orderFileSize": "Documents can be up to 10 MB and images up to 5 MB",
+    "draftTooLarge": "The draft is too large to save"
   },
   "errors": {
     "VALIDATION_ERROR": "Please check the highlighted fields.",
@@ -368,6 +372,17 @@
     },
     "combobox": {
       "noResults": "No matches"
+    },
+    "attachments": {
+      "choose": "Choose files",
+      "documentsHint": "PDF, Word, Excel, CSV or images · documents up to 10 MB, images up to 5 MB",
+      "screenshotsHint": "JPG, PNG or WEBP · up to 5 MB per image",
+      "maxFiles": "Up to {{max}} files",
+      "tooMany": "You can attach up to {{max}} files.",
+      "uploading": "Uploading {{name}}",
+      "remove": "Remove {{name}}",
+      "dismiss": "Dismiss",
+      "progress": "Upload progress of {{name}}"
     }
   },
   "options": {

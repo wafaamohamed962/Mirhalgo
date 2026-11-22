@@ -1,5 +1,4 @@
 import path from 'node:path';
-import sharp from 'sharp';
 import {
   DOCUMENT_TYPES,
   FILE_RULES,
@@ -9,6 +8,7 @@ import {
   type DocumentType,
 } from '@mirhalgo/shared';
 import { HttpError } from '../middleware/errorHandler.js';
+import { reencodeImage, type ImageMime } from './images.js';
 
 /*
  * Server-side file checks (spec A3 step 3, A5, decision 5):
@@ -34,10 +34,6 @@ export type PreparedFile = {
 };
 
 const LOGO_SIZE = 512;
-/** Large photos of documents are scaled down (still readable) to stay under the limits. */
-const MAX_DOCUMENT_IMAGE_SIDE = 4000;
-/** Decompression-bomb guard: refuse images above ~50 megapixels before decoding. */
-const MAX_INPUT_PIXELS = 50_000_000;
 
 const EXTENSIONS: Record<AllowedMime, string> = {
   'application/pdf': 'pdf',
@@ -48,30 +44,6 @@ const EXTENSIONS: Record<AllowedMime, string> = {
 
 const typeNotAllowed = () => new HttpError(400, 'FILE_TYPE_NOT_ALLOWED', 'File type not allowed');
 const tooLarge = () => new HttpError(413, 'FILE_TOO_LARGE', 'File too large');
-
-/** Re-encodes an image (metadata is dropped by default). Throws if it cannot be decoded. */
-async function reencodeImage(
-  buffer: Buffer,
-  mime: AllowedMime,
-  type: DocumentType,
-): Promise<{ buffer: Buffer; mime: AllowedMime }> {
-  const image = sharp(buffer, { failOn: 'error', limitInputPixels: MAX_INPUT_PIXELS }).rotate();
-
-  if (type === 'logo') {
-    const logo = await image.resize(LOGO_SIZE, LOGO_SIZE, { fit: 'cover' }).webp({ quality: 85 });
-    return { buffer: await logo.toBuffer(), mime: 'image/webp' };
-  }
-
-  const resized = image.resize(MAX_DOCUMENT_IMAGE_SIDE, MAX_DOCUMENT_IMAGE_SIDE, {
-    fit: 'inside',
-    withoutEnlargement: true,
-  });
-  const encoded =
-    mime === 'image/png'
-      ? resized.png({ compressionLevel: 9 })
-      : resized.jpeg({ quality: 85, mozjpeg: true });
-  return { buffer: await encoded.toBuffer(), mime };
-}
 
 /**
  * Display name only (files are stored under random UUIDs). Busboy decodes multipart
@@ -97,7 +69,9 @@ async function prepareFile(type: DocumentType, file: IncomingFile): Promise<Prep
   let mime = detected as AllowedMime;
   if (mime !== 'application/pdf') {
     try {
-      ({ buffer, mime } = await reencodeImage(buffer, mime, type));
+      ({ buffer, mime } = await reencodeImage(buffer, mime as ImageMime, {
+        square: type === 'logo' ? LOGO_SIZE : undefined,
+      }));
     } catch {
       throw typeNotAllowed(); // corrupt / not really an image
     }

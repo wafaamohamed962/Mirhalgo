@@ -8,7 +8,9 @@ import { companiesRouter } from './routes/companies.js';
 import { contactRouter } from './routes/contact.js';
 import { healthRouter } from './routes/health.js';
 import { meRouter } from './routes/me.js';
+import { ordersRouter } from './routes/orders.js';
 import { referenceRouter } from './routes/reference.js';
+import { uploadsRouter } from './routes/uploads.js';
 
 /** Express app (no listen), so tests can run it in-process. */
 export function createApp() {
@@ -28,6 +30,8 @@ export function createApp() {
       },
     }),
   );
+  // drafts and orders carry the whole form (MW_003): parsed here first, with a larger limit
+  app.use('/api/orders', express.json({ limit: '64kb' }));
   app.use(express.json({ limit: '10kb' }));
 
   app.use('/api/health', healthRouter);
@@ -36,6 +40,8 @@ export function createApp() {
   app.use('/api/contact', contactRouter);
   app.use('/api/reference', referenceRouter);
   app.use('/api/me', meRouter);
+  app.use('/api/orders', ordersRouter);
+  app.use('/api/uploads', uploadsRouter);
 
   app.use(notFound);
   app.use(errorHandler);

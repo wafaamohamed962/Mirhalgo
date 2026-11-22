@@ -24,6 +24,7 @@ export type AuditEvent =
   // request balance (MW_003 B2)
   | 'balance_initial_grant'
   | 'balance_initial_grant_failed'
+  | 'cleanup_run'
   | 'contact_message'
   | 'contact_spam';
 

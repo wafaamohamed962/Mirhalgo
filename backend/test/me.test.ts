@@ -11,6 +11,7 @@ const state = {
     unknown
   >,
   balance: null as number | null,
+  drafts: [] as Array<{ service: string; updated_at: string }>,
 };
 const calls = { grant: vi.fn() };
 
@@ -26,10 +27,14 @@ vi.mock('../src/lib/supabase.js', () => ({
       const result =
         table === 'profiles'
           ? { data: state.profile, error: null }
-          : { data: state.balance === null ? null : { balance: state.balance }, error: null };
+          : table === 'order_drafts'
+            ? { data: state.drafts, error: null }
+            : { data: state.balance === null ? null : { balance: state.balance }, error: null };
       const builder = {
         select: () => builder,
         eq: () => builder,
+        order: () => builder,
+        then: (resolve: (v: unknown) => unknown) => Promise.resolve(result).then(resolve),
         single: async () => result,
         maybeSingle: async () => result,
       };
@@ -58,6 +63,7 @@ beforeEach(() => {
   };
   state.profile = { first_name: 'Wafaa', gender: 'female', email_verified_at: '2026-11-20' };
   state.balance = 3;
+  state.drafts = [{ service: 'china', updated_at: '2026-11-22T10:00:00Z' }];
   calls.grant.mockClear();
 });
 
@@ -84,7 +90,7 @@ describe('requireCustomer', () => {
 });
 
 describe('GET /api/me/summary', () => {
-  it('first name, gender, balance "X of 5" and the drafts (empty until B3)', async () => {
+  it('first name, gender, balance "X of 5" and the saved drafts', async () => {
     const res = await summary('customer-token');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
@@ -93,7 +99,7 @@ describe('GET /api/me/summary', () => {
         firstName: 'Wafaa',
         gender: 'female',
         balance: { remaining: 3, total: 5 },
-        drafts: [],
+        drafts: [{ service: 'china', updatedAt: '2026-11-22T10:00:00Z' }],
       },
     });
     expect(calls.grant).not.toHaveBeenCalled();

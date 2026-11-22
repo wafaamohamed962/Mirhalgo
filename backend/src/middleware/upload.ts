@@ -1,6 +1,6 @@
 import type { RequestHandler } from 'express';
 import multer from 'multer';
-import { DOCUMENT_TYPES, FILE_RULES, MAX_UPLOAD_FILES } from '@mirhalgo/shared';
+import { DOCUMENT_TYPES, FILE_RULES, MAX_UPLOAD_FILES, ORDER_FILE_LIMITS } from '@mirhalgo/shared';
 import { HttpError } from './errorHandler.js';
 
 /*
@@ -46,6 +46,23 @@ function toHttpError(error: unknown): unknown {
 /** Parses the multipart body; multer errors become API errors. */
 export const companyUpload: RequestHandler = (req, res, next) => {
   parser(req, res, (error?: unknown) => next(error ? toHttpError(error) : undefined));
+};
+
+/** POST /api/uploads (MW_003 B3): one `file` + one `purpose` field, ≤ 10 MB in memory. */
+const orderParser = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: ORDER_FILE_LIMITS.documentBytes,
+    files: 1,
+    fields: 1,
+    fieldSize: 64,
+    parts: 2,
+    headerPairs: 100,
+  },
+}).single('file');
+
+export const orderUpload: RequestHandler = (req, res, next) => {
+  orderParser(req, res, (error?: unknown) => next(error ? toHttpError(error) : undefined));
 };
 
 /** The `application` field holds JSON: parse it into req.body for validateBody(). */

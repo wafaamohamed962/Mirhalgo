@@ -2,10 +2,11 @@ import { MAX_REQUEST_ATTEMPTS, type MeSummary } from '@mirhalgo/shared';
 import { db } from '../lib/supabase.js';
 import type { AuthUser } from '../middleware/requireAuth.js';
 import { getBalance, grantInitialBalance } from './balance.js';
+import { listDraftSummaries } from './orderDrafts.js';
 
 /**
  * GET /api/me/summary (MW_003 B1 page header): first name + gender for the welcome banner,
- * the request balance and the saved drafts (B3), in one call.
+ * the request balance and the saved drafts, in one call.
  */
 export async function getSummary(user: AuthUser): Promise<MeSummary> {
   const { data: profile, error } = await db
@@ -26,6 +27,6 @@ export async function getSummary(user: AuthUser): Promise<MeSummary> {
     firstName: profile.first_name ?? '',
     gender: profile.gender ?? 'male',
     balance: { remaining: remaining ?? 0, total: MAX_REQUEST_ATTEMPTS },
-    drafts: [], // server drafts arrive in B3
+    drafts: await listDraftSummaries(user.id),
   };
 }

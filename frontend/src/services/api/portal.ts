@@ -26,6 +26,7 @@ import type {
   TicketSummary,
 } from '@mirhalgo/shared';
 import { apiRequest } from '../../lib/apiClient';
+import { ordersApi } from './orders';
 import { ownProfile, type Identity } from './ownProfile';
 
 /*
@@ -76,7 +77,7 @@ export const portalApi = {
   confirmPhoneChange: (code: string) => send<Me>('POST', '/me/phone/confirm', { code }),
   // real API (MW_003 B2 / B3)
   getSummary: () => get<MeSummary>('/me/summary'),
-  discardRequestDraft: (service: ServiceType) => send<null>('DELETE', `/orders/drafts/${service}`),
+  discardRequestDraft: (service: ServiceType) => ordersApi.discardDraft(service),
 
   // orders
   listOrders: (params: OrderListParams) => get<OrderList>(`/orders?${query(params)}`),

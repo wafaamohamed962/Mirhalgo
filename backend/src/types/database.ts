@@ -2,7 +2,10 @@ import type {
   ApplicationStatus,
   DocumentType,
   Gender,
+  OrderMime,
+  OrderUploadPurpose,
   OtpPurpose,
+  ServiceType,
   StatusActorType,
   TransitMethod,
   TransitSource,
@@ -145,6 +148,30 @@ export type TransitEstimateRow = {
 /** Request balance (MW_003 B2): written only by grant_balance() / submit_order(). */
 export type CustomerBalanceRow = { customer_id: string; balance: number; updated_at: Timestamp };
 
+/** Drafts + uploads (MW_003 B3). Written by the backend only. */
+export type OrderDraftRow = {
+  id: string;
+  customer_id: string;
+  service: ServiceType;
+  payload: Record<string, unknown>;
+  form_version: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type OrderUploadRow = {
+  id: string;
+  customer_id: string;
+  purpose: OrderUploadPurpose;
+  storage_path: string;
+  original_name: string;
+  mime_type: OrderMime;
+  size_bytes: number;
+  draft_id: string | null;
+  order_id: string | null;
+  created_at: Timestamp;
+};
+
 /** A stored file: bucket + path (from list_expired_company_registrations / company_documents). */
 export type StoredFile = { bucket: string; path: string };
 
@@ -186,6 +213,15 @@ export type Database = {
       shipping_lines: Table<OptionRow, never, never>;
       transit_estimates: Table<TransitEstimateRow, never, never>;
       customer_balances: Table<CustomerBalanceRow, never, never>;
+      order_drafts: Table<OrderDraftRow, never, never>;
+      order_uploads: Table<
+        OrderUploadRow,
+        Pick<
+          OrderUploadRow,
+          'customer_id' | 'purpose' | 'storage_path' | 'original_name' | 'mime_type' | 'size_bytes'
+        >,
+        never
+      >;
     };
     Views: Record<never, never>;
     Functions: {
@@ -223,6 +259,25 @@ export type Database = {
         };
         Returns: Array<{ application_id: string; reference_number: string }>;
       };
+      save_order_draft: {
+        Args: {
+          p_customer_id: string;
+          p_service: ServiceType;
+          p_payload: Record<string, unknown>;
+          p_form_version: string;
+          p_upload_ids: string[];
+        };
+        Returns: Array<{ draft_id: string; updated_at: Timestamp }>;
+      };
+      list_orphan_uploads: {
+        Args: { p_older_than?: string; p_limit?: number };
+        Returns: Array<{ upload_id: string; storage_path: string }>;
+      };
+      list_expired_drafts: {
+        Args: { p_older_than?: string; p_limit?: number };
+        Returns: Array<{ draft_id: string; files: Array<{ id: string; path: string }> }>;
+      };
+      claim_job_lease: { Args: { p_name: string; p_seconds: number }; Returns: boolean };
       grant_balance: {
         Args: {
           p_customer_id: string;

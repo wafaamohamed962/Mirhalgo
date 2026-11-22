@@ -980,4 +980,65 @@ scheduling and idempotency are built in-house.
     - append-only holds even for the service role;
     - **after a global logout the old access token gets 401**;
     - deleting an account cascades through the ledger.
-- Next: B3 (server drafts + uploads + orphan cleanup).
+- **Phase B3 done (2026-11-22).** Migration pushed to `mirhalgo_v1` with the developer's OK.
+  - Shared:
+    - `orderFiles.ts`: purposes, limits (documents 10 MB, images 5 MB, 20 per order,
+      10 screenshots, 60 pending per customer), `allowedOrderMimes` (screenshot = images),
+      `checkOrderFile`.
+    - `detectOrderMime` (decision 25): signatures for PDF and images; DOCX / XLSX from the ZIP
+      central directory, refused with `vbaProject.bin`; DOC / XLS by OLE2 + extension;
+      CSV = UTF-8 without NUL.
+    - `schemas/drafts.ts`: `orderDraftSchema` (payload ≤ 60 000 chars, `service@n` form
+      version, ≤ 20 unique upload ids), `OrderDraft`, `UploadedFile`.
+  - `…000005_order_drafts_uploads.sql`:
+    - `order_drafts`: unique (customer, service), payload ≤ 64 KB.
+    - `order_uploads`: `storage_path` hidden by column grants; draft_id ON DELETE SET NULL;
+      order_id (FK in B4); never both; screenshot = image.
+    - `save_order_draft()`: upsert, then attach exactly the listed files (own, not ordered,
+      free or already in this draft; ≤ 20 / ≤ 10 screenshots) and detach the rest.
+    - `list_orphan_uploads(24 h)`, `list_expired_drafts(30 d)`.
+    - `job_leases` + `claim_job_lease()`: PostgREST cannot hold an advisory lock across
+      calls, so a lease row replaces the plan's advisory lock.
+    - Private bucket `order-attachments` (10 MB, the 9 MIME types) + a RESTRICTIVE
+      client-deny policy.
+    - PGlite `pg/verify-b3.mjs` (8 checks).
+  - API:
+    - `POST /api/uploads` (`requireCustomer`, 60 / h per user, multer single `file`):
+      checked by content, images re-encoded by `services/images.ts` (now shared with the
+      company files), stored as `{customer}/{uuid}.{ext}`; the row insert is compensated.
+    - `DELETE /api/uploads/:id`: own, not ordered.
+    - `GET/PUT/DELETE /api/orders/drafts/:service`: a 64 KB JSON parser on `/api/orders`,
+      mounted before the global 10 KB one; PUT 60 / min per user; a SQL check violation → 400;
+      DELETE removes the files now.
+    - `/me/summary` lists the drafts.
+    - `services/cleanup.ts`: orphans (files first, rows only if the storage delete worked),
+      expired drafts, MW_002 unverified companies (decision 10 is now scheduled).
+      `startCleanupSchedule()` runs hourly in `index.ts` with the lease, and never throws.
+      `npm run cleanup -w backend` runs it on demand. On a sleeping Render free instance,
+      also schedule it externally.
+  - Web:
+    - `apiUpload(…, { auth })`; `apiRequest` supports PUT.
+    - `services/api/orders.ts` (`ordersApi`); `portalApi.discardRequestDraft` reuses it.
+    - `features/requests/components/AttachmentField.tsx`: content check in the browser
+      (`features/requests/attachments.ts`), one upload + progress bar per file, max files,
+      per-file errors with dismiss, remove = DELETE.
+    - The draft autosave / restore hook is part of B5 (it needs the forms).
+  - Bugs caught by tests:
+    - two uploads finishing together overwrote each other (stale list) → the value is
+      committed through a ref;
+    - `form_version` check vs `service@n`.
+  - Tests:
+    - shared 101 (`orderFiles`), backend 111 (`orderDrafts.test.ts` over an in-memory
+      Supabase fake), frontend 96 (`attachmentField`), E2E 45.
+  - Real backend (scratchpad `b3-real-check.mjs`, 9 checks, test data deleted):
+    - PDF, DOCX, CSV and PNG accepted (EXIF removed);
+    - renamed EXE, macro XLSX, PDF-as-screenshot and an unknown purpose refused, nothing
+      stored;
+    - draft save / load / detach; the summary lists it;
+    - a foreign file id → 400;
+    - the client can read metadata only, has no bucket access and cannot call the RPC;
+    - orphan cleanup works;
+    - deleting an upload or a draft removes its files;
+    - the lease allows one holder.
+- Next: B4 (shared order schemas, orders tables, atomic `submit_order`, `POST /api/orders`,
+  `GET /api/orders/:reference`).

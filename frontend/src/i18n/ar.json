@@ -279,7 +279,11 @@
     "rating": "اختر تقييمًا من ١ إلى ٥ نجوم",
     "reviewLength": "الحد الأقصى ٥٠٠ حرف",
     "subjectLength": "يجب أن يتكون من ٣ إلى ١٢٠ حرفًا",
-    "typeDelete": "اكتب DELETE بالأحرف الكبيرة"
+    "typeDelete": "اكتب DELETE بالأحرف الكبيرة",
+    "orderFileType": "ارفع ملف PDF أو Word أو Excel أو CSV أو صورة (JPG أو PNG أو WEBP)",
+    "screenshotType": "ارفع صورة بصيغة JPG أو PNG أو WEBP",
+    "orderFileSize": "الحد الأقصى ١٠ ميغابايت للمستند و٥ ميغابايت للصورة",
+    "draftTooLarge": "حجم المسودة أكبر من الحد المسموح بحفظه"
   },
   "errors": {
     "VALIDATION_ERROR": "يرجى مراجعة الحقول المحددة.",
@@ -368,6 +372,17 @@
     },
     "combobox": {
       "noResults": "لا توجد نتائج مطابقة"
+    },
+    "attachments": {
+      "choose": "اختر الملفات",
+      "documentsHint": "PDF أو Word أو Excel أو CSV أو صور · المستند حتى ١٠ ميغابايت والصورة حتى ٥ ميغابايت",
+      "screenshotsHint": "JPG أو PNG أو WEBP · حتى ٥ ميغابايت للصورة",
+      "maxFiles": "الحد الأقصى لعدد الملفات: {{max}}",
+      "tooMany": "الحد الأقصى لعدد الملفات المرفقة هو {{max}}.",
+      "uploading": "جارٍ رفع {{name}}",
+      "remove": "إزالة {{name}}",
+      "dismiss": "إخفاء",
+      "progress": "تقدّم رفع {{name}}"
     }
   },
   "options": {
