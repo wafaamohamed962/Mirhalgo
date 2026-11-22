@@ -5,6 +5,7 @@ import { FILE_RULES, type DocumentType } from '@mirhalgo/shared';
 import { FileUpload } from '../../../components/ui';
 import { checkPickedFile } from '../api';
 import type { CompanyFormValues } from '../model';
+import { documentLabelKey } from '../options';
 
 const ImageCropper = lazy(() => import('../../../components/ImageCropper'));
 
@@ -14,7 +15,8 @@ const ImageCropper = lazy(() => import('../../../components/ImageCropper'));
  */
 export function DocumentField({ type, hint }: { type: DocumentType; hint?: ReactNode }) {
   const { t } = useTranslation();
-  const { control, setValue, clearErrors, formState } = useFormContext<CompanyFormValues>();
+  const { control, setValue, clearErrors, formState, watch } = useFormContext<CompanyFormValues>();
+  const country = watch('country');
   const [pickError, setPickError] = useState<string>();
   const [checking, setChecking] = useState(false);
   const [toCrop, setToCrop] = useState<File | null>(null);
@@ -43,7 +45,7 @@ export function DocumentField({ type, hint }: { type: DocumentType; hint?: React
         name={name}
         render={({ field, fieldState }) => (
           <FileUpload
-            label={t(`options.document.${type}`)}
+            label={t(documentLabelKey(type, country))}
             accept={rule.mimes.join(',')}
             hint={
               <>

@@ -2,13 +2,15 @@ import { Controller, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { COMPANY_LIMITS } from '@mirhalgo/shared';
 import { CheckboxGroup, Input, RadioGroup, Switch } from '../../../components/ui';
+import { regionOptions, useRegions } from '../../../services/api/reference';
 import type { CompanyFormValues } from '../model';
-import { useCompanyOptions } from '../options';
+import { regionKind, useCompanyOptions } from '../options';
 import { FormSection, Full } from './FormSection';
+import { LoadError } from './LoadError';
 
 /** Step 2: only the sections of the activities selected in Step 1 (spec A2). */
 export function ServicesStep() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const options = useCompanyOptions();
   const {
     register,
@@ -18,7 +20,11 @@ export function ServicesStep() {
   } = useFormContext<CompanyFormValues>();
   const f = (key: string) => t(`company.register.fields.${key}`);
   const activities = watch('activities') ?? [];
-  const allGovernorates = watch('domestic.allGovernorates');
+  const country = watch('country');
+  const kind = regionKind(country);
+  const allRegions = watch('domestic.allRegions');
+  // domestic coverage = the regions of the company country (MW_003 A2)
+  const regions = useRegions(activities.includes('domestic') ? country : undefined);
   const vehicleTypes = watch('domestic.vehicleTypes') ?? [];
   const sites = watch('china.sites') ?? [];
 
@@ -64,7 +70,7 @@ export function ServicesStep() {
               <CheckboxGroup
                 legend={f('countries')}
                 hint={f('servedHint')}
-                options={options.countries}
+                options={options.countries.filter((option) => option.value !== country)}
                 value={field.value}
                 onChange={field.onChange}
               />
@@ -89,24 +95,29 @@ export function ServicesStep() {
       {activities.includes('domestic') && (
         <FormSection title={t('company.register.sections.domestic')}>
           <Full>
-            <Switch label={f('allGovernorates')} {...register('domestic.allGovernorates')} />
+            <Switch
+              label={t(`company.register.fields.coverageAll.${kind}`)}
+              {...register('domestic.allRegions')}
+            />
           </Full>
-          {!allGovernorates && (
+          {!allRegions && (
             <Full>
               <Controller
                 control={control}
-                name="domestic.governorates"
+                name="domestic.regions"
                 render={({ field }) => (
                   <CheckboxGroup
-                    legend={f('governorates')}
-                    options={options.governorates}
+                    legend={t(`company.register.fields.coverageList.${kind}`)}
+                    hint={regions.isPending ? t('common.loading') : undefined}
+                    options={regionOptions(regions.data ?? [], i18n.language)}
                     required
                     value={field.value}
                     onChange={field.onChange}
-                    error={errors.domestic?.governorates?.message}
+                    error={errors.domestic?.regions?.message}
                   />
                 )}
               />
+              {regions.isError && <LoadError onRetry={() => void regions.refetch()} />}
             </Full>
           )}
           <Full>

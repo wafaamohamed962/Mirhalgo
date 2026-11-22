@@ -243,8 +243,20 @@
     "otherOptionLength": "يجب أن يتكون من ٣ إلى ١٠٠ حرف",
     "landline": "أدخل من ٧ إلى ١٢ رقمًا",
     "url": "أدخل رابطًا صحيحًا يبدأ بـ http:// أو https://",
-    "commercialRegister": "أدخل من ١ إلى ١٠ أرقام",
-    "taxNumber": "أدخل رقم البطاقة الضريبية (٩ أرقام)",
+    "legal": {
+      "EG": {
+        "registration": "أدخل من ١ إلى ١٠ أرقام",
+        "tax": "أدخل رقم البطاقة الضريبية (٩ أرقام)"
+      },
+      "SA": {
+        "registration": "أدخل رقم السجل التجاري (١٠ أرقام)",
+        "tax": "أدخل الرقم الضريبي (١٥ رقمًا)"
+      },
+      "AE": {
+        "registration": "أدخل رقم الرخصة التجارية (من ٣ إلى ٢٠ حرفًا أو رقمًا)",
+        "tax": "أدخل رقم التسجيل الضريبي (١٥ رقمًا)"
+      }
+    },
     "yearsInBusiness": "أدخل عددًا صحيحًا من ٠ إلى ١٠٠",
     "fleetSize": "أدخل عددًا صحيحًا من ٠ إلى ١٠٬٠٠٠",
     "notesLength": "الحد الأقصى للملاحظات ١٠٠٠ حرف",
@@ -433,6 +445,16 @@
       "tax_card": "صورة البطاقة الضريبية",
       "customs_license": "رخصة مخلّص جمركي",
       "logo": "شعار الشركة"
+    },
+    "legalDocument": {
+      "SA": {
+        "commercial_register": "صورة السجل التجاري (CR)",
+        "tax_card": "شهادة التسجيل في ضريبة القيمة المضافة"
+      },
+      "AE": {
+        "commercial_register": "صورة الرخصة التجارية",
+        "tax_card": "شهادة التسجيل الضريبي (TRN)"
+      }
     }
   },
   "company": {
@@ -493,7 +515,51 @@
         "websiteHint": "مثال: https://facebook.com/yourcompany",
         "governorate": "المحافظة",
         "governoratePlaceholder": "اختر المحافظة",
-        "city": "المدينة / المنطقة",
+        "country": "الدولة",
+        "countryPlaceholder": "اختر الدولة",
+        "region": {
+          "governorate": "المحافظة",
+          "region": "المنطقة",
+          "emirate": "الإمارة"
+        },
+        "regionPlaceholder": {
+          "governorate": "اختر المحافظة",
+          "region": "اختر المنطقة",
+          "emirate": "اختر الإمارة"
+        },
+        "regionFirst": "اختر الدولة أولًا",
+        "regionsError": "تعذّر تحميل القائمة. حاول مرة أخرى.",
+        "coverageAll": {
+          "governorate": "جميع المحافظات",
+          "region": "جميع المناطق",
+          "emirate": "جميع الإمارات"
+        },
+        "coverageList": {
+          "governorate": "المحافظات التي تغطيها",
+          "region": "المناطق التي تغطيها",
+          "emirate": "الإمارات التي تغطيها"
+        },
+        "legal": {
+          "EG": {
+            "registration": "رقم السجل التجاري",
+            "registrationHint": "من ١ إلى ١٠ أرقام",
+            "tax": "رقم البطاقة الضريبية",
+            "taxHint": "٩ أرقام"
+          },
+          "SA": {
+            "registration": "رقم السجل التجاري (CR)",
+            "registrationHint": "١٠ أرقام",
+            "tax": "الرقم الضريبي (VAT)",
+            "taxHint": "١٥ رقمًا"
+          },
+          "AE": {
+            "registration": "رقم الرخصة التجارية",
+            "registrationHint": "حروف وأرقام كما في الرخصة",
+            "tax": "رقم التسجيل الضريبي (TRN)",
+            "taxHint": "١٥ رقمًا"
+          }
+        },
+        "city": "المدينة / الحي",
         "street": "العنوان التفصيلي",
         "password": "كلمة المرور",
         "confirmPassword": "تأكيد كلمة المرور",
@@ -504,8 +570,6 @@
         "countries": "أهم الدول التي تخدمها",
         "regions": "أهم المناطق التي تخدمها",
         "servedHint": "اختياري",
-        "allGovernorates": "جميع المحافظات",
-        "governorates": "المحافظات التي تغطيها",
         "vehicleTypes": "أنواع المركبات",
         "vehicleTypeOther": "نوع المركبة الآخر",
         "fleetSize": "حجم الأسطول (تقريبًا)",
@@ -513,9 +577,6 @@
         "siteOther": "الموقع الآخر",
         "chinaServices": "الخدمات",
         "yearsInBusiness": "عدد سنوات الخبرة",
-        "commercialRegisterNumber": "رقم السجل التجاري",
-        "taxNumber": "رقم البطاقة الضريبية",
-        "taxNumberHint": "٩ أرقام",
         "customsRecommended": "يُفضّل رفعها لأنك تقدّم خدمة التخليص الجمركي.",
         "notes": "هل هناك ما تود إخبارنا به؟ (اختياري)",
         "notesCounter": "{{count, number}} / {{max, number}}",

@@ -91,10 +91,31 @@ export type CompanyApplicationRow = {
 export type CompanyRow = {
   id: string;
   legal_name: string;
-  governorate: string;
+  country_code: string;
+  region_id: string;
   activities: string[];
   commercial_register_number: string;
   tax_number: string;
+};
+
+/** Reference lists (MW_003): public read of active rows, written by migrations only. */
+export type CountryRow = {
+  code: string;
+  name_ar: string;
+  name_en: string;
+  dial_code: string | null;
+  company_signup: boolean;
+  sort: number;
+  active: boolean;
+};
+
+export type RegionRow = {
+  id: string;
+  country_code: string;
+  name_ar: string;
+  name_en: string;
+  sort: number;
+  active: boolean;
 };
 
 /** A stored file: bucket + path (from list_expired_company_registrations / company_documents). */
@@ -127,6 +148,9 @@ export type Database = {
       companies: Table<CompanyRow, never, never>;
       company_documents: Table<CompanyDocumentRow, never, never>;
       company_applications: Table<CompanyApplicationRow, never, never>;
+      // MW_003
+      countries: Table<CountryRow, never, never>;
+      regions: Table<RegionRow, never, never>;
     };
     Views: Record<never, never>;
     Functions: {
@@ -147,6 +171,8 @@ export type Database = {
           p_phone: string;
           p_company: Record<string, unknown>;
           p_services: Record<string, unknown>;
+          /** Region ids of the company country (MW_003); empty with domestic_all_regions. */
+          p_domestic_regions: string[];
           p_documents: Array<
             Pick<
               CompanyDocumentRow,

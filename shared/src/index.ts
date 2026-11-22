@@ -10,5 +10,6 @@ export * from './schemas/contact.js';
 export * from './company.js';
 export * from './files.js';
 export * from './schemas/company.js';
+export * from './reference.js';
 export * from './portal.js';
 export * from './schemas/portal.js';

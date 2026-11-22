@@ -15,6 +15,22 @@ vi.mock('../src/features/companyRegistration/api', async (importOriginal) => ({
   registerCompany: (values: { email: string }) => registerCompany(values),
 }));
 
+// reference lists (MW_003 A2): GET /api/reference/* answers from the fixtures
+vi.mock('../src/lib/apiClient', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/lib/apiClient')>();
+  const { referenceResponse } = await import('./referenceFixtures');
+  return {
+    ...actual,
+    apiRequest: async (method: string, path: string, options?: object) => {
+      const url = new URL(path, 'http://api.test');
+      if (method === 'GET' && url.pathname.startsWith('/reference/')) {
+        return referenceResponse(url.pathname.slice('/reference/'.length), url.searchParams);
+      }
+      return actual.apiRequest(method as never, path as never, options);
+    },
+  };
+});
+
 const { default: CompanyRegistrationPage } =
   await import('../src/features/companyRegistration/pages/CompanyRegistrationPage');
 
@@ -48,13 +64,26 @@ function renderWizard() {
 const pdf = () => new File(['%PDF-1.7 test'], 'register.pdf', { type: 'application/pdf' });
 const next = (user: UserEvent) => user.click(screen.getByRole('button', { name: 'Next' }));
 
-async function fillAccount(user: UserEvent, activities: RegExp[]) {
+/** Picks the country, waits for its regions, then picks the region (both lists are async). */
+async function pickLocation(user: UserEvent, country: string, region: string, regionLabel: RegExp) {
+  await screen.findByRole('option', { name: 'Egypt' });
+  await user.selectOptions(screen.getByLabelText(/^Country(?! code)/), country);
+  const select = await screen.findByLabelText(regionLabel);
+  await waitFor(() => expect(select).toBeEnabled());
+  await user.selectOptions(select, region);
+}
+
+async function fillAccount(
+  user: UserEvent,
+  activities: RegExp[],
+  [country, region, regionLabel] = ['EG', 'EG-GZ', /^Governorate/] as [string, string, RegExp],
+) {
   await user.type(screen.getByLabelText(/Legal company name/), 'Nile Shipping');
   await user.type(screen.getByLabelText(/Representative full name/), 'Ahmed Hassan');
   await user.type(screen.getByLabelText(/Representative job title/), 'Owner');
   await user.type(screen.getByLabelText(/Business email/), 'Ops@Nile.com');
   await user.type(screen.getByLabelText(/Mobile phone/), '1012345678');
-  await user.selectOptions(screen.getByLabelText(/Governorate/), 'giza');
+  await pickLocation(user, country, region, regionLabel);
   await user.type(screen.getByLabelText(/City \/ Area/), 'Dokki');
   await user.type(screen.getByLabelText(/Street address/), '5 Tahrir Street');
   await user.type(screen.getByLabelText(/^Password/, { selector: 'input' }), 'Str0ng!pass');
@@ -166,6 +195,70 @@ describe('company registration wizard', () => {
     ).toEqual(['commercial_register', 'tax_card']);
     expect(localStorage.getItem('mirhalgo.companyDraft')).toBeNull(); // cleared after submit
     expect(sessionStorage.getItem('mirhalgo.pendingKind')).toBe('company');
+  });
+
+  it('country → region list, region label, phone code and legal rules (MW_003 A2)', async () => {
+    const user = userEvent.setup();
+    renderWizard();
+    const dialCode = () => screen.getAllByLabelText('Country code')[0]!;
+
+    await pickLocation(user, 'SA', 'SA-01', /^Region/);
+    expect(dialCode()).toHaveValue('SA'); // the empty phone follows the country
+    expect(screen.getByRole('option', { name: 'Makkah' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Cairo' })).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText(/^Country(?! code)/), 'AE');
+    const emirate = await screen.findByLabelText(/^Emirate/);
+    expect(emirate).toHaveValue(''); // the previous selection is cleared
+    expect(dialCode()).toHaveValue('AE');
+
+    // a number already typed keeps its code
+    await user.type(screen.getByLabelText(/Mobile phone/), '501234567');
+    await user.selectOptions(screen.getByLabelText(/^Country(?! code)/), 'EG');
+    await screen.findByLabelText(/^Governorate/);
+    expect(dialCode()).toHaveValue('AE');
+  });
+
+  it('Saudi company: CR / VAT labels, document names and the 15-digit VAT rule', async () => {
+    const user = userEvent.setup();
+    renderWizard();
+    await fillAccount(user, [/^Other/], ['SA', 'SA-01', /^Region/]);
+    await user.type(screen.getByLabelText(/Describe the other activity/), 'Warehousing');
+    await next(user);
+
+    expect(screen.getByLabelText(/Commercial Registration number \(CR\)/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/VAT registration certificate/)).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/Commercial Registration number/), '1010123456');
+    const vat = screen.getByLabelText(/^VAT number/);
+    await user.type(vat, '123-456-789');
+    expect(vat).toHaveValue('123456789'); // no Egyptian mask: digits only
+    await next(user);
+    expect(screen.getByText('Enter the 15-digit VAT number')).toBeInTheDocument();
+  });
+
+  it('domestic coverage lists the regions of the company country', async () => {
+    const user = userEvent.setup();
+    renderWizard();
+    await fillAccount(user, [/^Domestic land shipping/], ['AE', 'AE-DU', /^Emirate/]);
+    await next(user);
+    expect(screen.getByRole('switch', { name: 'All emirates' })).toBeInTheDocument();
+    const covered = screen.getByRole('group', { name: /Covered emirates/ });
+    expect(within(covered).getByRole('checkbox', { name: 'Dubai' })).toBeInTheDocument();
+    expect(within(covered).queryByRole('checkbox', { name: 'Cairo' })).not.toBeInTheDocument();
+  });
+
+  it('restores a saved country + region once their lists have loaded', async () => {
+    localStorage.setItem(
+      'mirhalgo.companyDraft',
+      JSON.stringify({
+        savedAt: Date.now(),
+        values: { legalName: 'Gulf Co', country: 'SA', region: 'SA-02' },
+      }),
+    );
+    renderWizard();
+    expect(await screen.findByRole('option', { name: 'Makkah' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Country(?! code)/)).toHaveValue('SA');
+    expect(screen.getByLabelText(/^Region/)).toHaveValue('SA-02');
   });
 
   /** Types a company name + password, waits for the autosave, then "comes back" to the page. */

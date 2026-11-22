@@ -9,6 +9,7 @@ const registerCompany = vi.fn(async (app: { email: string }) => ({
   cooldownSeconds: 60,
 }));
 vi.mock('../src/services/companies.js', () => ({ registerCompany }));
+// the country/region existence check lives in the service (mocked here)
 
 const { createApp } = await import('../src/app.js');
 const app = createApp();
@@ -20,7 +21,8 @@ const application = {
   email: 'Ops@Nile.com',
   phone: '+201012345678',
   whatsappSameAsMobile: true,
-  governorate: 'giza',
+  country: 'EG',
+  region: 'EG-GZ',
   city: 'Dokki',
   street: '5 Tahrir Street',
   password: 'Str0ng!pass',

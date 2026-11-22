@@ -1,4 +1,5 @@
 import type { Page, Route } from '@playwright/test';
+import { referenceResponse } from '../test/referenceFixtures';
 
 /** Network mocks for the API (http://api.test) and Supabase (http://supabase.test). */
 
@@ -33,12 +34,20 @@ export const fail = (code: string) => ({ ok: false, error: { code, message: code
 
 export type ApiHandler = (body: Record<string, unknown>) => { status: number; body: unknown };
 
-/** Mocks POST /api/<path>. Returns the list of request bodies for assertions. */
+/**
+ * Mocks POST /api/<path>. Returns the list of request bodies for assertions. The public
+ * reference lists (GET /api/reference/*, MW_003) always answer from the test fixtures.
+ */
 export async function mockApi(page: Page, handlers: Record<string, ApiHandler>) {
   const calls: Array<{ path: string; body: Record<string, unknown>; raw: string }> = [];
   await page.route('http://api.test/api/**', async (route) => {
     if (route.request().method() === 'OPTIONS') return json(route, 204, {});
-    const path = new URL(route.request().url()).pathname.replace('/api', '');
+    const url = new URL(route.request().url());
+    const path = url.pathname.replace('/api', '');
+    if (path.startsWith('/reference/')) {
+      const list = referenceResponse(path.slice('/reference/'.length), url.searchParams);
+      return list ? json(route, 200, ok(list)) : json(route, 404, fail('NOT_FOUND'));
+    }
     const raw = route.request().postData() ?? '';
     let body: Record<string, unknown> = {};
     try {

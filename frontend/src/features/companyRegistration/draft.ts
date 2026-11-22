@@ -1,4 +1,5 @@
 import type { DefaultValues } from 'react-hook-form';
+import { regionBelongsTo } from '@mirhalgo/shared';
 import type { CompanyFormValues } from './model';
 
 /*
@@ -65,16 +66,27 @@ export function clearCompanyDraft() {
   }
 }
 
-/** Draft values on top of the empty form (sections merged one level deep). */
+/**
+ * Draft values on top of the empty form (sections merged one level deep). Regions that do not
+ * belong to the saved country (an older or edited draft) are dropped (MW_003 A2).
+ */
 export function withDraft(
   empty: DefaultValues<CompanyFormValues>,
   draft: Partial<DraftValues>,
 ): DefaultValues<CompanyFormValues> {
+  const country = draft.country;
+  const ofCountry = (id: unknown) =>
+    typeof id === 'string' && typeof country === 'string' && regionBelongsTo(id, country);
   return {
     ...empty,
     ...draft,
+    region: ofCountry(draft.region) ? draft.region : empty.region,
     international: { ...empty.international, ...draft.international },
-    domestic: { ...empty.domestic, ...draft.domestic },
+    domestic: {
+      ...empty.domestic,
+      ...draft.domestic,
+      regions: (draft.domestic?.regions ?? []).filter(ofCountry),
+    },
     china: { ...empty.china, ...draft.china },
   };
 }

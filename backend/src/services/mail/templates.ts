@@ -204,14 +204,15 @@ export function newCompanyApplicationEmail(details: {
   referenceNumber: string;
   legalName: string;
   email: string;
-  governorate: string;
+  /** e.g. "Giza (EG)" */
+  region: string;
   activities: readonly string[];
 }): MailContent {
   const rows: Array<[string, string]> = [
     [label('reference'), details.referenceNumber],
     [label('company'), details.legalName],
     [label('email'), details.email],
-    [label('governorate'), details.governorate],
+    [label('region'), details.region],
     [label('activities'), details.activities.join(', ')],
   ];
   return {

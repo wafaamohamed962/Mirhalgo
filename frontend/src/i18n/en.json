@@ -243,8 +243,20 @@
     "otherOptionLength": "Must be 3–100 characters",
     "landline": "Enter 7–12 digits",
     "url": "Enter a valid link starting with http:// or https://",
-    "commercialRegister": "Enter 1–10 digits",
-    "taxNumber": "Enter the 9-digit tax card number",
+    "legal": {
+      "EG": {
+        "registration": "Enter 1–10 digits",
+        "tax": "Enter the 9-digit tax card number"
+      },
+      "SA": {
+        "registration": "Enter the 10-digit Commercial Registration (CR) number",
+        "tax": "Enter the 15-digit VAT number"
+      },
+      "AE": {
+        "registration": "Enter the trade license number (3–20 letters or digits)",
+        "tax": "Enter the 15-digit Tax Registration Number (TRN)"
+      }
+    },
     "yearsInBusiness": "Enter a whole number from 0 to 100",
     "fleetSize": "Enter a whole number from 0 to 10,000",
     "notesLength": "Notes can be up to 1000 characters",
@@ -433,6 +445,16 @@
       "tax_card": "Tax card copy",
       "customs_license": "Customs broker license",
       "logo": "Company logo"
+    },
+    "legalDocument": {
+      "SA": {
+        "commercial_register": "Commercial Registration (CR) copy",
+        "tax_card": "VAT registration certificate"
+      },
+      "AE": {
+        "commercial_register": "Trade license copy",
+        "tax_card": "TRN certificate"
+      }
     }
   },
   "company": {
@@ -493,6 +515,50 @@
         "websiteHint": "e.g. https://facebook.com/yourcompany",
         "governorate": "Governorate",
         "governoratePlaceholder": "Select a governorate",
+        "country": "Country",
+        "countryPlaceholder": "Select a country",
+        "region": {
+          "governorate": "Governorate",
+          "region": "Region",
+          "emirate": "Emirate"
+        },
+        "regionPlaceholder": {
+          "governorate": "Select a governorate",
+          "region": "Select a region",
+          "emirate": "Select an emirate"
+        },
+        "regionFirst": "Select a country first",
+        "regionsError": "We couldn't load the list. Try again.",
+        "coverageAll": {
+          "governorate": "All governorates",
+          "region": "All regions",
+          "emirate": "All emirates"
+        },
+        "coverageList": {
+          "governorate": "Covered governorates",
+          "region": "Covered regions",
+          "emirate": "Covered emirates"
+        },
+        "legal": {
+          "EG": {
+            "registration": "Commercial register number",
+            "registrationHint": "1–10 digits",
+            "tax": "Tax card number",
+            "taxHint": "9 digits"
+          },
+          "SA": {
+            "registration": "Commercial Registration number (CR)",
+            "registrationHint": "10 digits",
+            "tax": "VAT number",
+            "taxHint": "15 digits"
+          },
+          "AE": {
+            "registration": "Trade license number",
+            "registrationHint": "Letters and digits, as shown on the license",
+            "tax": "Tax Registration Number (TRN)",
+            "taxHint": "15 digits"
+          }
+        },
         "city": "City / Area",
         "street": "Street address",
         "password": "Password",
@@ -504,8 +570,6 @@
         "countries": "Main countries served",
         "regions": "Main regions served",
         "servedHint": "Optional",
-        "allGovernorates": "All governorates",
-        "governorates": "Covered governorates",
         "vehicleTypes": "Vehicle types",
         "vehicleTypeOther": "Other vehicle type",
         "fleetSize": "Fleet size (approx.)",
@@ -513,9 +577,6 @@
         "siteOther": "Other site",
         "chinaServices": "Services",
         "yearsInBusiness": "Years in business",
-        "commercialRegisterNumber": "Commercial register number",
-        "taxNumber": "Tax card number",
-        "taxNumberHint": "9 digits",
         "customsRecommended": "Recommended because you offer customs clearance.",
         "notes": "Anything else we should know? (optional)",
         "notesCounter": "{{count, number}} / {{max, number}}",

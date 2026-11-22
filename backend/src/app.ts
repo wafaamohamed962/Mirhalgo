@@ -7,6 +7,7 @@ import { authRouter } from './routes/auth.js';
 import { companiesRouter } from './routes/companies.js';
 import { contactRouter } from './routes/contact.js';
 import { healthRouter } from './routes/health.js';
+import { referenceRouter } from './routes/reference.js';
 
 /** Express app (no listen), so tests can run it in-process. */
 export function createApp() {
@@ -32,6 +33,7 @@ export function createApp() {
   app.use('/api/auth', authRouter);
   app.use('/api/companies', companiesRouter);
   app.use('/api/contact', contactRouter);
+  app.use('/api/reference', referenceRouter);
 
   app.use(notFound);
   app.use(errorHandler);

@@ -5,13 +5,16 @@ import {
   CHINA_SERVICES,
   CHINA_SITES,
   COMPANY_ACTIVITIES,
+  COMPANY_COUNTRY_RULES,
   COUNTRIES,
-  GOVERNORATES,
   INTERNATIONAL_MODES,
   INTERNATIONAL_SCOPES,
   SERVICE_REGIONS,
   VEHICLE_TYPES,
+  isCompanyCountry,
   type CompanyActivity,
+  type CompanyCountry,
+  type DocumentType,
 } from '@mirhalgo/shared';
 import type { ChoiceOption } from '../../components/ui';
 
@@ -24,7 +27,6 @@ const ACTIVITY_ICONS: Record<CompanyActivity, LucideIcon> = {
 
 /** i18n group of each option list (`options.<group>.<value>`). */
 const GROUPS = {
-  governorates: ['governorate', GOVERNORATES],
   modes: ['internationalMode', INTERNATIONAL_MODES],
   scopes: ['internationalScope', INTERNATIONAL_SCOPES],
   regions: ['region', SERVICE_REGIONS],
@@ -60,7 +62,8 @@ export function useCompanyOptions(): Options {
         description: t(`options.activityDescription.${value}`),
         icon: ACTIVITY_ICONS[value],
       })),
-      countries: COUNTRIES.filter((c) => c.iso !== 'EG').map((c) => ({
+      // the company's own country is filtered out where it is shown (MW_003 A2)
+      countries: COUNTRIES.map((c) => ({
         value: c.iso,
         label: regionNames.of(c.iso) ?? c.iso,
       })),
@@ -78,4 +81,22 @@ export function labelsOf(
     .filter((option) => values.includes(option.value))
     .map((option) => String(option.label));
   return new Intl.ListFormat(language, { type: 'conjunction' }).format(labels);
+}
+
+// ── per-country copy (MW_003 A2) ──────────────────────────────────────────
+
+/** Governorate (EG) · Region (SA) · Emirate (AE); "governorate" until a country is chosen. */
+export const regionKind = (country: unknown) =>
+  isCompanyCountry(country) ? COMPANY_COUNTRY_RULES[country].regionLabel : 'governorate';
+
+/** Country whose legal-number copy is shown (Egypt until a country is chosen). */
+export const legalCopyCountry = (country: unknown): CompanyCountry =>
+  isCompanyCountry(country) ? country : 'EG';
+
+/** i18n key of a document name: the CR and tax documents are named per country. */
+export function documentLabelKey(type: DocumentType, country: unknown) {
+  const legal = type === 'commercial_register' || type === 'tax_card';
+  return legal && (country === 'SA' || country === 'AE')
+    ? (`options.legalDocument.${country}.${type}` as const)
+    : (`options.document.${type}` as const);
 }

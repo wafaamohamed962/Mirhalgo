@@ -192,7 +192,8 @@ test('company registration → OTP → "Application submitted" (no login)', asyn
   await page.getByLabel(/Representative job title/).fill('Owner');
   await page.getByLabel(/Business email/).fill('ops@nile.com');
   await page.getByLabel(/Mobile phone/).fill('1012345678');
-  await page.getByLabel(/Governorate/).selectOption('giza');
+  await page.getByLabel(/^Country(?! code)/).selectOption('EG');
+  await page.getByLabel(/^Governorate/).selectOption('EG-GZ');
   await page.getByLabel(/City \/ Area/).fill('Dokki');
   await page.getByLabel(/Street address/).fill('5 Tahrir Street');
   await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);

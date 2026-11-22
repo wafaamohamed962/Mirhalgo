@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  COMPANY_COUNTRIES,
+  COMPANY_COUNTRY_RULES,
   GOVERNORATES,
   TERMS_VERSION,
   checkFile,
@@ -8,7 +10,7 @@ import {
   companyRegistrationSchema,
   companyServicesStepSchema,
   detectMime,
-  formatTaxNumber,
+  formatLegalNumber,
   needsServicesStep,
   textSchema,
   toAsciiDigits,
@@ -24,7 +26,8 @@ const account = {
   whatsappSameAsMobile: true,
   whatsapp: '',
   landline: '',
-  governorate: 'cairo',
+  country: 'EG',
+  region: 'EG-C',
   city: 'Nasr City',
   street: '12 Abbas El Akkad St.',
   website: '',
@@ -37,8 +40,8 @@ const account = {
 const services = {
   international: { modes: ['air', 'sea'], scope: 'both', countries: ['CN'], regions: ['gulf'] },
   domestic: {
-    allGovernorates: false,
-    governorates: ['cairo', 'giza'],
+    allRegions: false,
+    regions: ['EG-C', 'EG-GZ'],
     vehicleTypes: ['pickup'],
     vehicleTypeOther: '',
     fleetSize: '',
@@ -51,7 +54,7 @@ const legal = { commercialRegisterNumber: '123456', taxNumber: '123-456-789' };
 const review = { notes: '', confirmAccuracy: true, acceptTerms: true, termsVersion: TERMS_VERSION };
 const application = { ...account, ...services, ...legal, ...review };
 
-/** Error messages per field path, e.g. { 'domestic.governorates': ['validation.selectAtLeastOne'] } */
+/** Error messages per field path, e.g. { 'domestic.regions': ['validation.selectAtLeastOne'] } */
 function issues(result: {
   success: boolean;
   error?: { issues: { path: unknown[]; message: string }[] };
@@ -63,8 +66,12 @@ function issues(result: {
 }
 
 describe('constants', () => {
-  it('lists the 27 Egyptian governorates once each', () => {
+  it('lists the 27 Egyptian governorates once each (still used by the mocked portal)', () => {
     expect(new Set(GOVERNORATES).size).toBe(27);
+  });
+
+  it('has legal-number rules for every company sign-up country', () => {
+    expect(Object.keys(COMPANY_COUNTRY_RULES).sort()).toEqual([...COMPANY_COUNTRIES].sort());
   });
 
   it('skips Step 2 only when "Other" is the only activity', () => {
@@ -96,9 +103,12 @@ describe('field helpers', () => {
     }
   });
 
-  it('masks the tax number as XXX-XXX-XXX while typing', () => {
-    expect(formatTaxNumber('1234')).toBe('123-4');
-    expect(formatTaxNumber('123456789999')).toBe('123-456-789');
+  it('masks the legal numbers while typing, per country', () => {
+    expect(formatLegalNumber('EG', 'taxNumber', '1234')).toBe('123-4');
+    expect(formatLegalNumber('EG', 'taxNumber', '123456789999')).toBe('123-456-789');
+    expect(formatLegalNumber('SA', 'taxNumber', '٣٠٠ 000-0000000039')).toBe('300000000000003');
+    expect(formatLegalNumber('SA', 'commercialRegisterNumber', '1010a12345678')).toBe('1010123456');
+    expect(formatLegalNumber('AE', 'commercialRegisterNumber', 'cn-12 34_5')).toBe('CN-12345');
   });
 });
 
@@ -118,13 +128,27 @@ describe('Step 1: account', () => {
     ['street', 'abcd', 'validation.streetLength'],
     ['landline', '123456', 'validation.landline'],
     ['landline', '1234567890123', 'validation.landline'],
-    ['governorate', 'atlantis', 'validation.required'],
+    ['country', 'FR', 'validation.required'],
+    ['region', '', 'validation.required'],
+    ['region', 'cairo', 'validation.required'],
+    ['region', 'SA-01', 'validation.required'], // a region of another country
     ['activities', [], 'validation.selectAtLeastOne'],
     ['activities', ['china', 'china'], 'validation.duplicate'],
   ])('rejects %s = %j', (field, value, message) => {
     expect(
       issues(companyAccountStepSchema.safeParse({ ...account, [field]: value }))[field],
     ).toContain(message);
+  });
+
+  it('accepts a Saudi or Emirati company with a region of its own country', () => {
+    for (const [country, region] of [
+      ['SA', 'SA-01'],
+      ['AE', 'AE-DU'],
+    ]) {
+      expect(companyAccountStepSchema.safeParse({ ...account, country, region }).success).toBe(
+        true,
+      );
+    }
   });
 
   it('accepts a landline with spaces/dashes and Arabic digits', () => {
@@ -174,7 +198,12 @@ describe('Step 1: account', () => {
 
 describe('Step 2: services', () => {
   const step = (data: object) =>
-    companyServicesStepSchema.safeParse({ activities: account.activities, ...services, ...data });
+    companyServicesStepSchema.safeParse({
+      activities: account.activities,
+      country: account.country,
+      ...services,
+      ...data,
+    });
 
   it('accepts complete sections', () => {
     expect(step({}).success).toBe(true);
@@ -187,6 +216,7 @@ describe('Step 2: services', () => {
   it('ignores sections of unselected activities, even when invalid', () => {
     const result = companyServicesStepSchema.safeParse({
       activities: ['china'],
+      country: 'EG',
       china: services.china,
       domestic: { vehicleTypes: [] },
     });
@@ -203,14 +233,34 @@ describe('Step 2: services', () => {
     expect(r['international.countries.0']).toEqual(['validation.required']);
   });
 
-  it('needs governorates unless "All governorates", which is stored as the flag only', () => {
+  it('needs regions unless "All regions", which is stored as the flag only', () => {
     expect(
-      issues(step({ domestic: { ...services.domestic, governorates: [] } }))[
-        'domestic.governorates'
+      issues(step({ domestic: { ...services.domestic, regions: [] } }))['domestic.regions'],
+    ).toEqual(['validation.selectAtLeastOne']);
+    const all = step({ domestic: { ...services.domestic, allRegions: true } });
+    expect(all.data?.domestic).toMatchObject({ allRegions: true, regions: [] });
+    expect(
+      issues(step({ domestic: { ...services.domestic, regions: ['EG-C', 'EG-C'] } }))[
+        'domestic.regions'
+      ],
+    ).toEqual(['validation.duplicate']);
+  });
+
+  it('drops covered regions of another country and the own country from "countries served"', () => {
+    // e.g. the user switched from Egypt to Saudi Arabia after filling Step 2
+    const result = step({
+      country: 'SA',
+      domestic: { ...services.domestic, regions: ['EG-C', 'SA-01'] },
+      international: { ...services.international, countries: ['SA', 'CN'] },
+    });
+    expect(result.data?.domestic?.regions).toEqual(['SA-01']);
+    expect(result.data?.international?.countries).toEqual(['CN']);
+    // only stale values left: the "at least one" rule applies again
+    expect(
+      issues(step({ country: 'SA', domestic: { ...services.domestic, regions: ['EG-C'] } }))[
+        'domestic.regions'
       ],
     ).toEqual(['validation.selectAtLeastOne']);
-    const all = step({ domestic: { ...services.domestic, allGovernorates: true } });
-    expect(all.data?.domestic).toMatchObject({ allGovernorates: true, governorates: [] });
   });
 
   it('requires the "Other" text for vehicle types and China sites (3–100 chars)', () => {
@@ -249,34 +299,75 @@ describe('Step 2: services', () => {
   });
 });
 
-describe('Step 3: legal', () => {
-  it('accepts 1–10 digit commercial register numbers and a 9-digit tax number', () => {
-    expect(
-      companyLegalStepSchema.parse({ commercialRegisterNumber: '٧', taxNumber: '123 456 789' }),
-    ).toEqual({
-      commercialRegisterNumber: '7',
-      taxNumber: '123456789',
+describe('Step 3: legal (rules per country)', () => {
+  const legalStep = (data: object) =>
+    companyLegalStepSchema.safeParse({ country: 'EG', ...legal, ...data });
+  const VALID = {
+    EG: legal,
+    SA: { commercialRegisterNumber: '1010123456', taxNumber: '300000000000003' },
+    AE: { commercialRegisterNumber: 'CN-1234567', taxNumber: '100123456700003' },
+  } as const;
+
+  it.each([
+    ['EG', '٧', '123 456 789', '7', '123456789'],
+    ['SA', '1010 123456', '300-000-000-000-003', '1010123456', '300000000000003'],
+    ['AE', ' cn-1234567 ', '100 1234 5670 0003', 'CN-1234567', '100123456700003'],
+  ])('%s: accepts and normalises the numbers', (country, cr, tax, storedCr, storedTax) => {
+    expect(legalStep({ country, commercialRegisterNumber: cr, taxNumber: tax }).data).toEqual({
+      country,
+      commercialRegisterNumber: storedCr,
+      taxNumber: storedTax,
     });
   });
 
   it.each([
     [
+      'EG',
       { commercialRegisterNumber: '12345678901' },
       'commercialRegisterNumber',
-      'validation.commercialRegister',
+      'validation.legal.EG.registration',
     ],
     [
+      'EG',
       { commercialRegisterNumber: '12a' },
       'commercialRegisterNumber',
-      'validation.commercialRegister',
+      'validation.legal.EG.registration',
     ],
-    [{ commercialRegisterNumber: '' }, 'commercialRegisterNumber', 'validation.required'],
-    [{ taxNumber: '12345678' }, 'taxNumber', 'validation.taxNumber'],
-    [{ taxNumber: '1234567890' }, 'taxNumber', 'validation.taxNumber'],
-  ])('rejects %j', (data, field, message) => {
-    expect(issues(companyLegalStepSchema.safeParse({ ...legal, ...data }))[field]).toEqual([
-      message,
-    ]);
+    ['EG', { commercialRegisterNumber: '' }, 'commercialRegisterNumber', 'validation.required'],
+    ['EG', { taxNumber: '12345678' }, 'taxNumber', 'validation.legal.EG.tax'],
+    ['EG', { taxNumber: '1234567890' }, 'taxNumber', 'validation.legal.EG.tax'],
+    [
+      'SA',
+      { commercialRegisterNumber: '123456789' },
+      'commercialRegisterNumber',
+      'validation.legal.SA.registration',
+    ],
+    ['SA', { taxNumber: '123456789' }, 'taxNumber', 'validation.legal.SA.tax'],
+    [
+      'AE',
+      { commercialRegisterNumber: 'AB' },
+      'commercialRegisterNumber',
+      'validation.legal.AE.registration',
+    ],
+    [
+      'AE',
+      { commercialRegisterNumber: '-1234' },
+      'commercialRegisterNumber',
+      'validation.legal.AE.registration',
+    ],
+    [
+      'AE',
+      { commercialRegisterNumber: 'CN_1234' },
+      'commercialRegisterNumber',
+      'validation.legal.AE.registration',
+    ],
+    ['AE', { taxNumber: '10012345670000' }, 'taxNumber', 'validation.legal.AE.tax'],
+  ] as const)('%s: rejects %j', (country, data, field, message) => {
+    expect(issues(legalStep({ country, ...VALID[country], ...data }))[field]).toEqual([message]);
+  });
+
+  it('an Egyptian tax card number is not a valid Saudi VAT number', () => {
+    expect(issues(legalStep({ country: 'SA' })).taxNumber).toEqual(['validation.legal.SA.tax']);
   });
 });
 

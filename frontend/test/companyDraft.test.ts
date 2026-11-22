@@ -47,9 +47,19 @@ describe('company draft', () => {
     const draft = loadCompanyDraft();
     const restored = withDraft(EMPTY_VALUES, draft!.values);
     expect(restored.legalName).toBe('Nile Shipping');
-    expect(restored.domestic).toMatchObject({ vehicleTypes: ['pickup'], governorates: [] });
+    expect(restored.domestic).toMatchObject({ vehicleTypes: ['pickup'], regions: [] });
     expect(restored.password).toBe('');
     expect(restored.files).toEqual({});
+  });
+
+  it('drops regions that do not belong to the saved country (MW_003 A2)', () => {
+    const restored = withDraft(EMPTY_VALUES, {
+      country: 'SA',
+      region: 'EG-C',
+      domestic: { ...EMPTY_VALUES.domestic, vehicleTypes: ['pickup'], regions: ['EG-C', 'SA-01'] },
+    } as Parameters<typeof withDraft>[1]);
+    expect(restored.region).toBe('');
+    expect(restored.domestic?.regions).toEqual(['SA-01']);
   });
 
   it('expires after 7 days and drops corrupt drafts', () => {

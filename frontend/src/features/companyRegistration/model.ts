@@ -41,7 +41,7 @@ const filesSchema = z.object(
 export const STEP_SCHEMAS: Record<StepId, z.ZodTypeAny> = {
   account: companyAccountStepSchema,
   services: companyServicesStepSchema,
-  documents: companyLegalStepSchema.extend({ files: filesSchema }),
+  documents: companyLegalStepSchema.and(z.object({ files: filesSchema })),
   review: companyRegistrationSchema.and(z.object({ files: filesSchema })),
 };
 
@@ -75,6 +75,8 @@ export const EMPTY_VALUES: DefaultValues<CompanyFormValues> = {
   whatsappSameAsMobile: true,
   whatsapp: '',
   landline: '',
+  // country stays unset ("Select…"); the region list loads once it is chosen (MW_003 A2)
+  region: '',
   city: '',
   street: '',
   website: '',
@@ -85,8 +87,8 @@ export const EMPTY_VALUES: DefaultValues<CompanyFormValues> = {
   // every section exists; the schema ignores the ones whose activity is not selected
   international: { modes: [], countries: [], regions: [] },
   domestic: {
-    allGovernorates: false,
-    governorates: [],
+    allRegions: false,
+    regions: [],
     vehicleTypes: [],
     vehicleTypeOther: '',
     fleetSize: '',
