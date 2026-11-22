@@ -73,7 +73,7 @@ export const companies: CompanyProfile[] = [
     services: ['sea_freight', 'air_freight', 'customs_clearance', 'door_to_door'],
     canRate: true,
   }),
-  company('co_delta', 'دلتا كارجو للشحن', ['domestic'], 4.6, 88, 960, {
+  company('co_delta', 'دلتا للشحن والنقل', ['domestic'], 4.6, 88, 960, {
     services: ['door_to_door', 'same_day', 'tracking'],
     allGovernorates: true,
     coveredGovernorates: [],

@@ -8,9 +8,14 @@ Context for Claude Code. Read this first in every session.
 shipping request and receives price quotes from verified shipping / customs-clearance
 companies.
 
-**Current task: MW_002** (branch `feature/mw-002`, spec `docs/MW_002.md`, see §14):
-Part A company registration (full stack) + Part B customer portal (frontend only, MSW mocks).
-MW_002 builds on MW_001 and does not override its design system, stack, security or OTP rules.
+**Current task: MW_003** (branch `feature/mw-003`, stacked on `feature/mw-002`; spec
+`docs/MW_003.md`, plan `docs/MW_003-plan.md`, see §15): fixes (Arabic MSA, company country →
+region, back button) + the full-stack New Request page. Builds on MW_001/MW_002 rules.
+
+**Previous task: MW_002** (branch `feature/mw-002`, not merged yet; spec `docs/MW_002.md`, see
+§14): Part A company registration (full stack) + Part B customer portal (frontend only, MSW
+mocks). MW_002 builds on MW_001 and does not override its design system, stack, security or OTP
+rules.
 
 **Previous task: MW_001** (on `main`): Landing page + Customer Sign Up (email OTP) + Login +
 Forgot password + persistent session.
@@ -151,6 +156,7 @@ Available utilities:
   كلمة المرور · البريد الإلكتروني · رقم الهاتف · رمز التحقق (not "كود") · الشعار (not "لوجو") ·
   المركبات (not "عربيات"). Imperatives in the masculine singular (أدخل، اختر، أرسل). Applies to
   `ar.json`, `i18n/portal/ar.json`, the Arabic email templates, `index.html` meta and the mocks.
+  Enforced by `frontend/test/arabicCopy.test.ts` (deny-list + no Arabic hard-coded in code).
 - Every input: label, error message, `aria-invalid`, `aria-describedby`.
 - Every async action: loading, success and error states, and prevent double submit.
 - Forms: React Hook Form + Zod schemas imported from `@mirhalgo/shared`. **The same schema
@@ -684,3 +690,84 @@ Implementation choices (proposed in the plan, not contradicted; confirm in revie
   (the pre-checks prevent that failure path there).
 - Ticket attachments are metadata only in the mock (the real API will need multipart).
 - Not committed yet: everything is on `feature/mw-002` as working-tree changes.
+
+## 15. MW_003: Fixes + New Request page (full stack)
+
+**Spec:** `docs/MW_003.md` (copied from the developer's spec folder on 2026-11-22).
+**Plan:** `docs/MW_003-plan.md` (approved 2026-11-22 by the developer).
+**Branch:** `feature/mw-003`, created from `feature/mw-002` (stacked PR; rebase onto `main`
+after MW_002 is merged). The MW_002 decisions 23–24 work was committed first on `feature/mw-002`
+(`6941628`).
+
+**Scope**
+
+- **Part A:**
+  - A1: Arabic MSA audit plus a deny-list test (most of it was done by decision 23).
+  - A2: company sign-up country (EG/SA/AE from the DB) → region (ISO 3166-2 ids), with
+    country-specific region label, phone dial code, legal-number labels/validation and
+    domestic coverage.
+  - A3: "Back to home" on the company and customer sign-up pages, with a confirmation.
+- **Part B, full stack:**
+  - reference tables + `GET /api/reference/:list` (cached), searchable `Combobox` with flags
+    and "Other";
+  - request balance (`customer_balances` + append-only `balance_ledger`, 5 granted on
+    verification) and `GET /api/me/summary`;
+  - server drafts per user/service and uploads before submit (private bucket
+    `order-attachments`, 24 h orphan cleanup);
+  - `POST /api/orders`: atomic `submit_order` RPC, `Idempotency-Key`, `409 NO_BALANCE`, values
+    recalculated on the server;
+  - `GET /api/orders/:reference`;
+  - 3 forms: international 6 steps, domestic 6, China 4;
+  - success screen with print and PDF.
+- **Out of scope:** My Orders / Companies / Account stay mocked; admin review; offers; balance
+  restore/reset (the ledger is designed for it); payments.
+
+**Key conflicts with MW_002 (details in plan §4):**
+
+- Legal numbers become country-aware and unique per `(country_code, number)`.
+- `companies.governorate` (enum) becomes `country_code` + `region_id` (FK, backfilled).
+- `domestic_governorates[]` becomes the join table `company_domestic_regions`.
+- Decision 24 (auto-restore) is kept.
+- The mocks `/me/attempts` and `/requests/draft` are removed; order references become `MG####`.
+
+**Decisions (2026-11-22, by the developer, PENDING Team Lead confirmation; list them as
+assumptions in the PR)**
+
+25. Uploads accept legacy DOC/XLS (OLE2 signature) and CSV (valid UTF-8 text, no NUL bytes) as
+    the spec lists them, plus PDF, DOCX/XLSX (ZIP signature + Office entries, no
+    `vbaProject.bin`), JPG/PNG/WEBP. Every file is validated by its content (magic bytes) and is
+    **never opened, parsed or executed on the server**; it is served only as a download.
+26. API auth: `supabase.auth.getUser(token)` on every authenticated request (respects sessions
+    revoked after a password reset, decision 8). No local JWT verification.
+27. Reference lists without a demo source (13 truck types, container types, shipping lines) are
+    seeded with reasonable starter lists and marked **placeholder** (`-- PLACEHOLDER` comment in
+    the seed migration + `docs/MW_003-plan.md`), to be replaced from the demo later.
+28. Transit estimates are configurable rows in `transit_estimates`: Chinese sites air 15–25 /
+    sea 45–60 days, SHEIN land 35–45, **SHEIN air 10–15 days** (default, not in the spec).
+29. Every other open item uses the default proposed in plan §5 (items 4–24, 31–36), e.g.
+    `MG` + sequence from 1001, idempotency columns on `orders`, 5 backfilled for verified
+    customers, 30-day draft expiry, hourly in-process cleanup timer + npm scripts, Cairo date for
+    "ready date", client-side PDF.
+
+**Libraries:** `jspdf` + `html-to-image` (PDF, lazy chunk) follow plan §5 item 36 (default
+accepted). `flag-icons` is still to be confirmed (needed from B1). Combobox, file checks,
+scheduling and idempotency are built in-house.
+
+**Progress**
+
+- **Phase A1 done (2026-11-22).** Most of the MSA rewrite was already in MW_002 (decision 23).
+  - Audit: every Arabic string (`ar.json`, `portal/ar.json`, emails, `index.html`, mocks) was checked for
+    colloquial words and English written in Arabic letters. One fix: the mock company
+    "دلتا كارجو للشحن" → "دلتا للشحن والنقل". Brand names (واتساب، فيسبوك، إنستغرام، شي إن، علي بابا،
+    تاوباو) stay; Latin text in Arabic strings is limited to brands, file formats, URLs and the
+    "DELETE" confirmation word.
+  - `frontend/test/arabicCopy.test.ts` covers these rules:
+    - a deny-list of colloquial and transliterated words, matched as whole words with prefixes and
+      diacritics, in every Arabic source;
+    - no Arabic letters in `frontend/src` / `shared/src` code outside comments (`mocks/`
+      excepted). Backend email templates are the only other place with Arabic (no i18n JSON there).
+    - Add a word to the deny-list when review finds a new colloquial or transliterated term.
+  - For A2: the team-notice email still labels the location "Governorate / المحافظة". For B: the
+    portal search placeholder still shows the `MG-R-…` reference format.
+  - Still open: the native-speaker review of the final `ar.json` before merge (developer action).
+- Next: Phase A2.
