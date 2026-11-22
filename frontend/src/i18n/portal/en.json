@@ -75,6 +75,7 @@
       "viewOrders": "View my orders"
     },
     "orderStatus": {
+      "under_review": "Under review",
       "awaiting_offers": "Awaiting offers",
       "offers_received": "Offers received",
       "awaiting_approval": "Awaiting final approval",

@@ -14,6 +14,7 @@ const DOT: Record<Tone, string> = {
 };
 
 const ORDER_TONES: Record<OrderStatus, Tone> = {
+  under_review: 'muted',
   awaiting_offers: 'warning',
   offers_received: 'violet',
   awaiting_approval: 'blue',

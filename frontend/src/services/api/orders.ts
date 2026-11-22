@@ -1,4 +1,7 @@
 import type {
+  OrderInput,
+  OrderRecord,
+  SubmitOrderResult,
   OrderDraft,
   OrderDraftInput,
   OrderUploadPurpose,
@@ -30,4 +33,17 @@ export const ordersApi = {
     return apiUpload<UploadedFile>('/uploads', body, onProgress, auth);
   },
   deleteUpload: (id: string) => apiRequest<null>('DELETE', `/uploads/${id}`, auth),
+
+  /**
+   * Submit (B4). `idempotencyKey`: a UUID created once per submit attempt and reused for its
+   * retries, so a double click or a retry never creates a second order.
+   */
+  submitOrder: (order: OrderInput, idempotencyKey: string) =>
+    apiRequest<SubmitOrderResult>('POST', '/orders', {
+      body: order,
+      auth: true,
+      headers: { 'Idempotency-Key': idempotencyKey },
+    }),
+  getOrder: (reference: string) =>
+    apiRequest<OrderRecord>('GET', `/orders/${encodeURIComponent(reference)}`, auth),
 };

@@ -1040,5 +1040,87 @@ scheduling and idempotency are built in-house.
     - orphan cleanup works;
     - deleting an upload or a draft removes its files;
     - the lease allows one holder.
-- Next: B4 (shared order schemas, orders tables, atomic `submit_order`, `POST /api/orders`,
-  `GET /api/orders/:reference`).
+- **Phase B4 done (2026-11-23).** Migration pushed to `mirhalgo_v1` with the developer's OK.
+  - Shared:
+    - `orders.ts`: every option list of spec B3–B5 (= Postgres enums), `ATTACHMENT_SLOTS` +
+      `SLOT_PURPOSE`, `ORDER_LIMITS`, `ORDER_FORM_VERSIONS`, `SubmitOrderResult`,
+      `OrderRecord`.
+    - `schemas/orders.ts`: `orderSchema` = a discriminated union by service of strict objects
+      (international: shipment by mode with cargo by kind; domestic: container / general;
+      china), plus one refine function per service. `orderSchemas` holds the per-service ones
+      for the forms.
+    - Rules:
+      - hidden values → `validation.notAllowed`;
+      - clearance location / point when the scope includes customs;
+      - door services need addresses; trucking needs the address per side;
+      - FCL = containers, LCL / air = loose, land container / FTL / LTL;
+      - target price only for sea;
+      - hazardous → MSDS (per product for manual products);
+      - manual → 1–50 products, packing list → the file;
+      - insurance → cargo value; ready date ≥ Cairo today;
+      - China: site per source, method per add method, products 1–10, name or URL, colour /
+        size totals = quantity, HTTPS cart link, shipping method per source, "other" country →
+        typed city.
+    - The demo bugs are fixed and tested.
+    - Numbers accept Arabic / Persian digits and "٫".
+    - `collectAttachments` (upload id → slot, product position), `deriveOrderValues` (CBM,
+      air volumetric, totals: never from the client), `cairoToday`.
+    - Portal `ORDER_STATUSES` gains `under_review` (badge + label, mock timeline).
+  - `…000006_orders.sql`:
+    - enums;
+    - `orders`: reference `MG` + sequence from 1001; contact, client type, notes, accuracy
+      time, form version; idempotency key + SHA-256 payload hash unique per customer;
+    - `order_shipments`: every international / domestic field as a column; reference id + a
+      separate "other" text; domestic regions and port and the air door addresses reuse the
+      origin / destination columns;
+    - container / truck groups; cargo items with CBM / volumetric stored;
+    - China details, products, colour / size variants;
+    - `order_status_history`;
+    - `order_uploads` gains slot + `cargo_item_id`; FK from the ledger to orders;
+    - RLS: owner read (not the key / hash), companies nothing.
+    - `submit_order()` in ONE transaction:
+      1. lock the balance row (concurrency + idempotency);
+      2. same key → replay (or `IDEMPOTENCY_KEY_REUSED` with another hash);
+      3. `NO_BALANCE`;
+      4. all rows;
+      5. attachments (own, unattached, the right purpose per slot, ≤ 20, no duplicates →
+         `INVALID_ATTACHMENT`);
+      6. ledger consume (`order:<id>`) + balance −1;
+      7. status `under_review`;
+      8. delete that service's draft.
+    - Note: `jsonb_populate_record` turns missing keys into NULL (column defaults do not
+      apply), so `toRows` always sends the NOT NULL booleans.
+  - API:
+    - `services/orderRows.ts` (pure): `toRows` / `fromRows` (rebuilds exactly the
+      validated shape).
+    - `services/orders.ts`:
+      - reference checks: ports / airports / cities in the chosen country, Egyptian regions
+        and port of discharge, types and lines exist, China delivery country;
+      - canonical-JSON hash (sorted keys);
+      - RPC errors → 409 NO_BALANCE / 422 IDEMPOTENCY_KEY_REUSED / 400; FK and check
+        violations → 400;
+      - `getOrder` rebuilds the order + derived values + attachment metadata (no paths, keys
+        or hashes).
+    - `POST /api/orders`: `requireCustomer`, 10 / h per user, a UUID `Idempotency-Key`
+      header, the shared schema; 201, or 200 for a replay.
+    - `GET /api/orders/:reference`: own orders only, else 404.
+  - Web: `apiRequest` takes headers; `ordersApi.submitOrder(order, key)` /
+    `getOrder(reference)`; the validation copy for every new message.
+  - Tests:
+    - shared `orders.test.ts` (20: every path + every rule + demo bugs + derived values);
+    - backend `orders.test.ts` (12: auth, key, strict, reference checks, RPC arguments +
+      canonical hash, status mapping, read-back, rate limit);
+    - PGlite `pg/verify-b4.mjs` (12: drives the REAL schema + `toRows` / `fromRows`; every
+      path round-trips exactly; replay; reused key; NO_BALANCE; attachment rollback; RLS;
+      cascade);
+    - totals: shared 121, backend 123, frontend 96, E2E 45.
+  - Real backend (scratchpad `b4-real-check.mjs`, 9 checks, test data deleted):
+    - one order per path (air with MSDS per product, sea FCL, land LTL with a packing list,
+      domestic container, SHEIN screenshots); balance 5 → 0;
+    - read-back by reference; another customer gets 404; the draft is removed on submit;
+    - NO_BALANCE; a foreign file → 400;
+    - **two parallel submits at balance 1 → one 201 + one 409**;
+    - **a parallel double click with the same key → one order (201 + 200 replay), one
+      deduction**;
+    - a reused key → 422; RLS over PostgREST.
+- Next: B5 (the three forms + draft autosave / restore).

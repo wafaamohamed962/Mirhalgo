@@ -12,6 +12,8 @@ export * from './files.js';
 export * from './orderFiles.js';
 export * from './schemas/company.js';
 export * from './reference.js';
+export * from './orders.js';
 export * from './portal.js';
 export * from './schemas/portal.js';
 export * from './schemas/drafts.js';
+export * from './schemas/orders.js';

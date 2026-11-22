@@ -34,10 +34,14 @@ async function accessToken(): Promise<string | null> {
 export async function apiRequest<T>(
   method: Method,
   path: `/${string}`,
-  { body, auth = false }: { body?: unknown; auth?: boolean } = {},
+  {
+    body,
+    auth = false,
+    headers: extraHeaders = {},
+  }: { body?: unknown; auth?: boolean; headers?: Record<string, string> } = {},
 ): Promise<T> {
   assertConfigured(missingApiEnv);
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...extraHeaders };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (auth) {
     const token = await accessToken();

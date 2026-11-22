@@ -86,3 +86,4 @@ const perUser = (name: string, windowMs: number, limit: number) =>
   limiter({ name, windowMs, limit, key: (req) => req.authUser?.id ?? null });
 export const uploadLimit = perUser('upload', HOUR, 60);
 export const draftSaveLimit = perUser('draft-save', MINUTE, 60);
+export const orderSubmitLimit = perUser('order-submit', HOUR, 10);

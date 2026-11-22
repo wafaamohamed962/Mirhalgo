@@ -283,7 +283,18 @@
     "orderFileType": "Upload a PDF, Word, Excel, CSV or image file (JPG, PNG, WEBP)",
     "screenshotType": "Upload an image (JPG, PNG or WEBP)",
     "orderFileSize": "Documents can be up to 10 MB and images up to 5 MB",
-    "draftTooLarge": "The draft is too large to save"
+    "draftTooLarge": "The draft is too large to save",
+    "addressLength": "Enter an address of 5–300 characters",
+    "descriptionLength": "Enter a description of 3–500 characters",
+    "fullNameLength": "Enter a name of 3–80 characters",
+    "httpsUrl": "Enter a link that starts with https://",
+    "maxItems": "You have reached the maximum number of entries",
+    "notAllowed": "This field does not apply to your choices",
+    "positiveNumber": "Enter a valid number",
+    "productNameOrUrl": "Enter the product link or its name",
+    "quantitiesMustMatch": "The quantities must add up to the product quantity",
+    "readyDate": "Choose today or a later date",
+    "wholeNumber": "Enter a whole number"
   },
   "errors": {
     "VALIDATION_ERROR": "Please check the highlighted fields.",
@@ -297,6 +308,8 @@
     "CORS_NOT_ALLOWED": "Request not allowed.",
     "PAYLOAD_TOO_LARGE": "The request is too large.",
     "INVALID_JSON": "Invalid request.",
+    "NO_BALANCE": "You have no requests left. You can't send a new request now.",
+    "IDEMPOTENCY_KEY_REUSED": "This request was already sent with different details. Please try again.",
     "UNAUTHORIZED": "Please log in again.",
     "FORBIDDEN": "You don't have access to this.",
     "NOT_FOUND": "Not found.",

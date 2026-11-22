@@ -25,6 +25,8 @@ export type AuditEvent =
   | 'balance_initial_grant'
   | 'balance_initial_grant_failed'
   | 'cleanup_run'
+  | 'order_submitted'
+  | 'order_no_balance'
   | 'contact_message'
   | 'contact_spam';
 

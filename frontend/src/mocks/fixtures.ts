@@ -189,6 +189,7 @@ const offer = (
 });
 
 const STEPS_FOR: Record<OrderStatus, TimelineStep[]> = {
+  under_review: ['submitted'],
   awaiting_offers: ['submitted', 'under_review'],
   offers_received: ['submitted', 'under_review', 'offers_received'],
   awaiting_approval: ['submitted', 'under_review', 'offers_received', 'selected'],

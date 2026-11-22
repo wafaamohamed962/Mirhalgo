@@ -45,7 +45,9 @@ export type MeSummary = {
   drafts: RequestDraft[];
 };
 
+/** `under_review`: just submitted, before the admin publishes it to companies (MW_003 B4). */
 export const ORDER_STATUSES = [
+  'under_review',
   'awaiting_offers',
   'offers_received',
   'awaiting_approval',

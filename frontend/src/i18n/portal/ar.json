@@ -75,6 +75,7 @@
       "viewOrders": "عرض طلباتي"
     },
     "orderStatus": {
+      "under_review": "قيد المراجعة",
       "awaiting_offers": "بانتظار العروض",
       "offers_received": "وصلت عروض",
       "awaiting_approval": "بانتظار الموافقة النهائية",

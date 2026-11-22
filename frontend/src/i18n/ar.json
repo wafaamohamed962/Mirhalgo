@@ -283,7 +283,18 @@
     "orderFileType": "ارفع ملف PDF أو Word أو Excel أو CSV أو صورة (JPG أو PNG أو WEBP)",
     "screenshotType": "ارفع صورة بصيغة JPG أو PNG أو WEBP",
     "orderFileSize": "الحد الأقصى ١٠ ميغابايت للمستند و٥ ميغابايت للصورة",
-    "draftTooLarge": "حجم المسودة أكبر من الحد المسموح بحفظه"
+    "draftTooLarge": "حجم المسودة أكبر من الحد المسموح بحفظه",
+    "addressLength": "أدخل عنوانًا من ٥ إلى ٣٠٠ حرف",
+    "descriptionLength": "أدخل وصفًا من ٣ إلى ٥٠٠ حرف",
+    "fullNameLength": "أدخل اسمًا من ٣ إلى ٨٠ حرفًا",
+    "httpsUrl": "أدخل رابطًا يبدأ بـ https://",
+    "maxItems": "وصلت إلى الحد الأقصى لعدد العناصر",
+    "notAllowed": "هذا الحقل لا ينطبق على اختياراتك",
+    "positiveNumber": "أدخل رقمًا صالحًا",
+    "productNameOrUrl": "أدخل رابط المنتج أو اسمه",
+    "quantitiesMustMatch": "يجب أن يساوي مجموع الكميات كمية المنتج",
+    "readyDate": "اختر تاريخ اليوم أو تاريخًا لاحقًا",
+    "wholeNumber": "أدخل عددًا صحيحًا"
   },
   "errors": {
     "VALIDATION_ERROR": "يرجى مراجعة الحقول المحددة.",
@@ -297,6 +308,8 @@
     "CORS_NOT_ALLOWED": "الطلب غير مسموح به.",
     "PAYLOAD_TOO_LARGE": "حجم الطلب كبير جدًا.",
     "INVALID_JSON": "طلب غير صالح.",
+    "NO_BALANCE": "لم يتبقَّ لديك رصيد من الطلبات، ولا يمكنك إرسال طلب جديد الآن.",
+    "IDEMPOTENCY_KEY_REUSED": "أُرسل هذا الطلب سابقًا ببيانات مختلفة. يرجى المحاولة مرة أخرى.",
     "UNAUTHORIZED": "يرجى تسجيل الدخول مرة أخرى.",
     "FORBIDDEN": "ليست لديك صلاحية الوصول إلى هذا.",
     "NOT_FOUND": "غير موجود.",

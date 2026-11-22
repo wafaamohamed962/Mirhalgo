@@ -1,5 +1,6 @@
 import type {
   ApplicationStatus,
+  AttachmentSlot,
   DocumentType,
   Gender,
   OrderMime,
@@ -169,6 +170,9 @@ export type OrderUploadRow = {
   size_bytes: number;
   draft_id: string | null;
   order_id: string | null;
+  /** set with order_id by submit_order() (MW_003 B4) */
+  slot: AttachmentSlot | null;
+  cargo_item_id: number | null;
   created_at: Timestamp;
 };
 
@@ -214,6 +218,15 @@ export type Database = {
       transit_estimates: Table<TransitEstimateRow, never, never>;
       customer_balances: Table<CustomerBalanceRow, never, never>;
       order_drafts: Table<OrderDraftRow, never, never>;
+      // MW_003 B4: written only by submit_order(); read back as plain rows (orderRows.ts)
+      orders: Table<Record<string, unknown> & { id: string; reference: string }, never, never>;
+      order_shipments: Table<Record<string, unknown>, never, never>;
+      order_container_groups: Table<Record<string, unknown>, never, never>;
+      order_truck_groups: Table<Record<string, unknown>, never, never>;
+      order_cargo_items: Table<Record<string, unknown>, never, never>;
+      order_china_details: Table<Record<string, unknown>, never, never>;
+      order_china_products: Table<Record<string, unknown>, never, never>;
+      order_china_product_variants: Table<Record<string, unknown>, never, never>;
       order_uploads: Table<
         OrderUploadRow,
         Pick<
@@ -278,6 +291,21 @@ export type Database = {
         Returns: Array<{ draft_id: string; files: Array<{ id: string; path: string }> }>;
       };
       claim_job_lease: { Args: { p_name: string; p_seconds: number }; Returns: boolean };
+      submit_order: {
+        Args: {
+          p_customer_id: string;
+          p_order: Record<string, unknown>;
+          p_attachments: Array<Record<string, unknown>>;
+          p_idempotency_key: string;
+          p_payload_hash: string;
+        };
+        Returns: Array<{
+          order_id: string;
+          reference: string;
+          balance_after: number;
+          replayed: boolean;
+        }>;
+      };
       grant_balance: {
         Args: {
           p_customer_id: string;
