@@ -29,6 +29,9 @@ export const ERROR_CODES = [
   'CORS_NOT_ALLOWED',
   'PAYLOAD_TOO_LARGE',
   'INVALID_JSON',
+  // authenticated endpoints (MW_003): no / expired session, or the wrong role
+  'UNAUTHORIZED',
+  'FORBIDDEN',
   'NOT_FOUND',
   'INTERNAL',
   'NETWORK_ERROR',

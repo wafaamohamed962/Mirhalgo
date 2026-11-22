@@ -88,13 +88,8 @@ export function createHandlers(db: MockDb, { latency = 400 }: { latency?: number
         return ok(db.me);
       }),
     ]),
-    http.get(api('/me/attempts'), async () => (await wait(), ok(db.attempts))),
-    http.get(api('/requests/draft'), async () => (await wait(), ok(db.draft))),
-    http.delete(api('/requests/draft'), async () => {
-      await wait();
-      db.draft = null;
-      return ok(null);
-    }),
+    // GET /me/summary and the drafts are the real API (MW_003 B2/B3): not mocked, they pass
+    // through to the server.
 
     // ── orders ─────────────────────────────────────────────────────────────
     http.get(api('/orders'), async ({ request }) => {

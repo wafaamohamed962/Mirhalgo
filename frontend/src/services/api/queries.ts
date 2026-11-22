@@ -14,8 +14,8 @@ import { portalApi } from './portal';
 /** Query keys in one place, so mutations invalidate exactly what they change. */
 export const keys = {
   me: ['me'] as const,
-  attempts: ['attempts'] as const,
-  draft: ['request-draft'] as const,
+  /** GET /me/summary: first name, balance, drafts (real API, MW_003 B2). */
+  summary: ['me', 'summary'] as const,
   orders: ['orders'] as const,
   orderList: (params: Omit<OrderListParams, 'cursor'>) => ['orders', 'list', params] as const,
   order: (id: string) => ['orders', 'detail', id] as const,
@@ -33,10 +33,8 @@ export const keys = {
 };
 
 export const useMe = () => useQuery({ queryKey: keys.me, queryFn: portalApi.getMe });
-export const useAttempts = () =>
-  useQuery({ queryKey: keys.attempts, queryFn: portalApi.getAttempts });
-export const useRequestDraft = () =>
-  useQuery({ queryKey: keys.draft, queryFn: portalApi.getRequestDraft });
+export const useMeSummary = () =>
+  useQuery({ queryKey: keys.summary, queryFn: portalApi.getSummary });
 
 export function useOrders(params: Omit<OrderListParams, 'cursor'>) {
   return useInfiniteQuery({

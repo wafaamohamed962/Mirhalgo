@@ -142,6 +142,9 @@ export type TransitEstimateRow = {
   active: boolean;
 };
 
+/** Request balance (MW_003 B2): written only by grant_balance() / submit_order(). */
+export type CustomerBalanceRow = { customer_id: string; balance: number; updated_at: Timestamp };
+
 /** A stored file: bucket + path (from list_expired_company_registrations / company_documents). */
 export type StoredFile = { bucket: string; path: string };
 
@@ -182,6 +185,7 @@ export type Database = {
       truck_types: Table<OptionRow, never, never>;
       shipping_lines: Table<OptionRow, never, never>;
       transit_estimates: Table<TransitEstimateRow, never, never>;
+      customer_balances: Table<CustomerBalanceRow, never, never>;
     };
     Views: Record<never, never>;
     Functions: {
@@ -218,6 +222,18 @@ export type Database = {
           p_consent: { terms_version: string; submit_ip: string | null; user_agent: string | null };
         };
         Returns: Array<{ application_id: string; reference_number: string }>;
+      };
+      grant_balance: {
+        Args: {
+          p_customer_id: string;
+          p_amount: number;
+          p_reason: string;
+          p_unique_key: string;
+          p_actor_type?: 'system' | 'customer' | 'admin';
+          p_actor_id?: string | null;
+        };
+        /** The balance after the call. */
+        Returns: number;
       };
       transition_application_status: {
         Args: {

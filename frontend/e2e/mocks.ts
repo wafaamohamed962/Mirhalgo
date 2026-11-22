@@ -108,6 +108,17 @@ export const loginSuccess: ApiHandler = () => ({
 });
 
 /** GET /api/me for the customer portal (the portal's other data is not mocked here). */
+/** GET /me/summary (real API since MW_003 B2): welcome name, balance, no drafts. */
+export const summary: ApiHandler = () => ({
+  status: 200,
+  body: ok({
+    firstName: USER.firstName,
+    gender: 'male',
+    balance: { remaining: 5, total: 5 },
+    drafts: [],
+  }),
+});
+
 export const me: ApiHandler = () => ({
   status: 200,
   body: ok({
@@ -154,4 +165,40 @@ export const otpSent: ApiHandler = (body) => ({
 /** Open the app in a given language (stored like the LanguageSwitch does). */
 export async function setLanguage(page: Page, language: 'ar' | 'en') {
   await page.addInitScript((lang) => localStorage.setItem('mirhalgo.lang', lang), language);
+}
+
+/**
+ * The REAL API parts of the portal (MW_003 B2+: GET /me/summary, draft discard). With MSW on
+ * they pass through the service worker, so they are routed at the context level.
+ */
+export async function mockPortalApi(page: Page) {
+  const drafts = [
+    { service: 'international', updatedAt: new Date(Date.now() - 7_200_000).toISOString() },
+  ];
+  await page.context().route('http://api.test/api/**', async (route) => {
+    const { pathname } = new URL(route.request().url());
+    const method = route.request().method();
+    if (method === 'OPTIONS') return json(route, 204, {});
+    if (method === 'GET' && pathname === '/api/me/summary') {
+      return json(
+        route,
+        200,
+        ok({
+          firstName: USER.firstName,
+          gender: 'male',
+          balance: { remaining: 3, total: 5 },
+          drafts,
+        }),
+      );
+    }
+    const discard = /^\/api\/orders\/drafts\/(\w+)$/.exec(pathname);
+    if (method === 'DELETE' && discard) {
+      drafts.splice(
+        drafts.findIndex((d) => d.service === discard[1]),
+        1,
+      );
+      return json(route, 200, ok(null));
+    }
+    return route.fallback();
+  });
 }

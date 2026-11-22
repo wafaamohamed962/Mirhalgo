@@ -933,4 +933,51 @@ scheduling and idempotency are built in-house.
   - Open:
     - Arabic names of ports / airports / cities / types live in the DB, not in `ar.json`, so
       they are not in `docs/ar-review.md` yet.
-- Next: B2 (request balance + ledger + `GET /api/me/summary`).
+- **Phase B2 done (2026-11-22).** Migration pushed to `mirhalgo_v1` with the developer's OK.
+  - `…000004_request_balance.sql`:
+    - `customer_balances` (balance ≥ 0).
+    - `balance_ledger`, append-only: type grant | consume | restore | reset; order_id (FK in B4);
+      before / after; an i18n-ready `reason`; actor_type system | customer | admin; actor_id;
+      a unique `unique_key`. The direction check makes consume exactly −1 and requires an order.
+    - A trigger blocks UPDATE / DELETE for every role. The only exception is the
+      account-deletion cascade (`pg_trigger_depth() > 1`).
+    - `grant_balance()`: security definer, service_role only, customers only. It locks the
+      balance row, then checks the key, so concurrent identical grants apply once.
+    - RLS: the owner reads; the ledger columns `unique_key` / `actor_id` are hidden; no client
+      writes.
+    - Backfill: 5 for every verified customer (`initial_backfill`, key `initial:<id>`, the same
+      key as the verification grant).
+  - API:
+    - `middleware/requireAuth.ts`: `requireRole` / `requireCustomer`. Bearer →
+      `db.auth.getUser` (decision 26) → `app_metadata.role` (401 UNAUTHORIZED / 403 FORBIDDEN,
+      new error codes); `authUser(req)`.
+    - `services/balance.ts` (`grantInitialBalance`, `getBalance`).
+    - `verifyEmail` grants 5 to customers; a failure is logged (`balance_initial_grant_failed`)
+      and never fails the verification.
+    - `GET /api/me/summary` → `MeSummary` { firstName, gender, balance { remaining, total },
+      drafts: [] until B3 }. It repeats the idempotent grant for a verified customer without a
+      balance (safety net).
+  - Web:
+    - `portalApi.getSummary` / `useMeSummary` (`keys.summary`) feed the welcome banner,
+      the balance card, the "no requests left" block and the draft rows (one per service;
+      Discard → `DELETE /orders/drafts/:service`, B3).
+    - The MSW handlers `/me/attempts` and `/requests/draft` are removed (they pass through).
+    - `db.attempts` stays only for the mocked Account › Balance page (decision 12: that page
+      stays mocked).
+  - Tests:
+    - PGlite `pg/verify-b2.mjs` (9 checks);
+    - backend `me.test.ts` (401/403, summary, safety-net grant) + `authRoles` (grant at
+      verify, never fatal, not for companies);
+    - portal tests with a stand-in for the real API (`renderPortal` `apiState`); E2E
+      `mockPortalApi` + `summary`;
+    - totals: shared 96, backend 97, frontend 91, E2E 45.
+  - Real backend (scratchpad `b2-real-check.mjs`, 8 checks, test data deleted):
+    - the backfill matches the ledger for both real verified customers;
+    - signup → verify gives 5 with an `initial_grant` ledger row; the summary is correct;
+    - the grant is idempotent;
+    - 401 / 403 as expected;
+    - RLS: own rows only, key hidden, no client write or RPC;
+    - append-only holds even for the service role;
+    - **after a global logout the old access token gets 401**;
+    - deleting an account cascades through the ledger.
+- Next: B3 (server drafts + uploads + orphan cleanup).

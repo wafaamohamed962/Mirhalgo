@@ -21,6 +21,9 @@ export type AuditEvent =
   | 'company_already_registered'
   | 'company_application_submitted'
   | 'company_registration_expired'
+  // request balance (MW_003 B2)
+  | 'balance_initial_grant'
+  | 'balance_initial_grant_failed'
   | 'contact_message'
   | 'contact_spam';
 

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { flags } from '../../src/lib/env';
-import { db, profileRow, renderPortal, resetPortalDb, server } from './renderPortal';
+import { db, profileRow, renderPortal, resetPortalDb, server, apiState } from './renderPortal';
 
 /* Customer portal (MW_002 Part B) against the MSW mocks: the same handlers as the preview. */
 
@@ -110,8 +110,29 @@ describe('new request (B3)', () => {
     expect(main().queryByText('You have an unfinished request')).not.toBeInTheDocument();
   });
 
+  it('the summary is the real API: one draft row per service, discard calls DELETE /orders/drafts/:service', async () => {
+    const user = userEvent.setup();
+    apiState.drafts = [
+      { service: 'china', updatedAt: new Date().toISOString() },
+      { service: 'domestic', updatedAt: new Date().toISOString() },
+    ];
+    renderPortal('/app/new-request');
+    expect(await main().findAllByText('You have an unfinished request')).toHaveLength(2);
+    const [china] = main().getAllByRole('button', { name: 'Discard' });
+    await user.click(china!);
+    expect(await screen.findByText('The draft was discarded.')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(main().getAllByText('You have an unfinished request')).toHaveLength(1),
+    );
+    expect(apiState.drafts.map((d) => d.service)).toEqual(['domestic']);
+    expect(main().getByRole('link', { name: 'Continue' })).toHaveAttribute(
+      'href',
+      '/app/new-request/domestic',
+    );
+  });
+
   it('no requests left: red state and the service cards are disabled', async () => {
-    db.attempts.remaining = 0;
+    apiState.balance.remaining = 0;
     renderPortal('/app/new-request');
     expect(await main().findByRole('alert')).toHaveTextContent(/no requests left/);
     for (const link of main().getAllByRole('link', { name: /Start request/ })) {

@@ -293,6 +293,8 @@
     "CORS_NOT_ALLOWED": "Request not allowed.",
     "PAYLOAD_TOO_LARGE": "The request is too large.",
     "INVALID_JSON": "Invalid request.",
+    "UNAUTHORIZED": "Please log in again.",
+    "FORBIDDEN": "You don't have access to this.",
     "NOT_FOUND": "Not found.",
     "INTERNAL": "Something went wrong. Please try again.",
     "NETWORK_ERROR": "Can't reach the server. Check your connection and try again.",

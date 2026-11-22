@@ -4,6 +4,7 @@ import { createMemoryRouter, Navigate, RouterProvider } from 'react-router';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { Session } from '@supabase/supabase-js';
+import type { MeSummary } from '@mirhalgo/shared';
 import { Toaster } from '../../src/components/ui/Toast';
 import { AuthContext, type AuthContextValue } from '../../src/features/auth/authContext';
 import AccountPage from '../../src/features/portal/account/AccountPage';
@@ -47,6 +48,27 @@ const supabaseHandlers = [
   }),
 ];
 
+/**
+ * Stand-in for the REAL API parts of the portal (MW_003 B2+): GET /me/summary and draft discard.
+ * They are not in src/mocks (those pass through to the server), so the tests answer them here.
+ */
+export let apiState: MeSummary;
+
+const realApiHandlers = [
+  http.get('*/api/me/summary', ({ request }) =>
+    request.headers.get('authorization') === 'Bearer test-access-token'
+      ? HttpResponse.json({ ok: true, data: apiState })
+      : HttpResponse.json(
+          { ok: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
+          { status: 401 },
+        ),
+  ),
+  http.delete('*/api/orders/drafts/:service', ({ params }) => {
+    apiState.drafts = apiState.drafts.filter((draft) => draft.service !== params.service);
+    return HttpResponse.json({ ok: true, data: null });
+  }),
+];
+
 export function resetPortalDb() {
   db = createMockDb();
   profileRow = {
@@ -57,7 +79,19 @@ export function resetPortalDb() {
     email: 'customer@example.com',
     phone: '+201098765432',
   };
-  server.resetHandlers(...supabaseHandlers, ...createHandlers(db, { latency: 0 }));
+  apiState = {
+    firstName: 'Wafaa',
+    gender: 'female',
+    balance: { remaining: 3, total: 5 },
+    drafts: [
+      { service: 'international', updatedAt: new Date(Date.now() - 7_200_000).toISOString() },
+    ],
+  };
+  server.resetHandlers(
+    ...supabaseHandlers,
+    ...realApiHandlers,
+    ...createHandlers(db, { latency: 0 }),
+  );
 }
 
 /** A stored supabase-js session (valid for a day, so no network is needed to read it). */

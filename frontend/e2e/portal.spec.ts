@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { mockSupabase, seedCustomerSession, setLanguage, USER } from './mocks';
+import { mockPortalApi, mockSupabase, seedCustomerSession, setLanguage, USER } from './mocks';
 
 /*
  * Customer portal (MW_002 Part B) on the build with the MSW mocks enabled (like the deployed
  * preview). A stored session = logged-in customer; the data comes from the service worker,
- * except the user's own identity, which is the (mocked) Supabase profiles row.
+ * except the parts that are already real: the user's own identity (the mocked Supabase profiles
+ * row) and the New Request summary (GET /me/summary, MW_003 B2, mocked with mockPortalApi).
  */
 
 const PAGES = [
@@ -32,6 +33,7 @@ const PAGES = [
 test.beforeEach(async ({ page }) => {
   await seedCustomerSession(page);
   await mockSupabase(page);
+  await mockPortalApi(page);
 });
 
 test('Arabic by default: RTL, sidebar on the right (desktop) / bottom navigation (mobile)', async ({

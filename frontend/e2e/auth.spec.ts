@@ -9,6 +9,7 @@ import {
   otpSent,
   USER,
   setLanguage,
+  summary,
 } from './mocks';
 
 const PASSWORD = 'Str0ng!pass';
@@ -35,6 +36,7 @@ test('customer sign up → OTP → logged in → customer portal → logout', as
         : { status: 400, body: fail('OTP_INVALID') },
     '/auth/login': loginSuccess,
     '/me': me,
+    '/me/summary': summary,
   });
 
   await page.goto('/');
