@@ -4,6 +4,7 @@ node_modules/
 # builds
 dist/
 dist-e2e/
+dist-e2e-portal/
 test-results/
 playwright-report/
 coverage/
@@ -15,8 +16,8 @@ coverage/
 !.env.example
 
 # supabase local
-supabase/.temp/
-supabase/.branches/
+backend/supabase/.temp/
+backend/supabase/.branches/
 
 # editors / OS
 .vscode/*

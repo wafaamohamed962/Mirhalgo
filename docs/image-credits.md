@@ -1,8 +1,8 @@
 # Image credits
 
 All images must be **commercial-use licensed** (spec 3.4). Originals live in
-`apps/web/src/assets/images/` (never bundled); `npm run images -w apps/web` exports the
-AVIF/WebP sizes to `apps/web/public/images/`.
+`frontend/src/assets/images/` (never bundled); `npm run images -w frontend` exports the
+AVIF/WebP sizes to `frontend/public/images/`.
 
 | File (original)                            | Size        | Used in              | Source URL               | Author   | License                                      |
 | ------------------------------------------ | ----------- | -------------------- | ------------------------ | -------- | -------------------------------------------- |
