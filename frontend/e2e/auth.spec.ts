@@ -257,3 +257,37 @@ test('Arabic auth pages are RTL', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('مرحبًا بعودتك');
 });
+
+test('"Back to home" on both sign-up forms: fits the header, confirms when the form has data', async ({
+  page,
+}) => {
+  await mockApi(page, {});
+  for (const [path, field] of [
+    ['/signup/customer', /First name/],
+    ['/signup/company', /Legal company name/],
+  ] as const) {
+    for (const language of ['ar', 'en'] as const) {
+      await setLanguage(page, language);
+      await page.goto(path);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - window.innerWidth,
+      );
+      expect(overflow, `${path} ${language}`).toBeLessThanOrEqual(0);
+    }
+
+    // empty form: straight home
+    await page.getByRole('link', { name: 'Back to home' }).click();
+    await expect(page).toHaveURL('/');
+
+    // with data: confirm first
+    await page.goto(path);
+    await page.getByLabel(field).fill('Nile');
+    await page.getByRole('link', { name: 'Back to home' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Leave the form?' });
+    await dialog.getByRole('button', { name: 'Stay' }).click();
+    await expect(page).toHaveURL(path);
+    await page.getByRole('link', { name: 'Back to home' }).click();
+    await dialog.getByRole('button', { name: 'Leave' }).click();
+    await expect(page).toHaveURL('/');
+  }
+});

@@ -3,6 +3,7 @@
     "brand": "MirhalGo",
     "appName": "MirhalGo",
     "backHome": "Back to home",
+    "home": "Home",
     "loading": "Loading…"
   },
   "meta": {
@@ -171,7 +172,11 @@
       "terms": "I agree to the <terms>Terms</terms> and <privacy>Privacy Policy</privacy>",
       "submit": "Create account",
       "haveAccount": "Already have an account?",
-      "login": "Log in"
+      "login": "Log in",
+      "leave": {
+        "title": "Leave the form?",
+        "text": "The information you entered will be lost."
+      }
     },
     "verify": {
       "title": "Verify your email",
@@ -475,8 +480,8 @@
         "dismiss": "Dismiss this notice"
       },
       "leave": {
-        "title": "Leave the registration?",
-        "text": "Your text is saved on this device for 7 days, but passwords, legal numbers and files will be lost.",
+        "title": "Leave the form?",
+        "text": "Your draft is saved on this device for 7 days. Passwords, legal numbers and files are not saved.",
         "stay": "Stay",
         "leave": "Leave"
       },

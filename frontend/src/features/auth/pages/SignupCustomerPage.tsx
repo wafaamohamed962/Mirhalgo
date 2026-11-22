@@ -15,6 +15,7 @@ import {
 import { errorKey } from '../../../lib/apiClient';
 import { useZodForm } from '../../../lib/forms';
 import { usePageMeta } from '../../../lib/usePageMeta';
+import { useUnsavedChangesGuard } from '../../../lib/useUnsavedChangesGuard';
 import { authApi } from '../api';
 import { AuthCard } from '../components/AuthCard';
 import { setPendingVerification } from '../pendingVerification';
@@ -38,13 +39,20 @@ export default function SignupCustomerPage() {
     register,
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useZodForm(signupSchema, { defaultValues: DEFAULTS });
+
+  // "Back to home" (or any link) with data typed: confirm first (MW_003 A3). No draft here.
+  const leaveGuard = useUnsavedChangesGuard(isDirty, {
+    title: t('auth.signup.leave.title'),
+    description: t('auth.signup.leave.text'),
+  });
 
   const signup = useMutation({
     mutationFn: authApi.signup,
     onSuccess: (result, input) => {
       setPendingVerification(result.email, input.password);
+      leaveGuard.allowLeave();
       navigate('/verify-email', { state: { cooldown: result.cooldownSeconds } });
     },
   });
@@ -52,6 +60,7 @@ export default function SignupCustomerPage() {
   return (
     <AuthCard
       wide
+      backHome
       title={t('auth.signup.title')}
       subtitle={t('auth.signup.subtitle')}
       footer={
@@ -157,6 +166,7 @@ export default function SignupCustomerPage() {
           </Button>
         </div>
       </form>
+      {leaveGuard.dialog}
     </AuthCard>
   );
 }

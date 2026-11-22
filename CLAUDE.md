@@ -754,7 +754,7 @@ assumptions in the PR)**
     "ready date", client-side PDF.
 
 **Libraries:** `jspdf` + `html-to-image` (PDF, lazy chunk) follow plan §5 item 36 (default
-accepted). `flag-icons` is still to be confirmed (needed from B1). Combobox, file checks,
+accepted). `flag-icons` approved by the developer on 2026-11-22 (used from B1). Combobox, file checks,
 scheduling and idempotency are built in-house.
 
 **Progress**
@@ -862,4 +862,25 @@ scheduling and idempotency are built in-house.
       tables are readable by anon and not writable.
   - Since the push, the company registration on `feature/mw-002` no longer matches the real
     DB (it still sends `governorate`). Only `feature/mw-003` does.
-- Next: Phase A3.
+- **Phase A3 done (2026-11-22): "Back to home".**
+  - `SimpleLayout backHome` (also on `AuthCard`) adds a header link on `/signup/company` and
+    `/signup/customer`.
+    - Phones show the short "Home / الرئيسية" (`common.home`), `sm`+ the full "Back to home".
+    - The accessible name is always the full text; the arrow is mirrored in RTL.
+  - The confirmation reuses `useUnsavedChangesGuard` (`useBlocker` + `beforeunload`), so the
+    logo and every other link ask too.
+    - Company: "Leave the form?" + "Your draft is saved on this device for 7 days. Passwords,
+      legal numbers and files are not saved."
+    - Customer sign-up (new guard, it has no draft): "Leave the form?" + "The information you
+      entered will be lost." The guard is released right before the successful redirect.
+  - Bug fixed (company draft):
+    - Leaving within the 500 ms autosave delay used to drop the last edit, so "Your draft is
+      saved" was not true. The pending save is now flushed on unmount.
+    - A pending save could also bring the draft back after "Start over" or after a successful
+      submit. It is now cancelled in both. A regression test fails without the fix.
+  - Tests:
+    - wizard (back home empty / with data, draft flushed, start over), new
+      `test/signupCustomer.test.tsx`;
+    - E2E on both sign-up pages, desktop + 360 px, AR/EN, no overflow;
+    - totals: shared 96, backend 89, frontend 82, E2E 45.
+- Next: Part B, phase B1 (reference data + migrations).

@@ -78,21 +78,35 @@ export default function CompanyRegistrationPage() {
 
   // ── autosave (text only, see draft.ts) after each edit. Resets (restore, start over) have
   // no field name and are not edits, so they never write a draft.
+  const pendingSave = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelAutosave = () => {
+    if (pendingSave.current) clearTimeout(pendingSave.current);
+    pendingSave.current = null;
+  };
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
     const subscription = form.watch((_values, { name }) => {
       if (!name) return;
-      clearTimeout(timer);
-      timer = setTimeout(() => saveCompanyDraft(form.getValues()), AUTOSAVE_DELAY_MS);
+      if (pendingSave.current) clearTimeout(pendingSave.current);
+      pendingSave.current = setTimeout(() => {
+        pendingSave.current = null;
+        saveCompanyDraft(form.getValues());
+      }, AUTOSAVE_DELAY_MS);
     });
     return () => {
-      clearTimeout(timer);
       subscription.unsubscribe();
+      // Leaving with a save still pending ("Back to home" right after typing): save it now,
+      // so "Your draft is saved" is true (MW_003 A3).
+      if (pendingSave.current) {
+        clearTimeout(pendingSave.current);
+        pendingSave.current = null;
+        saveCompanyDraft(form.getValues());
+      }
     };
   }, [form]);
 
   /** "Start over": drop the draft and give the user an empty form on the first step. */
   const startOver = () => {
+    cancelAutosave(); // a pending save must not bring the draft back
     clearCompanyDraft();
     form.reset(EMPTY_VALUES);
     setFormKey((key) => key + 1);
@@ -102,7 +116,7 @@ export default function CompanyRegistrationPage() {
     requestAnimationFrame(() => form.setFocus('legalName'));
   };
 
-  // leaving with unsaved changes (spec A1)
+  // leaving with unsaved changes (MW_002 A1; "Back to home" in the header, MW_003 A3)
   const leaveGuard = useUnsavedChangesGuard(isDirty, {
     title: t('company.register.leave.title'),
     description: t('company.register.leave.text'),
@@ -118,6 +132,7 @@ export default function CompanyRegistrationPage() {
     onMutate: () => setProgress(0),
     onSuccess: (result) => {
       leaveGuard.allowLeave();
+      cancelAutosave();
       clearCompanyDraft();
       setPendingVerification(result.email, null, 'company'); // no auto-login (decision 6)
       navigate('/verify-email', { state: { cooldown: result.cooldownSeconds } });
@@ -155,7 +170,7 @@ export default function CompanyRegistrationPage() {
   }));
 
   return (
-    <SimpleLayout>
+    <SimpleLayout backHome>
       <Card className="w-full max-w-3xl p-6 sm:p-10">
         <header className="mb-8 text-center">
           <h1 className="text-h2">{t('company.register.title')}</h1>

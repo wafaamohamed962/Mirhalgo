@@ -50,6 +50,7 @@ function renderWizard() {
       },
       { path: '/verify-email', element: <p>verify page</p> },
       { path: '/elsewhere', element: <p>elsewhere page</p> },
+      { path: '/', element: <p>home page</p> },
     ],
     { initialEntries: ['/signup/company'] },
   );
@@ -318,12 +319,21 @@ describe('company registration wizard', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
+  it('"Start over" right after typing: the pending autosave does not bring the draft back', async () => {
+    const user = userEvent.setup();
+    await saveDraftAndReturn(user);
+    await user.type(screen.getByLabelText(/Representative full name/), 'Ahmed'); // save pending
+    await user.click(screen.getByRole('button', { name: 'Start over' }));
+    await new Promise((resolve) => setTimeout(resolve, 700)); // > autosave delay
+    expect(localStorage.getItem('mirhalgo.companyDraft')).toBeNull();
+  });
+
   it('asks before leaving with unsaved changes', async () => {
     const user = userEvent.setup();
     const router = renderWizard();
     await user.type(screen.getByLabelText(/Legal company name/), 'Delta Cargo');
     await user.click(screen.getByRole('link', { name: 'elsewhere' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Leave the registration?' });
+    const dialog = await screen.findByRole('dialog', { name: 'Leave the form?' });
     await user.click(within(dialog).getByRole('button', { name: 'Stay' }));
     expect(router.state.location.pathname).toBe('/signup/company');
 
@@ -332,5 +342,34 @@ describe('company registration wizard', () => {
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Leave' }),
     );
     await waitFor(() => expect(router.state.location.pathname).toBe('/elsewhere'));
+  });
+
+  it('"Back to home" in the header: leaves at once when empty (MW_003 A3)', async () => {
+    const user = userEvent.setup();
+    const router = renderWizard();
+    await user.click(screen.getByRole('link', { name: 'Back to home' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('"Back to home" with data: "Your draft is saved", Stay keeps the data, Leave goes home', async () => {
+    const user = userEvent.setup();
+    const router = renderWizard();
+    await user.type(screen.getByLabelText(/Legal company name/), 'Delta Cargo');
+    await user.click(screen.getByRole('link', { name: 'Back to home' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Leave the form?' });
+    expect(dialog).toHaveTextContent('Your draft is saved');
+    await user.click(within(dialog).getByRole('button', { name: 'Stay' }));
+    expect(router.state.location.pathname).toBe('/signup/company');
+    expect(screen.getByLabelText(/Legal company name/)).toHaveValue('Delta Cargo');
+
+    await user.click(screen.getByRole('link', { name: 'Back to home' }));
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Leave' }),
+    );
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    await waitFor(() =>
+      expect(localStorage.getItem('mirhalgo.companyDraft')).toContain('Delta Cargo'),
+    );
   });
 });
