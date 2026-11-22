@@ -1,17 +1,21 @@
 import {
+  COUNTRY_FILTERED_LISTS,
   isCompanyCountry,
   regionBelongsTo,
   type CountryScope,
+  type LocalizedName,
   type ReferenceCountry,
+  type ReferenceList,
+  type ReferenceLists,
   type ReferenceRegion,
 } from '@mirhalgo/shared';
 import { db } from '../lib/supabase.js';
 import { HttpError } from '../middleware/errorHandler.js';
 
 /*
- * Reference lists (MW_003 A2, extended in B1): small, public, rarely changing tables, so each
- * one is loaded once and kept in memory for CACHE_TTL_MS (a DB edit shows up within that time).
- * A failed load is not cached.
+ * Reference lists (MW_003 A2 + B1): small, public, rarely changing tables, so each one is
+ * loaded once and kept in memory for CACHE_TTL_MS (a DB edit shows up within that time).
+ * A failed load is not cached. Only active rows, ordered by `sort` then the English name.
  */
 
 export const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -35,59 +39,153 @@ function cached<T>(load: () => Promise<T>): { get: () => Promise<T>; clear: () =
   };
 }
 
-const countries = cached(async (): Promise<ReferenceCountry[]> => {
-  const { data, error } = await db
-    .from('countries')
-    .select('code, name_ar, name_en, dial_code, company_signup')
-    .eq('active', true)
-    .order('sort')
-    .order('name_en');
+/** Unwraps a Supabase query result (throws its error). */
+async function rows<T>(query: PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
+  const { data, error } = await query;
   if (error) throw error;
-  return data.map((row) => ({
-    code: row.code,
-    name: { ar: row.name_ar, en: row.name_en },
-    dialCode: row.dial_code,
-    companySignup: row.company_signup,
-  }));
+  return data ?? [];
+}
+
+const name = (row: { name_ar: string; name_en: string }): LocalizedName => ({
+  ar: row.name_ar,
+  en: row.name_en,
 });
 
-const regions = cached(async (): Promise<ReferenceRegion[]> => {
-  const { data, error } = await db
-    .from('regions')
-    .select('id, country_code, name_ar, name_en')
-    .eq('active', true)
-    .order('sort')
-    .order('name_en');
-  if (error) throw error;
-  return data.map((row) => ({
-    id: row.id,
-    countryCode: row.country_code,
-    name: { ar: row.name_ar, en: row.name_en },
-  }));
-});
+/** Options of a plain list (container types, truck types, shipping lines). */
+const optionList = (table: 'container_types' | 'truck_types' | 'shipping_lines') => async () =>
+  (
+    await rows(
+      db
+        .from(table)
+        .select('id, name_ar, name_en')
+        .eq('active', true)
+        .order('sort')
+        .order('name_en'),
+    )
+  ).map((row) => ({ id: row.id, name: name(row) }));
+
+/** Countries, regions, cities, ports and airports share id + country + names. */
+const placeList = (table: 'regions' | 'cities' | 'airports') => async () =>
+  (
+    await rows(
+      db
+        .from(table)
+        .select('id, country_code, name_ar, name_en')
+        .eq('active', true)
+        .order('sort')
+        .order('name_en'),
+    )
+  ).map((row) => ({ id: row.id, countryCode: row.country_code, name: name(row) }));
+
+const LOADERS: { [L in ReferenceList]: () => Promise<ReferenceLists[L][]> } = {
+  countries: async () =>
+    (
+      await rows(
+        db
+          .from('countries')
+          .select('code, name_ar, name_en, dial_code, company_signup, china_delivery')
+          .eq('active', true)
+          .order('sort')
+          .order('name_en'),
+      )
+    ).map((row) => ({
+      code: row.code,
+      name: name(row),
+      dialCode: row.dial_code,
+      companySignup: row.company_signup,
+      chinaDelivery: row.china_delivery,
+    })),
+  regions: placeList('regions'),
+  cities: placeList('cities'),
+  airports: placeList('airports'),
+  ports: async () =>
+    (
+      await rows(
+        db
+          .from('ports')
+          .select('id, country_code, unlocode, name_ar, name_en')
+          .eq('active', true)
+          .order('sort')
+          .order('name_en'),
+      )
+    ).map((row) => ({
+      id: row.id,
+      countryCode: row.country_code,
+      unlocode: row.unlocode,
+      name: name(row),
+    })),
+  'container-types': optionList('container_types'),
+  'truck-types': optionList('truck_types'),
+  'shipping-lines': optionList('shipping_lines'),
+  'transit-estimates': async () =>
+    (
+      await rows(
+        db
+          .from('transit_estimates')
+          .select('source, method, min_days, max_days')
+          .eq('active', true)
+          .order('source')
+          .order('method'),
+      )
+    ).map((row) => ({
+      source: row.source,
+      method: row.method,
+      minDays: row.min_days,
+      maxDays: row.max_days,
+    })),
+};
+
+type Cache<T> = { get: () => Promise<T>; clear: () => void };
+
+// one cache per list (built from LOADERS; the mapped type keeps each list's item type)
+const caches = Object.fromEntries(
+  (Object.keys(LOADERS) as ReferenceList[]).map((list) => [
+    list,
+    cached(LOADERS[list] as () => Promise<unknown>),
+  ]),
+) as unknown as { [L in ReferenceList]: Cache<ReferenceLists[L][]> };
 
 /** For tests. */
 export function clearReferenceCache() {
-  countries.clear();
-  regions.clear();
+  for (const cache of Object.values(caches)) cache.clear();
 }
+
+export type ReferenceQuery = { country?: string; scope?: CountryScope };
+
+const hasCountry = (list: ReferenceList): list is (typeof COUNTRY_FILTERED_LISTS)[number] =>
+  (COUNTRY_FILTERED_LISTS as readonly string[]).includes(list);
 
 /**
- * Countries. `company_signup`: the countries flagged in the DB that also have legal-number
- * rules in the shared code (a flag without rules is never offered).
+ * One reference list. `country` filters regions, cities, ports and airports. Countries'
+ * `company_signup` scope = flagged in the DB AND with legal-number rules in the shared code
+ * (a flag without rules is never offered).
  */
-export async function listCountries(scope: CountryScope = 'all'): Promise<ReferenceCountry[]> {
-  const all = await countries.get();
-  return scope === 'company_signup'
-    ? all.filter((country) => country.companySignup && isCompanyCountry(country.code))
-    : all;
+export async function listReference<L extends ReferenceList>(
+  list: L,
+  { country, scope = 'all' }: ReferenceQuery = {},
+): Promise<ReferenceLists[L][]> {
+  const items = await caches[list].get();
+  if (list === 'countries') {
+    const countries = items as ReferenceCountry[];
+    const kept =
+      scope === 'company_signup'
+        ? countries.filter((c) => c.companySignup && isCompanyCountry(c.code))
+        : scope === 'china_delivery'
+          ? countries.filter((c) => c.chinaDelivery)
+          : countries;
+    return kept as ReferenceLists[L][];
+  }
+  if (country && hasCountry(list)) {
+    return (items as Array<{ countryCode: string }>).filter(
+      (item) => item.countryCode === country,
+    ) as ReferenceLists[L][];
+  }
+  return items;
 }
 
-/** Regions, optionally of one country. */
-export async function listRegions(countryCode?: string): Promise<ReferenceRegion[]> {
-  const all = await regions.get();
-  return countryCode ? all.filter((region) => region.countryCode === countryCode) : all;
-}
+export const listCountries = (scope: CountryScope = 'all') => listReference('countries', { scope });
+export const listRegions = (country?: string): Promise<ReferenceRegion[]> =>
+  listReference('regions', { country });
 
 const invalid = () => new HttpError(400, 'VALIDATION_ERROR', 'Invalid input');
 

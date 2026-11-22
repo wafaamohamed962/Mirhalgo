@@ -13,6 +13,8 @@ export type ReferenceCountry = {
   dialCode: string | null;
   /** A shipping company can register from this country. */
   companySignup: boolean;
+  /** Delivery country of the "SHEIN & Chinese sites" form (spec B5). */
+  chinaDelivery: boolean;
 };
 
 export type ReferenceRegion = {
@@ -22,10 +24,70 @@ export type ReferenceRegion = {
   name: LocalizedName;
 };
 
-/** Lists available at /api/reference/:list (B1 adds ports, airports, …). */
-export const REFERENCE_LISTS = ['countries', 'regions'] as const;
-export type ReferenceList = (typeof REFERENCE_LISTS)[number];
+/** City, e.g. "EG-CAIRO". */
+export type ReferenceCity = { id: string; countryCode: string; name: LocalizedName };
+
+/** Seaport, e.g. "EG-ALEXANDRIA"; `unlocode` only where verified. */
+export type ReferencePort = {
+  id: string;
+  countryCode: string;
+  unlocode: string | null;
+  name: LocalizedName;
+};
+
+/** Airport; the id is the IATA code. */
+export type ReferenceAirport = { id: string; countryCode: string; name: LocalizedName };
+
+/** A plain option list (container types, truck types, shipping lines). */
+export type ReferenceOption = { id: string; name: LocalizedName };
+
+export const TRANSIT_SOURCES = ['china_sites', 'shein'] as const;
+export type TransitSource = (typeof TRANSIT_SOURCES)[number];
+export const TRANSIT_METHODS = ['air', 'sea', 'land'] as const;
+export type TransitMethod = (typeof TRANSIT_METHODS)[number];
+
+/** Delivery time shown per source × shipping method (spec B5, configurable in the DB). */
+export type TransitEstimate = {
+  source: TransitSource;
+  method: TransitMethod;
+  minDays: number;
+  maxDays: number;
+};
+
+/** Lists available at /api/reference/:list, with the item type of each. */
+export type ReferenceLists = {
+  countries: ReferenceCountry;
+  regions: ReferenceRegion;
+  cities: ReferenceCity;
+  ports: ReferencePort;
+  airports: ReferenceAirport;
+  'container-types': ReferenceOption;
+  'truck-types': ReferenceOption;
+  'shipping-lines': ReferenceOption;
+  'transit-estimates': TransitEstimate;
+};
+export type ReferenceList = keyof ReferenceLists;
+
+export const REFERENCE_LISTS = [
+  'countries',
+  'regions',
+  'cities',
+  'ports',
+  'airports',
+  'container-types',
+  'truck-types',
+  'shipping-lines',
+  'transit-estimates',
+] as const satisfies readonly ReferenceList[];
+
+/** Lists that can be filtered with `?country=`. */
+export const COUNTRY_FILTERED_LISTS = [
+  'regions',
+  'cities',
+  'ports',
+  'airports',
+] as const satisfies readonly ReferenceList[];
 
 /** `?scope=` of the countries list. */
-export const COUNTRY_SCOPES = ['all', 'company_signup'] as const;
+export const COUNTRY_SCOPES = ['all', 'company_signup', 'china_delivery'] as const;
 export type CountryScope = (typeof COUNTRY_SCOPES)[number];

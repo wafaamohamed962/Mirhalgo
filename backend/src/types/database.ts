@@ -4,6 +4,8 @@ import type {
   Gender,
   OtpPurpose,
   StatusActorType,
+  TransitMethod,
+  TransitSource,
   UserRole,
 } from '@mirhalgo/shared';
 
@@ -105,6 +107,7 @@ export type CountryRow = {
   name_en: string;
   dial_code: string | null;
   company_signup: boolean;
+  china_delivery: boolean;
   sort: number;
   active: boolean;
 };
@@ -115,6 +118,27 @@ export type RegionRow = {
   name_ar: string;
   name_en: string;
   sort: number;
+  active: boolean;
+};
+
+/** Cities, airports: same shape as regions (id + country + names). Ports add the UN/LOCODE. */
+export type PlaceRow = RegionRow;
+export type PortRow = RegionRow & { unlocode: string | null };
+
+/** Container types, truck types, shipping lines. */
+export type OptionRow = {
+  id: string;
+  name_ar: string;
+  name_en: string;
+  sort: number;
+  active: boolean;
+};
+
+export type TransitEstimateRow = {
+  source: TransitSource;
+  method: TransitMethod;
+  min_days: number;
+  max_days: number;
   active: boolean;
 };
 
@@ -151,6 +175,13 @@ export type Database = {
       // MW_003
       countries: Table<CountryRow, never, never>;
       regions: Table<RegionRow, never, never>;
+      cities: Table<PlaceRow, never, never>;
+      ports: Table<PortRow, never, never>;
+      airports: Table<PlaceRow, never, never>;
+      container_types: Table<OptionRow, never, never>;
+      truck_types: Table<OptionRow, never, never>;
+      shipping_lines: Table<OptionRow, never, never>;
+      transit_estimates: Table<TransitEstimateRow, never, never>;
     };
     Views: Record<never, never>;
     Functions: {

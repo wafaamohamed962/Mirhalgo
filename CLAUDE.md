@@ -883,4 +883,54 @@ scheduling and idempotency are built in-house.
       `test/signupCustomer.test.tsx`;
     - E2E on both sign-up pages, desktop + 360 px, AR/EN, no overflow;
     - totals: shared 96, backend 89, frontend 82, E2E 45.
-- Next: Part B, phase B1 (reference data + migrations).
+- **Phase B1 done (2026-11-22).** Migration pushed to `mirhalgo_v1` with the developer's OK.
+  Real check: all 9 lists through the API (8 delivery countries, EG cities 28, ports 113 / EG 12,
+  CN airports 13, 7 / 13 / 20 options, 4 transit rows), anon PostgREST read OK, write refused (401).
+  - `backend/supabase/migrations/20261122000003_reference_logistics.sql` (generated, scratchpad
+    `gen-b1-sql.mjs`):
+    - `countries.china_delivery`: EG SA AE KW QA BH OM JO (spec B5).
+    - `cities`: 126 rows (`EG-CAIRO`…) for the 8 delivery countries + LY SD IQ LB TR.
+    - `ports`: 113 rows with a stable id (`EG-ALEXANDRIA`) and `unlocode`. The LOCODE is set
+      only where well known (98); the others are NULL until checked against the official list.
+      Egypt has 12 ports (the domestic form's list).
+    - `airports`: 103 rows, IATA id. "Any airport" is a flag on the order, not a row.
+    - PLACEHOLDER lists (decision 27): `container_types` 7 (spec), `truck_types` 13,
+      `shipping_lines` 20 (brand names, same text in both languages).
+    - `transit_estimates` (source × method → min/max days): China sites air 15–25 / sea 45–60,
+      SHEIN air 10–15 (decision 28) / land 35–45.
+    - Same RLS as A2: public read of active rows, no client writes.
+    - PGlite (scratchpad `pg/verify-b1.mjs`): counts, constraints, RLS on every table.
+  - Shared `reference.ts`: `ReferenceLists` maps each list to its item type
+    (`ReferenceCity/Port/Airport/Option`, `TransitEstimate`), `COUNTRY_FILTERED_LISTS`,
+    scopes `all | company_signup | china_delivery`.
+  - API `GET /api/reference/:list`:
+    - all 9 lists through one table-driven service (`LOADERS` + one cache per list);
+    - `?country=` for regions / cities / ports / airports.
+  - Web:
+    - `services/api/reference.ts`: `useReference(list, params)`, plus `comboboxOptions`
+      (localized label, flag, the other language as a search keyword, optional code) and
+      `countryOptions`.
+    - `components/ui/Combobox.tsx`: WAI-ARIA combobox (`aria-activedescendant`; keys
+      ↓↑ Home End Enter Esc Tab; Enter never submits), a flag inside the input and in the
+      options, a code hint, an optional "Other" (`COMBOBOX_OTHER`, always offered),
+      loading / "No matches".
+    - `Flag.tsx` (flag-icons).
+    - `lib/search.ts`: `normalizeSearch` / `matchesSearch` (Arabic diacritics + the hamza /
+      madda that NFD splits off أ إ آ, letter variants, Latin accents, Arabic digits).
+  - Bundle:
+    - `Combobox` and `Flag` are NOT in the `components/ui` barrel: import them from their
+      files, so only pages that use them load the flag stylesheet.
+    - `vite.config.ts` never inlines flag-icons SVGs. Before this, they made one 421 kB
+      stylesheet on a shared chunk.
+    - Checked with a probe: the chunk CSS is 30 kB, the flags are 0.2 kB files loaded when
+      shown, and the main CSS is unchanged (42 kB).
+  - Tests:
+    - backend `reference.test.ts` (B1 lists, filters, `china_delivery`);
+    - web `combobox.test.tsx` (ARIA, keyboard, filtering incl. Arabic spelling, Other,
+      errors, option helpers);
+    - `referenceFixtures.ts` has every list (unit + E2E);
+    - totals: shared 96, backend 91, frontend 90, E2E 45. Screenshots AR/EN at 360 px.
+  - Open:
+    - Arabic names of ports / airports / cities / types live in the DB, not in `ar.json`, so
+      they are not in `docs/ar-review.md` yet.
+- Next: B2 (request balance + ledger + `GET /api/me/summary`).
