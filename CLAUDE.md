@@ -66,7 +66,8 @@ frontend/src/
   assets/images/     optimized AVIF/WebP + srcset sizes (logo SVGs in assets/images/logo/)
   services/api/      customer-portal service layer + TanStack Query hooks (MW_002 B)
   mocks/             MSW handlers + fixtures (customer portal, until the real API exists)
-backend/src/         routes/, services/ (otp, mail, companies, storage), middleware/, schemas/
+backend/src/         routes/, services/ (otp, mail, companies, storage), middleware/, schemas/,
+                     i18n/ (ar.json, en.json: email copy + `t()`)
 backend/supabase/    config.toml + migrations/ (Supabase CLI: run from backend/)
 shared/src/          Zod schemas + types shared by web & api  (package name: @mirhalgo/shared)
 docs/                MW_001.md (spec), image-credits.md
@@ -149,7 +150,10 @@ Available utilities:
   use `ml- mr- pl- pr- left- right-` for direction-dependent spacing. Default language is
   **Arabic** (`<html lang="ar" dir="rtl">`); i18n must update `lang` and `dir` and save the
   choice in `localStorage`.
-- **All UI text comes from `i18n/ar.json` and `i18n/en.json`.** No hard-coded strings.
+- **All UI text comes from `i18n/ar.json` and `i18n/en.json`.** No hard-coded strings. The same
+  applies to the backend: email copy lives in `backend/src/i18n/{ar,en}.json` (`t(lang, key, vars)`
+  in `backend/src/i18n/index.ts`, `{{var}}` placeholders, typed keys); `mail/templates.ts` holds
+  layout only. Keys and placeholders must match in both files (`backend/test/i18n.test.ts`).
   Format numbers and dates per locale.
 - **Arabic copy is simple Modern Standard Arabic (فصحى مبسطة), never Egyptian colloquial**
   (decision 23): short, clear, professional. Fixed terms: تسجيل الدخول · إنشاء حساب ·
@@ -765,8 +769,15 @@ scheduling and idempotency are built in-house.
     - a deny-list of colloquial and transliterated words, matched as whole words with prefixes and
       diacritics, in every Arabic source;
     - no Arabic letters in `frontend/src` / `shared/src` code outside comments (`mocks/`
-      excepted). Backend email templates are the only other place with Arabic (no i18n JSON there).
+      excepted), now including `backend/src` (no exceptions).
     - Add a word to the deny-list when review finds a new colloquial or transliterated term.
+  - Email copy moved out of `backend/src/services/mail/templates.ts` into
+    `backend/src/i18n/{ar,en}.json` (32 strings, `t()` helper, `resolveJsonModule`, JSON imports
+    with `with { type: 'json' }`, copied to `dist/` by tsc). Checked: all 7 emails (subject,
+    html, text) are byte-for-byte identical before and after; `dist` loads under plain Node.
+  - `docs/ar-review.md` (key · Arabic · English, 20 sections, 856 strings) is generated for the
+    native-speaker review. It is **not committed**: listed in `.git/info/exclude` (local only).
+    Regenerate it after copy changes (generator script kept outside the repo, in the scratchpad).
   - For A2: the team-notice email still labels the location "Governorate / المحافظة". For B: the
     portal search placeholder still shows the `MG-R-…` reference format.
   - Still open: the native-speaker review of the final `ar.json` before merge (developer action).

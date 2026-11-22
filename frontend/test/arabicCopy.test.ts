@@ -5,11 +5,12 @@ import { describe, expect, it } from 'vitest';
 /*
  * Arabic copy rules (MW_003 A1, CLAUDE.md §7): formal Modern Standard Arabic everywhere, no
  * colloquial words, no English words written in Arabic letters, and no Arabic text hard-coded in
- * components (only in the i18n files; mock data and the backend email templates are the exceptions).
+ * code: only the i18n files (web `src/i18n`, backend `src/i18n` for the emails). Mock data is the
+ * one exception (it stands in for user content).
  */
 
-// Vitest runs in the frontend workspace; the Arabic sources span frontend/ and backend/.
-const root = resolve(process.cwd(), '..');
+// The repo root (this file is frontend/test/…): the Arabic sources span frontend/ and backend/.
+const root = resolve(__dirname, '../..');
 const read = (file: string) => readFileSync(join(root, file), 'utf8');
 
 /** Every file that contains user-facing Arabic. */
@@ -18,7 +19,7 @@ const ARABIC_SOURCES = [
   'frontend/src/i18n/portal/ar.json',
   'frontend/index.html',
   'frontend/src/mocks/fixtures.ts',
-  'backend/src/services/mail/templates.ts',
+  'backend/src/i18n/ar.json',
 ];
 
 /**
@@ -68,10 +69,12 @@ describe('Arabic copy (MSA)', () => {
     expect(deniedWords('هل يُعاد الطلب إلى رصيدي؟ تم حفظ التفضيلات.')).toEqual([]);
   });
 
-  it('no Arabic text is hard-coded in components (i18n files only)', () => {
-    const files = [...codeFiles('frontend/src'), ...codeFiles('shared/src')].filter(
-      (file) => !file.startsWith('frontend/src/mocks/'),
-    );
+  it('no Arabic text is hard-coded in code, web or backend (i18n files only)', () => {
+    const files = [
+      ...codeFiles('frontend/src'),
+      ...codeFiles('shared/src'),
+      ...codeFiles('backend/src'),
+    ].filter((file) => !file.startsWith('frontend/src/mocks/'));
     const offenders = files.filter((file) => /[\u0621-\u064A]/.test(withoutComments(read(file))));
     expect(offenders).toEqual([]);
   });

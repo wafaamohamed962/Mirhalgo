@@ -1,0 +1,52 @@
+{
+  "email": {
+    "brand": "MirhalGo",
+    "ignore": "If you didn't request this, ignore this email.",
+    "otp": {
+      "signup": {
+        "subject": "Verify your email",
+        "title": "Your verification code",
+        "body": "Use this code to verify your email on MirhalGo. It expires in {{minutes}} minutes."
+      },
+      "reset_password": {
+        "subject": "Reset your password",
+        "title": "Your password reset code",
+        "body": "Use this code to reset your MirhalGo password. It expires in {{minutes}} minutes."
+      }
+    },
+    "accountExists": {
+      "subject": "You already have a MirhalGo account",
+      "title": "You already have an account",
+      "intro": "Someone tried to create a new MirhalGo account with this email, but it is already registered.",
+      "action": "You can log in, or use \"Forgot password?\" on the login page if you don't remember your password."
+    },
+    "phoneTaken": {
+      "subject": "About your MirhalGo sign up",
+      "title": "About your MirhalGo sign up",
+      "intro": "We couldn't finish creating your account because the phone number you used is already registered to another account.",
+      "action": "If this number is yours, log in with it or use \"Forgot password?\". Otherwise, sign up with a different number."
+    },
+    "applicationReceived": {
+      "subject": "Application received",
+      "title": "We received your application",
+      "thanks": "Thank you for registering \"{{name}}\" on MirhalGo. Your reference number: {{reference}}",
+      "next": "Our team will review your application within 48 hours. We'll email you with the result."
+    },
+    "team": {
+      "contactSubject": "New contact message — {{name}}",
+      "contactTitle": "New contact message",
+      "companySubject": "New company application — {{reference}}",
+      "companyTitle": "New company application",
+      "companyNote": "Pending review. Documents are only available in the admin panel."
+    },
+    "labels": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "reference": "Reference",
+      "company": "Company",
+      "governorate": "Governorate",
+      "activities": "Activities"
+    }
+  }
+}

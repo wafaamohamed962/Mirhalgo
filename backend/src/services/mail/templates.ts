@@ -1,10 +1,12 @@
 import { OTP_TTL_MINUTES, type ContactInput, type OtpPurpose } from '@mirhalgo/shared';
+import { t, type EmailLabel, type Lang, type TranslationKey } from '../../i18n/index.js';
 import { escapeHtml } from './escape.js';
 
 /*
  * Branded bilingual email templates (spec 4.3): navy header, blue code box,
  * Arabic (RTL) first, then English. Email clients ignore external CSS, so the
  * brand colors (mirroring frontend/src/styles/tokens.css) are inlined here.
+ * All copy comes from src/i18n/{ar,en}.json (MW_003 A1); this file holds layout only.
  * Only static copy is interpolated raw; all user content goes through escapeHtml.
  */
 const COLORS = {
@@ -25,7 +27,22 @@ export type MailContent = { subject: string; html: string; text: string };
 
 type LocalizedBlock = { title: string; paragraphs: string[] };
 
-function block(lang: 'ar' | 'en', { title, paragraphs }: LocalizedBlock): string {
+/** The same block in both languages, Arabic first. */
+const inBothLanguages = (
+  build: (lang: Lang) => LocalizedBlock,
+): [LocalizedBlock, LocalizedBlock] => [build('ar'), build('en')];
+
+/** "English | Arabic", optionally followed by " — MirhalGo" when the text has no brand name. */
+function bilingualSubject(key: TranslationKey, { brand = false } = {}): string {
+  const subject = `${t('en', key)} | ${t('ar', key)}`;
+  return brand ? `${subject} — ${t('en', 'email.brand')}` : subject;
+}
+
+/** Team-inbox field label, e.g. "Email / البريد الإلكتروني". */
+const label = (key: EmailLabel) =>
+  `${t('en', `email.labels.${key}`)} / ${t('ar', `email.labels.${key}`)}`;
+
+function block(lang: Lang, { title, paragraphs }: LocalizedBlock): string {
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
   const align = lang === 'ar' ? 'right' : 'left';
   const body = paragraphs
@@ -48,12 +65,12 @@ function layout(content: string): string {
       <tr><td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${COLORS.white};border:1px solid ${COLORS.border};border-radius:16px;overflow:hidden;">
           <tr><td style="background:${COLORS.navy};padding:20px 28px;text-align:center;">
-            <span style="font-size:22px;font-weight:800;color:${COLORS.white};">MirhalGo</span>
-            <span style="font-size:16px;color:${COLORS.onDarkMuted};"> | مرحال جو</span>
+            <span style="font-size:22px;font-weight:800;color:${COLORS.white};">${t('en', 'email.brand')}</span>
+            <span style="font-size:16px;color:${COLORS.onDarkMuted};"> | ${t('ar', 'email.brand')}</span>
           </td></tr>
           <tr><td style="padding:28px;">${content}</td></tr>
           <tr><td style="padding:16px 28px;background:${COLORS.page};text-align:center;font-size:12px;line-height:18px;color:${COLORS.muted};">
-            © ${new Date().getFullYear()} MirhalGo
+            © ${new Date().getFullYear()} ${t('en', 'email.brand')}
           </td></tr>
         </table>
       </td></tr>
@@ -84,122 +101,66 @@ function codeBox(code: string): string {
     </div>`;
 }
 
-const IGNORE = {
-  ar: 'إذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة.',
-  en: "If you didn't request this, ignore this email.",
-};
-
-const OTP_COPY: Record<OtpPurpose, { subject: string; ar: LocalizedBlock; en: LocalizedBlock }> = {
-  signup: {
-    subject: 'Verify your email | تأكيد البريد الإلكتروني — MirhalGo',
-    ar: {
-      title: 'رمز تأكيد البريد الإلكتروني',
-      paragraphs: [
-        `استخدم هذا الرمز لتأكيد بريدك الإلكتروني في مرحال جو. الرمز صالح لمدة ${OTP_TTL_MINUTES} دقائق.`,
-        IGNORE.ar,
-      ],
-    },
-    en: {
-      title: 'Your verification code',
-      paragraphs: [
-        `Use this code to verify your email on MirhalGo. It expires in ${OTP_TTL_MINUTES} minutes.`,
-        IGNORE.en,
-      ],
-    },
-  },
-  reset_password: {
-    subject: 'Reset your password | استعادة كلمة المرور — MirhalGo',
-    ar: {
-      title: 'رمز استعادة كلمة المرور',
-      paragraphs: [
-        `استخدم هذا الرمز لتغيير كلمة المرور في مرحال جو. الرمز صالح لمدة ${OTP_TTL_MINUTES} دقائق.`,
-        IGNORE.ar,
-      ],
-    },
-    en: {
-      title: 'Your password reset code',
-      paragraphs: [
-        `Use this code to reset your MirhalGo password. It expires in ${OTP_TTL_MINUTES} minutes.`,
-        IGNORE.en,
-      ],
-    },
-  },
-};
-
 /** OTP email. The code is NEVER in the subject (spec 4.3). */
 export function otpEmail(code: string, purpose: OtpPurpose): MailContent {
-  const { subject, ar, en } = OTP_COPY[purpose];
-  const mail = bilingual(subject, ar, en, codeBox(code));
+  const key = `email.otp.${purpose}` as const;
+  const mail = bilingual(
+    bilingualSubject(`${key}.subject`, { brand: true }),
+    ...inBothLanguages((lang) => ({
+      title: t(lang, `${key}.title`),
+      paragraphs: [t(lang, `${key}.body`, { minutes: OTP_TTL_MINUTES }), t(lang, 'email.ignore')],
+    })),
+    codeBox(code),
+  );
   return { ...mail, text: `${code}\n\n${mail.text}` };
 }
 
-/** Sent instead of an OTP when someone signs up with an already verified email (no enumeration). */
-export function accountExistsEmail(): MailContent {
+/** "Someone tried to sign up with your email / phone": title, two paragraphs, ignore notice. */
+function noticeEmail(key: 'email.accountExists' | 'email.phoneTaken'): MailContent {
   return bilingual(
-    'You already have a MirhalGo account | لديك حساب بالفعل في مرحال جو',
-    {
-      title: 'لديك حساب بالفعل',
-      paragraphs: [
-        'حاول شخص ما إنشاء حساب جديد في مرحال جو بهذا البريد الإلكتروني، لكنه مسجّل لدينا بالفعل.',
-        'يمكنك تسجيل الدخول، وإذا نسيت كلمة المرور فاستخدم "نسيت كلمة المرور؟" في صفحة تسجيل الدخول.',
-        IGNORE.ar,
-      ],
-    },
-    {
-      title: 'You already have an account',
-      paragraphs: [
-        'Someone tried to create a new MirhalGo account with this email, but it is already registered.',
-        'You can log in, or use "Forgot password?" on the login page if you don\'t remember your password.',
-        IGNORE.en,
-      ],
-    },
+    bilingualSubject(`${key}.subject`),
+    ...inBothLanguages((lang) => ({
+      title: t(lang, `${key}.title`),
+      paragraphs: [t(lang, `${key}.intro`), t(lang, `${key}.action`), t(lang, 'email.ignore')],
+    })),
   );
 }
 
+/** Sent instead of an OTP when someone signs up with an already verified email (no enumeration). */
+export const accountExistsEmail = (): MailContent => noticeEmail('email.accountExists');
+
 /** Sent when the phone used at signup belongs to another account (no enumeration). */
-export function phoneTakenEmail(): MailContent {
-  return bilingual(
-    'About your MirhalGo sign up | بخصوص تسجيلك في مرحال جو',
-    {
-      title: 'بخصوص تسجيلك في مرحال جو',
-      paragraphs: [
-        'تعذّر إكمال إنشاء حسابك لأن رقم الهاتف الذي استخدمته مسجّل في حساب آخر.',
-        'إذا كان هذا الرقم يخصك، فسجّل الدخول به أو استخدم "نسيت كلمة المرور؟". وإلا فسجّل برقم آخر.',
-        IGNORE.ar,
-      ],
-    },
-    {
-      title: 'About your MirhalGo sign up',
-      paragraphs: [
-        "We couldn't finish creating your account because the phone number you used is already registered to another account.",
-        'If this number is yours, log in with it or use "Forgot password?". Otherwise, sign up with a different number.',
-        IGNORE.en,
-      ],
-    },
-  );
+export const phoneTakenEmail = (): MailContent => noticeEmail('email.phoneTaken');
+
+/** Label/value rows for the team inbox; values are escaped. */
+function detailsTable(rows: Array<[string, string]>): string {
+  const cells = rows
+    .map(
+      ([name, value]) =>
+        `<tr><td style="padding:6px 12px 6px 0;color:${COLORS.muted};white-space:nowrap;">${name}</td><td dir="auto" style="padding:6px 0;color:${COLORS.navy};font-weight:600;">${escapeHtml(value)}</td></tr>`,
+    )
+    .join('');
+  return `<table role="presentation" style="margin:16px 0;font-size:15px;">${cells}</table>`;
 }
+
+/** "New contact message / رسالة تواصل جديدة" heading of the team-inbox emails. */
+const teamTitle = (key: TranslationKey) => `${t('en', key)} / ${t('ar', key)}`;
 
 /** Contact form → team inbox (spec 3.5). Every user field is escaped. */
 export function contactEmail(input: ContactInput): MailContent {
   const name = `${input.firstName} ${input.lastName}`;
   const rows: Array<[string, string]> = [
-    ['Name / الاسم', name],
-    ['Email / البريد الإلكتروني', input.email],
-    ['Phone / الهاتف', input.phone],
+    [label('name'), name],
+    [label('email'), input.email],
+    [label('phone'), input.phone],
   ];
-  const table = rows
-    .map(
-      ([label, value]) =>
-        `<tr><td style="padding:6px 12px 6px 0;color:${COLORS.muted};white-space:nowrap;">${label}</td><td dir="auto" style="padding:6px 0;color:${COLORS.navy};font-weight:600;">${escapeHtml(value)}</td></tr>`,
-    )
-    .join('');
 
   return {
-    subject: `New contact message — ${name}`,
-    html: layout(`${block('en', { title: 'New contact message / رسالة تواصل جديدة', paragraphs: [] })}
-      <table role="presentation" style="margin:16px 0;font-size:15px;">${table}</table>
+    subject: t('en', 'email.team.contactSubject', { name }),
+    html: layout(`${block('en', { title: teamTitle('email.team.contactTitle'), paragraphs: [] })}
+      ${detailsTable(rows)}
       <div dir="auto" style="padding:16px;background:${COLORS.page};border:1px solid ${COLORS.border};border-radius:12px;font-size:15px;line-height:24px;color:${COLORS.body};white-space:pre-wrap;">${escapeHtml(input.message)}</div>`),
-    text: [...rows.map(([label, value]) => `${label}: ${value}`), '', input.message].join('\n'),
+    text: [...rows.map(([key, value]) => `${key}: ${value}`), '', input.message].join('\n'),
   };
 }
 
@@ -219,24 +180,16 @@ export function companyApplicationReceivedEmail({
   referenceNumber: string;
   legalName: string;
 }): MailContent {
-  const subject = 'Application received | تم استلام طلبك — MirhalGo';
+  const subject = bilingualSubject('email.applicationReceived.subject', { brand: true });
   // `name` is HTML-escaped for the html part and raw for the plain-text part.
-  const copy = (name: string): [LocalizedBlock, LocalizedBlock] => [
-    {
-      title: 'استلمنا طلب انضمام شركتك',
+  const copy = (name: string) =>
+    inBothLanguages((lang) => ({
+      title: t(lang, 'email.applicationReceived.title'),
       paragraphs: [
-        `شكرًا لتسجيل "${name}" في مرحال جو. رقم الطلب: ${referenceNumber}`,
-        'سيراجع فريقنا طلبك خلال 48 ساعة، وسنرسل إليك النتيجة عبر البريد الإلكتروني.',
+        t(lang, 'email.applicationReceived.thanks', { name, reference: referenceNumber }),
+        t(lang, 'email.applicationReceived.next'),
       ],
-    },
-    {
-      title: 'We received your application',
-      paragraphs: [
-        `Thank you for registering "${name}" on MirhalGo. Your reference number: ${referenceNumber}`,
-        "Our team will review your application within 48 hours. We'll email you with the result.",
-      ],
-    },
-  ];
+    }));
   const { html } = bilingual(
     subject,
     ...copy(escapeHtml(legalName)),
@@ -255,22 +208,16 @@ export function newCompanyApplicationEmail(details: {
   activities: readonly string[];
 }): MailContent {
   const rows: Array<[string, string]> = [
-    ['Reference / رقم الطلب', details.referenceNumber],
-    ['Company / الشركة', details.legalName],
-    ['Email / البريد الإلكتروني', details.email],
-    ['Governorate / المحافظة', details.governorate],
-    ['Activities / الأنشطة', details.activities.join(', ')],
+    [label('reference'), details.referenceNumber],
+    [label('company'), details.legalName],
+    [label('email'), details.email],
+    [label('governorate'), details.governorate],
+    [label('activities'), details.activities.join(', ')],
   ];
-  const table = rows
-    .map(
-      ([label, value]) =>
-        `<tr><td style="padding:6px 12px 6px 0;color:${COLORS.muted};white-space:nowrap;">${label}</td><td dir="auto" style="padding:6px 0;color:${COLORS.navy};font-weight:600;">${escapeHtml(value)}</td></tr>`,
-    )
-    .join('');
   return {
-    subject: `New company application — ${details.referenceNumber}`,
-    html: layout(`${block('en', { title: 'New company application / طلب انضمام شركة جديد', paragraphs: ['Pending review. Documents are only available in the admin panel.'] })}
-      <table role="presentation" style="margin:16px 0;font-size:15px;">${table}</table>`),
-    text: rows.map(([label, value]) => `${label}: ${value}`).join('\n'),
+    subject: t('en', 'email.team.companySubject', { reference: details.referenceNumber }),
+    html: layout(`${block('en', { title: teamTitle('email.team.companyTitle'), paragraphs: [t('en', 'email.team.companyNote')] })}
+      ${detailsTable(rows)}`),
+    text: rows.map(([key, value]) => `${key}: ${value}`).join('\n'),
   };
 }
