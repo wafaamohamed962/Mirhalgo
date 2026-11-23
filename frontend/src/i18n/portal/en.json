@@ -64,16 +64,6 @@
       "details": "How it works",
       "none": "You have no requests left this month, so sending is disabled. Your balance renews at the start of next month."
     },
-    "success": {
-      "title": "Request sent",
-      "text": "Companies will send you their offers soon. We'll notify you.",
-      "reference": "Reference number",
-      "companies": "Sent to",
-      "allMatching": "All matching companies",
-      "print": "Print",
-      "download": "Download",
-      "viewOrders": "View my orders"
-    },
     "orderStatus": {
       "under_review": "Under review",
       "awaiting_offers": "Awaiting offers",
@@ -576,7 +566,19 @@
       },
       "success": {
         "title": "Your request was sent",
-        "viewOrders": "View my orders"
+        "viewOrders": "View my orders",
+        "message": "Our team will contact you as soon as possible.",
+        "messageChina": "We will reply within 24 working hours.",
+        "reference": "Request number",
+        "service": "Service",
+        "date": "Submitted on",
+        "status": "Status",
+        "balance": "Requests left",
+        "balanceValue": "{{remaining}} of {{total}}",
+        "print": "Print",
+        "downloadPdf": "Download PDF",
+        "pdfError": "The PDF could not be created. Please try again.",
+        "notFound": "This request was not found."
       },
       "steps": {
         "customer": "Customer",

@@ -174,6 +174,8 @@ export type PortalApiState = {
   savedDrafts: Record<string, unknown>;
   uploads: Array<{ id: string; purpose: string; name: string }>;
   orders: Array<{ key: string | undefined; body: Record<string, unknown> }>;
+  /** GET /orders/:reference (success page, B6). */
+  records: Record<string, Record<string, unknown>>;
 };
 
 /**
@@ -193,6 +195,7 @@ export async function mockPortalApi(
     savedDrafts: {},
     uploads: [],
     orders: [],
+    records: {},
   };
   await page.context().route('http://api.test/api/**', async (route) => {
     const request = route.request();
@@ -254,11 +257,21 @@ export async function mockPortalApi(
       if (state.balance.remaining === 0) return json(route, 409, fail('NO_BALANCE'));
       state.balance = { ...state.balance, remaining: state.balance.remaining - 1 };
       delete state.savedDrafts[String(body.service)]; // submit_order deletes the draft (B4)
+      const reference = `MG${1000 + state.orders.length}`;
+      state.records[reference] = {
+        reference,
+        service: body.service,
+        status: 'under_review',
+        submittedAt: new Date().toISOString(),
+        order: body,
+        derived: { items: [], totalContainers: null, totalTrucks: null, totalCbm: null },
+        attachments: [],
+      };
       return json(
         route,
         201,
         ok({
-          reference: `MG${1000 + state.orders.length}`,
+          reference,
           service: body.service,
           status: 'under_review',
           createdAt: new Date().toISOString(),
@@ -266,6 +279,11 @@ export async function mockPortalApi(
           replayed: false,
         }),
       );
+    }
+    const record = /^\/api\/orders\/(MG\d+)$/.exec(pathname);
+    if (method === 'GET' && record) {
+      const found = state.records[record[1]!];
+      return found ? json(route, 200, ok(found)) : json(route, 404, fail('NOT_FOUND'));
     }
     return route.fallback();
   });

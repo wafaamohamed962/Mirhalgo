@@ -648,8 +648,8 @@ Implementation choices (proposed in the plan, not contradicted; confirm in revie
     "More" drawer. Portal copy is its own chunk: `i18n/portal/{ar,en}.json` (imported by the
     layout).
   - Pages (lazy, routes in `app/router.tsx` via `portal(path, title, load)`): `requests/`
-    (New Request, service placeholder `/app/new-request/:service`, `RequestSuccessModal` ready
-    for later), `orders/` (list with tabs/counts/search/sort/load more; details with Details ·
+    (New Request; its service placeholder and success modal were replaced by the MW_003 B5 forms
+    and the B6 success page), `orders/` (list with tabs/counts/search/sort/load more; details with Details ·
     Offers · Timeline, accept/reject/ask/compare/cancel), `companies/` (directory, bulk bar, send
     to category ≤ 10, profile, reviews, rating only after a completed order), `account/` (7
     sections; profile with avatar crop + change email/phone OTP UI + unsaved guard), `notifications/`,
@@ -1155,4 +1155,35 @@ scheduling and idempotency are built in-house.
     `/portal\w*\.spec/`.
   - Totals: shared 121, backend 123, frontend 115, E2E 57.
   - Not done here: the real-backend run of every path (B7).
-- Next: B6 (success screen + print + PDF).
+- B5 committed as `ff7b77e`.
+- **Phase B6 done (2026-11-23): success screen + print + PDF** (not committed yet).
+  - `/app/new-request/success/:reference` (`features/requests/RequestSuccessPage`) reads
+    `GET /api/orders/:reference` (`useOrderRecord`, no retry on 404), so a reload or a shared
+    link works.
+    - The card shows: logo, title, the spec message (China: "within 24 working hours"), the
+      reference, service, date + time (`useDateFormat`), status badge, balance "2 of 5"
+      (`/me/summary`), and "View my orders".
+    - 404 → "This request was not found" (also for another customer's order).
+  - **Print:** `window.print()`. The portal shell (sidebar, top bar, bottom nav) is
+    `print:hidden!` and the buttons are outside the card, so the card alone prints on one page.
+    `[print-color-adjust:exact]` keeps the card's colours.
+  - **PDF:** `lib/downloadPdf.ts` uses `html-to-image` + `jspdf` (installed, plan §5 item 36),
+    both loaded on click.
+    - The card is captured as the browser draws it (Arabic joining, RTL, Cairo checked
+      visually), as a 2× JPEG on the card's computed background without shadow/radius, centred
+      on A4. About 80–100 kB; a PNG was 5.5 MB.
+    - jsPDF's optional `html2canvas` / `purify` chunks are built but never loaded (we don't
+      call `.html()`). Main chunk +0.2 kB.
+  - **Bug fixed (mock preview):** MSW's mocked `GET /orders/:id` (My Orders) also caught the real
+    `/orders/MG1001`, so with `VITE_USE_MOCKS=true` the success page said "not found". References
+    matching `ORDER_REFERENCE_PATTERN` now pass through (`passthrough()`). The unit harness does
+    the same.
+  - MW_002's unused `RequestSuccessModal`, its test and the `portal.success.*` copy were removed.
+  - Tests:
+    - `test/portal/requestSuccess.test.tsx` (4: direct open, China message, 404, Print / PDF /
+      PDF error);
+    - E2E (international flow, AR + EN, desktop + 360 px): reload keeps the card; print media
+      hides the shell and buttons; `page.pdf()` = exactly 1 page; Download PDF = a real `%PDF`
+      file named `MirhalGo-MG1001.pdf`. The files are kept in `test-results/` for a visual check.
+  - Totals: shared 121, backend 123, frontend 117, E2E 57.
+- Next: B7 (real-backend run of every path, README, `docs/MW_003-PR.md`, deployed preview).

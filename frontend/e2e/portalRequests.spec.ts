@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import arApp from '../src/i18n/ar.json' with { type: 'json' };
 import enApp from '../src/i18n/en.json' with { type: 'json' };
@@ -100,6 +101,45 @@ function formDriver(page: Page, lang: Lang) {
   };
 }
 
+/**
+ * Success screen (B6): the card survives a reload (read from the API), prints alone (portal
+ * shell and buttons hidden), and "Download PDF" saves a real PDF (kept in the test output for
+ * a visual check of the Arabic rendering).
+ */
+async function checkSuccessPage(page: Page, lang: Lang, pdfPath: string) {
+  const f = formDriver(page, lang);
+  await expect(page).toHaveURL(/\/app\/new-request\/success\/MG1001$/);
+  await page.reload();
+  await expect(f.main.getByText('MG1001')).toBeVisible();
+  await expect(f.main.getByText(f.tr('portal.request.success.message'))).toBeVisible();
+  await expect(
+    f.main.getByText(f.tr('portal.request.success.balanceValue', { remaining: 2, total: 5 })),
+  ).toBeVisible();
+  const print = f.main.getByRole('button', { name: f.tr('portal.request.success.print') });
+  await expect(print).toBeVisible();
+
+  await page.emulateMedia({ media: 'print' });
+  await expect(page.locator('aside')).toBeHidden();
+  await expect(page.locator('header')).toBeHidden();
+  await expect(page.locator('nav.fixed')).toBeHidden();
+  await expect(print).toBeHidden();
+  await expect(f.main.getByText('MG1001')).toBeVisible();
+  // what the browser prints: the card alone, on one page
+  const printed = await page.pdf({ format: 'A4', path: pdfPath.replace('.pdf', '-print.pdf') });
+  expect(printed.toString('latin1').match(/\/Type\s*\/Page\b/g)).toHaveLength(1);
+  await page.emulateMedia({ media: 'screen' });
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    f.main.getByRole('button', { name: f.tr('portal.request.success.downloadPdf') }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe('MirhalGo-MG1001.pdf');
+  await download.saveAs(pdfPath);
+  const bytes = readFileSync(pdfPath);
+  expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
+  expect(bytes.length).toBeGreaterThan(20_000); // the card is in it as an image
+}
+
 const pdf = (name: string) => ({
   name,
   mimeType: 'application/pdf',
@@ -138,7 +178,9 @@ for (const lang of ['ar', 'en'] as const) {
       await mockSupabase(page);
     });
 
-    test('international · sea FCL · customs · hazardous with MSDS · invoice', async ({ page }) => {
+    test('international · sea FCL · customs · hazardous with MSDS · invoice', async ({
+      page,
+    }, testInfo) => {
       const api = await mockPortalApi(page, { drafts: false });
       const f = formDriver(page, lang);
       const n = NAMES[lang];
@@ -194,6 +236,7 @@ for (const lang of ['ar', 'en'] as const) {
       await expect(f.main.getByText(n.shanghai).first()).toBeVisible();
       await f.submit();
       await expect(f.main.getByText('MG1001')).toBeVisible();
+      await checkSuccessPage(page, lang, testInfo.outputPath(`confirmation-${lang}.pdf`));
 
       expect(api.uploads.map((u) => [u.purpose, u.name])).toEqual([
         ['msds', 'msds.pdf'],

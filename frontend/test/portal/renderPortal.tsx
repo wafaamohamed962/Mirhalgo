@@ -4,7 +4,12 @@ import { createMemoryRouter, Navigate, RouterProvider } from 'react-router';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { Session } from '@supabase/supabase-js';
-import type { MeSummary, OrderDraft } from '@mirhalgo/shared';
+import {
+  ORDER_REFERENCE_PATTERN,
+  type MeSummary,
+  type OrderDraft,
+  type OrderRecord,
+} from '@mirhalgo/shared';
 import { Toaster } from '../../src/components/ui/Toast';
 import { AuthContext, type AuthContextValue } from '../../src/features/auth/authContext';
 import AccountPage from '../../src/features/portal/account/AccountPage';
@@ -57,6 +62,8 @@ const supabaseHandlers = [
 export let apiState: MeSummary;
 /** Server drafts by service and the orders the forms submitted (with their Idempotency-Key). */
 export let draftStore: Record<string, OrderDraft & { updatedAt: string; uploads: [] }>;
+/** Orders the API knows (filled by submits, or planted by a test). */
+export let orderRecords: Record<string, OrderRecord>;
 export let submitted: Array<{ key: string | null; body: Record<string, unknown> }>;
 
 const realApiHandlers = [
@@ -94,6 +101,16 @@ const realApiHandlers = [
       );
     apiState.balance.remaining -= 1;
     const reference = `MG${1000 + submitted.length}`;
+    // read back by the success page (GET /orders/:reference, B6)
+    orderRecords[reference] = {
+      reference,
+      service: body.service as OrderRecord['service'],
+      status: 'under_review',
+      submittedAt: new Date().toISOString(),
+      order: body,
+      derived: { items: [], totalContainers: null, totalTrucks: null, totalCbm: null },
+      attachments: [],
+    };
     return HttpResponse.json(
       {
         ok: true,
@@ -110,6 +127,17 @@ const realApiHandlers = [
     );
   }),
   http.delete('*/api/uploads/:id', () => HttpResponse.json({ ok: true, data: null })),
+  http.get('*/api/orders/:reference', ({ params }) => {
+    // mocked My Orders ids (ord_118) fall through to the MSW portal handlers
+    if (!ORDER_REFERENCE_PATTERN.test(String(params.reference))) return undefined;
+    const record = orderRecords[String(params.reference)];
+    return record
+      ? HttpResponse.json({ ok: true, data: record })
+      : HttpResponse.json(
+          { ok: false, error: { code: 'NOT_FOUND', message: 'Not found' } },
+          { status: 404 },
+        );
+  }),
   http.delete('*/api/orders/drafts/:service', ({ params }) => {
     delete draftStore[String(params.service)];
     apiState.drafts = apiState.drafts.filter((draft) => draft.service !== params.service);
@@ -129,6 +157,7 @@ export function resetPortalDb() {
   };
   draftStore = {};
   submitted = [];
+  orderRecords = {};
   apiState = {
     firstName: 'Wafaa',
     gender: 'female',

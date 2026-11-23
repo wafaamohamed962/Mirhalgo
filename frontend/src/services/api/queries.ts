@@ -8,7 +8,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { CompanyCategory, CompanySort, OrderListParams } from '@mirhalgo/shared';
-import { errorKey } from '../../lib/apiClient';
+import { ApiRequestError, errorKey } from '../../lib/apiClient';
+import { ordersApi } from './orders';
 import { portalApi } from './portal';
 
 /** Query keys in one place, so mutations invalidate exactly what they change. */
@@ -19,6 +20,8 @@ export const keys = {
   orders: ['orders'] as const,
   orderList: (params: Omit<OrderListParams, 'cursor'>) => ['orders', 'list', params] as const,
   order: (id: string) => ['orders', 'detail', id] as const,
+  /** GET /orders/:reference: a submitted order, real API (MW_003 B4/B6). */
+  orderRecord: (reference: string) => ['orders', 'record', reference] as const,
   companies: ['companies'] as const,
   companyList: (params: object) => ['companies', 'list', params] as const,
   company: (id: string) => ['companies', 'detail', id] as const,
@@ -35,6 +38,16 @@ export const keys = {
 export const useMe = () => useQuery({ queryKey: keys.me, queryFn: portalApi.getMe });
 export const useMeSummary = () =>
   useQuery({ queryKey: keys.summary, queryFn: portalApi.getSummary });
+
+/** A submitted order does not change on the success screen: read once, no retry on 404. */
+export const useOrderRecord = (reference: string) =>
+  useQuery({
+    queryKey: keys.orderRecord(reference),
+    queryFn: () => ordersApi.getOrder(reference),
+    staleTime: Infinity,
+    retry: (count, error) =>
+      !(error instanceof ApiRequestError && error.status === 404) && count < 2,
+  });
 
 export function useOrders(params: Omit<OrderListParams, 'cursor'>) {
   return useInfiniteQuery({
