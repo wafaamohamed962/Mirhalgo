@@ -8,16 +8,32 @@ Context for Claude Code. Read this first in every session.
 shipping request and receives price quotes from verified shipping / customs-clearance
 companies.
 
-**Current task: MW_003** (branch `feature/mw-003`, stacked on `feature/mw-002`; spec
-`docs/MW_003.md`, plan `docs/MW_003-plan.md`, see §15): fixes (Arabic MSA, company country →
-region, back button) + the full-stack New Request page. Builds on MW_001/MW_002 rules.
+**Repository status (2026-11-23): MW_001 + MW_002 + MW_003 + the navigation work are all
+merged into `main` and pushed** (GitHub `wafaamohamed962/Mirhalgo`).
 
-**Previous task: MW_002** (branch `feature/mw-002`, not merged yet; spec `docs/MW_002.md`, see
-§14): Part A company registration (full stack) + Part B customer portal (frontend only, MSW
+- MW_002 came in through PR #1 (`d0b08be`).
+- `feature/mw-003` was merged with `--no-ff` (`b932487`): no conflicts, the merged tree is
+  identical to `feature/mw-003`.
+- On `main`: build, lint, shared 121 / backend 123 / frontend 135 tests and E2E 71 pass.
+- The feature branches stay on GitHub. Local `feature/mw-002` has one commit more than
+  `origin/feature/mw-002` (`6941628`, decisions 23–24); it is already in `main` through
+  `feature/mw-003`.
+- **Windows line endings:** `core.autocrlf=true` checks files out with CRLF while the repo stores
+  LF, so `npx prettier --check .` flags every file after a fresh checkout. Content is fine:
+  `npx prettier --check . --end-of-line auto` passes. Scripted text edits must also expect
+  CRLF.
+- Start new work on a new branch from `main`.
+
+**Latest task: MW_003** (merged into `main`; spec `docs/MW_003.md`, plan
+`docs/MW_003-plan.md`, see §15): fixes (Arabic MSA, company country → region, back button) + the
+full-stack New Request page + site-wide navigation (addition beyond the spec). Builds on
+MW_001/MW_002 rules.
+
+**Previous task: MW_002** (merged into `main`, PR #1; spec `docs/MW_002.md`, see §14): Part A company registration (full stack) + Part B customer portal (frontend only, MSW
 mocks). MW_002 builds on MW_001 and does not override its design system, stack, security or OTP
 rules.
 
-**Previous task: MW_001** (on `main`): Landing page + Customer Sign Up (email OTP) + Login +
+**Previous task: MW_001** (in `main`): Landing page + Customer Sign Up (email OTP) + Login +
 Forgot password + persistent session.
 
 - **The full spec is `docs/MW_001.md`. It is the single source of truth.** Follow it exactly.
@@ -693,15 +709,16 @@ Implementation choices (proposed in the plan, not contradicted; confirm in revie
 - Rollback after an RPC failure was verified with unit tests + PGlite, not on the real backend
   (the pre-checks prevent that failure path there).
 - Ticket attachments are metadata only in the mock (the real API will need multipart).
-- Not committed yet: everything is on `feature/mw-002` as working-tree changes.
+- Committed on `feature/mw-002` and merged into `main` (PR #1); decisions 23–24 (`6941628`)
+  reached `main` through `feature/mw-003`.
 
 ## 15. MW_003: Fixes + New Request page (full stack)
 
 **Spec:** `docs/MW_003.md` (copied from the developer's spec folder on 2026-11-22).
 **Plan:** `docs/MW_003-plan.md` (approved 2026-11-22 by the developer).
-**Branch:** `feature/mw-003`, created from `feature/mw-002` (stacked PR; rebase onto `main`
-after MW_002 is merged). The MW_002 decisions 23–24 work was committed first on `feature/mw-002`
-(`6941628`).
+**Branch:** `feature/mw-003`, created from `feature/mw-002` (stacked), merged into `main` with
+`--no-ff` on 2026-11-23 (`b932487`, no conflicts). The MW_002 decisions 23–24 work was committed
+first on `feature/mw-002` (`6941628`).
 
 **Scope**
 
@@ -1123,7 +1140,7 @@ scheduling and idempotency are built in-house.
     - **a parallel double click with the same key → one order (201 + 200 replay), one
       deduction**;
     - a reused key → 422; RLS over PostgREST.
-- **Phase B5 done (2026-11-23): the three forms** (not committed yet).
+- **Phase B5 done (2026-11-23): the three forms** (`ff7b77e`).
   - `/app/new-request/:service` = `features/requests/RequestFormPage` (international 6 steps,
     domestic 6, China 4); `ServicePlaceholderPage` removed. `/app/new-request/success/:reference`
     is a minimal card until B6.
@@ -1156,7 +1173,7 @@ scheduling and idempotency are built in-house.
   - Totals: shared 121, backend 123, frontend 115, E2E 57.
   - Not done here: the real-backend run of every path (B7).
 - B5 committed as `ff7b77e`.
-- **Phase B6 done (2026-11-23): success screen + print + PDF** (not committed yet).
+- **Phase B6 done (2026-11-23): success screen + print + PDF** (`3db811f`).
   - `/app/new-request/success/:reference` (`features/requests/RequestSuccessPage`) reads
     `GET /api/orders/:reference` (`useOrderRecord`, no retry on 404), so a reload or a shared
     link works.
@@ -1240,7 +1257,7 @@ scheduling and idempotency are built in-house.
     code.
   - Totals: shared 121, backend 123, frontend 123, E2E 57.
 - **Navigation + "Back" button across the site (2026-11-23). ADDITION BEYOND THE MW_003
-  SPEC**, requested by the developer in two steps (not committed yet).
+  SPEC**, requested by the developer in two steps (`ffeb451`).
   - **`components/ui/BackButton`** (no props but `className`): arrow + "رجوع" / "Back", ghost
     button (44 px, global focus ring), aria-label "رجوع إلى الصفحة السابقة" / "Back to the
     previous page" (contains the visible word). Arrow: `ArrowLeft` + `rtl:rotate-180`.
