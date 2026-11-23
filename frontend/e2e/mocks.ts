@@ -167,17 +167,38 @@ export async function setLanguage(page: Page, language: 'ar' | 'en') {
   await page.addInitScript((lang) => localStorage.setItem('mirhalgo.lang', lang), language);
 }
 
+/** What the New Request forms sent to the (mocked) real API, for assertions. */
+export type PortalApiState = {
+  balance: { remaining: number; total: number };
+  drafts: Array<{ service: string; updatedAt: string }>;
+  savedDrafts: Record<string, unknown>;
+  uploads: Array<{ id: string; purpose: string; name: string }>;
+  orders: Array<{ key: string | undefined; body: Record<string, unknown> }>;
+};
+
 /**
- * The REAL API parts of the portal (MW_003 B2+: GET /me/summary, draft discard). With MSW on
- * they pass through the service worker, so they are routed at the context level.
+ * The REAL API parts of the portal (MW_003 B2+: GET /me/summary, reference lists, server
+ * drafts, uploads, orders). With MSW on they pass through the service worker, so they are
+ * routed at the context level.
  */
-export async function mockPortalApi(page: Page) {
-  const drafts = [
-    { service: 'international', updatedAt: new Date(Date.now() - 7_200_000).toISOString() },
-  ];
+export async function mockPortalApi(
+  page: Page,
+  { remaining = 3, drafts = true }: { remaining?: number; drafts?: boolean } = {},
+) {
+  const state: PortalApiState = {
+    balance: { remaining, total: 5 },
+    drafts: drafts
+      ? [{ service: 'international', updatedAt: new Date(Date.now() - 7_200_000).toISOString() }]
+      : [],
+    savedDrafts: {},
+    uploads: [],
+    orders: [],
+  };
   await page.context().route('http://api.test/api/**', async (route) => {
-    const { pathname } = new URL(route.request().url());
-    const method = route.request().method();
+    const request = route.request();
+    const url = new URL(request.url());
+    const { pathname } = url;
+    const method = request.method();
     if (method === 'OPTIONS') return json(route, 204, {});
     if (method === 'GET' && pathname === '/api/me/summary') {
       return json(
@@ -186,19 +207,67 @@ export async function mockPortalApi(page: Page) {
         ok({
           firstName: USER.firstName,
           gender: 'male',
-          balance: { remaining: 3, total: 5 },
-          drafts,
+          balance: state.balance,
+          drafts: state.drafts,
         }),
       );
     }
-    const discard = /^\/api\/orders\/drafts\/(\w+)$/.exec(pathname);
-    if (method === 'DELETE' && discard) {
-      drafts.splice(
-        drafts.findIndex((d) => d.service === discard[1]),
-        1,
-      );
+    if (method === 'GET' && pathname.startsWith('/api/reference/')) {
+      const list = referenceResponse(pathname.slice('/api/reference/'.length), url.searchParams);
+      return list ? json(route, 200, ok(list)) : json(route, 404, fail('NOT_FOUND'));
+    }
+    const draft = /^\/api\/orders\/drafts\/(\w+)$/.exec(pathname);
+    if (draft) {
+      const service = draft[1]!;
+      if (method === 'GET') return json(route, 200, ok(state.savedDrafts[service] ?? null));
+      if (method === 'PUT') {
+        const saved = {
+          ...request.postDataJSON(),
+          uploads: [],
+          updatedAt: new Date().toISOString(),
+        };
+        state.savedDrafts[service] = saved;
+        return json(route, 200, ok(saved));
+      }
+      delete state.savedDrafts[service];
+      state.drafts = state.drafts.filter((d) => d.service !== service);
       return json(route, 200, ok(null));
+    }
+    if (method === 'POST' && pathname === '/api/uploads') {
+      const raw = request.postDataBuffer()?.toString('latin1') ?? '';
+      const upload = {
+        id: crypto.randomUUID(),
+        purpose: /name="purpose"\r\n\r\n(\w+)/.exec(raw)?.[1] ?? 'document',
+        name: /filename="([^"]+)"/.exec(raw)?.[1] ?? 'file',
+        mime: 'application/pdf',
+        size: 13,
+        createdAt: new Date().toISOString(),
+      };
+      state.uploads.push(upload);
+      return json(route, 201, ok(upload));
+    }
+    if (method === 'DELETE' && pathname.startsWith('/api/uploads/'))
+      return json(route, 200, ok(null));
+    if (method === 'POST' && pathname === '/api/orders') {
+      const body = request.postDataJSON() as Record<string, unknown>;
+      state.orders.push({ key: request.headers()['idempotency-key'], body });
+      if (state.balance.remaining === 0) return json(route, 409, fail('NO_BALANCE'));
+      state.balance = { ...state.balance, remaining: state.balance.remaining - 1 };
+      delete state.savedDrafts[String(body.service)]; // submit_order deletes the draft (B4)
+      return json(
+        route,
+        201,
+        ok({
+          reference: `MG${1000 + state.orders.length}`,
+          service: body.service,
+          status: 'under_review',
+          createdAt: new Date().toISOString(),
+          balance: state.balance,
+          replayed: false,
+        }),
+      );
     }
     return route.fallback();
   });
+  return state;
 }

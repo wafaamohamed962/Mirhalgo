@@ -17,7 +17,7 @@ import {
 } from '../../../services/api/reference';
 import type { CompanyFormValues } from '../model';
 import { regionKind, useCompanyOptions } from '../options';
-import { FormSection, Full } from './FormSection';
+import { FormSection, Full } from '../../../components/FormSection';
 import { LoadError } from './LoadError';
 
 /**

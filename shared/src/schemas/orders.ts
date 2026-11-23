@@ -641,6 +641,22 @@ export const orderSchemas = {
   china: chinaObject.superRefine(refineChina),
 };
 
+/**
+ * The same objects and rules, apart. Zod runs a superRefine only when the object itself parsed,
+ * so a form step whose later steps are still empty cannot see its cross-field errors through
+ * orderSchemas; it runs the rules itself (web `stepIssues`). The server uses orderSchema.
+ */
+export const orderObjects = {
+  international: internationalObject,
+  domestic: domesticObject,
+  china: chinaObject,
+};
+export const orderRules = {
+  international: refineInternational,
+  domestic: refineDomestic,
+  china: refineChina,
+};
+
 export type OrderInput = z.input<typeof orderSchema>;
 export type Order = z.output<typeof orderSchema>;
 export type InternationalOrder = z.output<typeof internationalObject>;

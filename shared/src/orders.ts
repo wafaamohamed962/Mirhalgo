@@ -1,3 +1,5 @@
+import type { TransitSource } from './reference.js';
+
 /**
  * New Request orders (MW_003 B3–B5, B8): the fixed option lists of the three forms. Each list is
  * also a Postgres enum (migration …000006), so never rename an id without a migration. Labels
@@ -61,6 +63,11 @@ export const ADD_METHODS = ['cart_link', 'manual', 'screenshots'] as const;
 export const CHINA_SHIPPING_METHODS: Record<ChinaSource, readonly ShippingMode[]> = {
   chinese_sites: ['air', 'sea'],
   shein: ['air', 'land'],
+};
+/** The reference table names the source of the transit estimates differently (B1). */
+export const TRANSIT_SOURCE_OF: Record<ChinaSource, TransitSource> = {
+  chinese_sites: 'china_sites',
+  shein: 'shein',
 };
 
 // ── attachments: where each uploaded file belongs (B8 "Attachments") ─────────

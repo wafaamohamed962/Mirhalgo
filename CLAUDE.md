@@ -1123,4 +1123,36 @@ scheduling and idempotency are built in-house.
     - **a parallel double click with the same key → one order (201 + 200 replay), one
       deduction**;
     - a reused key → 422; RLS over PostgREST.
-- Next: B5 (the three forms + draft autosave / restore).
+- **Phase B5 done (2026-11-23): the three forms** (not committed yet).
+  - `/app/new-request/:service` = `features/requests/RequestFormPage` (international 6 steps,
+    domestic 6, China 4); `ServicePlaceholderPage` removed. `/app/new-request/success/:reference`
+    is a minimal card until B6.
+  - `useRequestWizard`: raw RHF values mirror the order. `pruneOrder` keeps only the chosen path,
+    and `hiddenPaths` clears hidden values when a branch field changes. Validation =
+    `orderIssues` (shared `orderSchemas`). The server draft is restored once (another form
+    version is ignored) and autosaved 1 s after an edit (flushed on leave, never after submit).
+    "Start over" deletes it. Submit keeps one `Idempotency-Key` per payload (reused on network
+    retries). Balance 0 → Send disabled with the reason.
+  - `lib/wizard.ts` (`useWizardSteps`, `useAutosave`, `focusFirstError`) is shared with the
+    company wizard (plan B5 refactor). `FormSection` / `DraftRestoredNotice` moved to
+    `components/`.
+  - Steps: `steps/*`, field wrappers `components/fields.tsx` (`*` required / "(optional)"),
+    review summary `summary.ts` (walks the pruned order: option labels, reference names, file
+    names), copy in `i18n/portal/{ar,en}.json`.
+  - **Bug fixed: "Next" skipped cross-field rules.** Zod runs a `superRefine` only when every
+    field parsed, and the later steps are still empty. So "Next" let e.g. hazardous cargo
+    without an MSDS through, and the error only came at the final submit. Shared now also
+    exports `orderObjects` + `orderRules`. `orderIssues(service, order, step)` runs the rules
+    itself when the step has no field errors: parts that parse are passed as parsed values, and
+    a throw from a later, empty part is ignored. The server still uses `orderSchema` unchanged.
+  - Tests: `test/requestModel.test.ts` (prune per path, hidden paths, `orderIssues` regression,
+    summary), `test/portal/requestForms.test.tsx` (8: domestic LTL, zero balance, Back /
+    branch clearing, draft restore + autosave, old draft version, China SHEIN, international sea
+    FCL with MSDS + invoice). In jsdom, MSW does not answer an XHR upload, so that test stubs
+    `ordersApi.uploadFile`. E2E `e2e/portalRequests.spec.ts`: the 3 forms submitted in AR + EN,
+    desktop + 360 px, no overflow on any step, real XHR uploads. `mockPortalApi` now mocks the
+    reference lists, drafts, uploads and orders, and returns its state. The portal projects match
+    `/portal\w*\.spec/`.
+  - Totals: shared 121, backend 123, frontend 115, E2E 57.
+  - Not done here: the real-backend run of every path (B7).
+- Next: B6 (success screen + print + PDF).

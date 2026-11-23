@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Award } from 'lucide-react';
 import type { CompanyCard } from '@mirhalgo/shared';
 import { Avatar, StarRating, buttonClasses } from '../../../components/ui';
+import { newRequestFor } from '../requests/shared';
 import { cn } from '../../../lib/utils';
 import { useCompanyIdentity } from '../components/companyIdentity';
 
@@ -14,7 +15,8 @@ export function CompanyCardView({
 }: {
   company: CompanyCard;
   selected: boolean;
-  onToggle: () => void;
+  /** Absent: the card cannot be selected. */
+  onToggle?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const { name, logoUrl } = useCompanyIdentity()(company);
@@ -40,15 +42,17 @@ export function CompanyCardView({
             })}
           </p>
         </div>
-        <label className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full hover:bg-slate-50">
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={onToggle}
-            aria-label={t('portal.companies.select', { name })}
-            className="size-5 accent-blue-600"
-          />
-        </label>
+        {onToggle && (
+          <label className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full hover:bg-slate-50">
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={onToggle}
+              aria-label={t('portal.companies.select', { name })}
+              className="size-5 accent-blue-600"
+            />
+          </label>
+        )}
       </div>
       <div className="flex flex-wrap gap-2">
         {company.topRated && (
@@ -80,7 +84,7 @@ export function CompanyCardView({
           {t('portal.companies.viewProfile')}
         </Link>
         <Link
-          to={`/app/new-request?companies=${company.id}`}
+          to={newRequestFor([company.id])}
           className={buttonClasses({ shape: 'form', className: 'px-3' })}
         >
           {t('portal.companies.sendRequest')}

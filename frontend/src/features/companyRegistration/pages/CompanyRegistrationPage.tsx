@@ -1,21 +1,22 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FormProvider, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { DraftRestoredNotice } from '../../../components/DraftRestoredNotice';
 import { SimpleLayout } from '../../../components/layout/SimpleLayout';
 import { Alert, Button, Card, ProgressBar, Stepper, type Step } from '../../../components/ui';
 import { ServiceNotice } from '../../../components/ui/ServiceNotice';
 import { ApiRequestError, errorKey } from '../../../lib/apiClient';
 import { usePageMeta } from '../../../lib/usePageMeta';
 import { useUnsavedChangesGuard } from '../../../lib/useUnsavedChangesGuard';
+import { useAutosave, useWizardSteps } from '../../../lib/wizard';
 import { setPendingVerification } from '../../auth/pendingVerification';
 import { registerCompany } from '../api';
 import { AccountStep } from '../components/AccountStep';
 import { DocumentsStep } from '../components/DocumentsStep';
-import { DraftRestoredNotice } from '../components/DraftRestoredNotice';
 import { ReviewStep } from '../components/ReviewStep';
 import { ServicesStep } from '../components/ServicesStep';
 import { clearCompanyDraft, loadCompanyDraft, saveCompanyDraft, withDraft } from '../draft';
@@ -41,8 +42,7 @@ export default function CompanyRegistrationPage() {
   usePageMeta('signupCompany');
   const navigate = useNavigate();
 
-  const [step, setStep] = useState<StepId>('account');
-  const [completed, setCompleted] = useState<ReadonlySet<StepId>>(new Set());
+  const { step, completed, goTo, markCompleted, restart } = useWizardSteps<StepId>('account');
   const [initialDraft] = useState(loadCompanyDraft); // read once, on arrival
   const [showRestored, setShowRestored] = useState(initialDraft !== null);
   const [formKey, setFormKey] = useState(0); // remounts inputs after a reset
@@ -78,31 +78,10 @@ export default function CompanyRegistrationPage() {
 
   // ── autosave (text only, see draft.ts) after each edit. Resets (restore, start over) have
   // no field name and are not edits, so they never write a draft.
-  const pendingSave = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cancelAutosave = () => {
-    if (pendingSave.current) clearTimeout(pendingSave.current);
-    pendingSave.current = null;
-  };
-  useEffect(() => {
-    const subscription = form.watch((_values, { name }) => {
-      if (!name) return;
-      if (pendingSave.current) clearTimeout(pendingSave.current);
-      pendingSave.current = setTimeout(() => {
-        pendingSave.current = null;
-        saveCompanyDraft(form.getValues());
-      }, AUTOSAVE_DELAY_MS);
-    });
-    return () => {
-      subscription.unsubscribe();
-      // Leaving with a save still pending ("Back to home" right after typing): save it now,
-      // so "Your draft is saved" is true (MW_003 A3).
-      if (pendingSave.current) {
-        clearTimeout(pendingSave.current);
-        pendingSave.current = null;
-        saveCompanyDraft(form.getValues());
-      }
-    };
-  }, [form]);
+  // A save still pending on leave ("Back to home" right after typing) is flushed (MW_003 A3).
+  const { cancel: cancelAutosave } = useAutosave(form, saveCompanyDraft, {
+    delayMs: AUTOSAVE_DELAY_MS,
+  });
 
   /** "Start over": drop the draft and give the user an empty form on the first step. */
   const startOver = () => {
@@ -110,8 +89,7 @@ export default function CompanyRegistrationPage() {
     clearCompanyDraft();
     form.reset(EMPTY_VALUES);
     setFormKey((key) => key + 1);
-    setCompleted(new Set());
-    setStep('account');
+    restart();
     setShowRestored(false);
     requestAnimationFrame(() => form.setFocus('legalName'));
   };
@@ -121,11 +99,6 @@ export default function CompanyRegistrationPage() {
     title: t('company.register.leave.title'),
     description: t('company.register.leave.text'),
   });
-
-  const goTo = (next: StepId) => {
-    setStep(next);
-    window.scrollTo({ top: 0 });
-  };
 
   const register = useMutation({
     mutationFn: (values: CompanyFormValues) => registerCompany(values, setProgress),
@@ -145,7 +118,7 @@ export default function CompanyRegistrationPage() {
   /** Next / Submit: validates this step (all steps on the last one). */
   const onContinue = form.handleSubmit(
     () => {
-      setCompleted((done) => new Set(done).add(step));
+      markCompleted(step);
       if (step === 'review') return register.mutate(form.getValues());
       goTo(visibleSteps[index + 1] ?? 'review');
     },

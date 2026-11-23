@@ -5,7 +5,7 @@ import { Input } from '../../../components/ui';
 import type { CompanyFormValues } from '../model';
 import { legalCopyCountry } from '../options';
 import { DocumentField } from './DocumentField';
-import { FormSection } from './FormSection';
+import { FormSection } from '../../../components/FormSection';
 
 type LegalField = keyof typeof LEGAL_FIELDS;
 

@@ -22,6 +22,7 @@ import { cn } from '../../../lib/utils';
 import { portalApi } from '../../../services/api/portal';
 import { keys, useApiMutation, useCompany, useReviews } from '../../../services/api/queries';
 import { useCompanyIdentity } from '../components/companyIdentity';
+import { newRequestFor } from '../requests/shared';
 
 function RateForm({ company }: { company: CompanyProfile }) {
   const { t } = useTranslation();
@@ -197,7 +198,7 @@ export default function CompanyProfilePage() {
                       <StarRating value={data.rating} />
                     </div>
                     <Link
-                      to={`/app/new-request?companies=${data.id}`}
+                      to={newRequestFor([data.id])}
                       className={buttonClasses({ shape: 'form' })}
                     >
                       {t('portal.companies.sendRequest')}

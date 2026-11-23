@@ -84,9 +84,14 @@ export const router = createBrowserRouter([
                 () => import('../features/portal/requests/NewRequestPage'),
               ),
               portal(
+                'new-request/success/:reference',
+                'newRequest',
+                () => import('../features/requests/RequestSuccessPage'),
+              ),
+              portal(
                 'new-request/:service',
                 'newRequest',
-                () => import('../features/portal/requests/ServicePlaceholderPage'),
+                () => import('../features/requests/RequestFormPage'),
               ),
               portal('orders', 'orders', () => import('../features/portal/orders/OrdersPage')),
               portal(

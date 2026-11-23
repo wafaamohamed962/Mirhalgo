@@ -10,7 +10,7 @@ import { portalApi } from '../../../services/api/portal';
 import type { RequestDraft } from '@mirhalgo/shared';
 import { keys, useApiMutation, useCompanies, useMeSummary } from '../../../services/api/queries';
 import { useCompanyIdentity } from '../components/companyIdentity';
-import { SERVICE_ICONS, useSelectedCompanies } from './shared';
+import { companySelection, SERVICE_ICONS, useSelectedCompanies } from './shared';
 
 /*
  * Header of /app/new-request: welcome, balance and drafts all come from the real
@@ -160,13 +160,14 @@ function SelectedCompanies() {
   );
 }
 
-/** /app/new-request (spec B3). The service forms come in a later plan (placeholder pages). */
+/**
+ * /app/new-request (MW_003 B1): the three landing-page service cards (same copy). With no
+ * requests left the cards stay open; the form blocks only the submit (spec B1).
+ */
 export default function NewRequestPage() {
   const { t } = useTranslation();
-  const summary = useMeSummary();
   const { ids } = useSelectedCompanies();
-  const blocked = summary.data?.balance.remaining === 0;
-  const query = ids.length ? `?companies=${ids.join(',')}` : '';
+  const query = companySelection.enabled && ids.length ? `?companies=${ids.join(',')}` : '';
 
   return (
     <div className="flex flex-col gap-6">
@@ -174,7 +175,7 @@ export default function NewRequestPage() {
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-6">
           <DraftBanner />
-          <SelectedCompanies />
+          {companySelection.enabled && <SelectedCompanies />}
         </div>
         <AttemptsCard />
       </div>
@@ -190,19 +191,24 @@ export default function NewRequestPage() {
               <li key={service}>
                 <Link
                   to={`/app/new-request/${service}${query}`}
-                  aria-disabled={blocked || undefined}
-                  onClick={(event) => blocked && event.preventDefault()}
-                  className={cn(
-                    'group flex h-full flex-col gap-3 rounded-lg bg-white p-6 no-underline shadow-md transition duration-300 ease-out hover:-translate-y-1 hover:shadow-lg',
-                    blocked && 'pointer-events-none opacity-50',
-                  )}
+                  className="group flex h-full flex-col gap-3 rounded-lg bg-white p-6 no-underline shadow-md transition duration-300 ease-out hover:-translate-y-1 hover:shadow-lg"
                 >
-                  <span className="flex size-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                    <Icon aria-hidden="true" className="size-6" />
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="flex size-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                      <Icon aria-hidden="true" className="size-6" />
+                    </span>
+                    {service !== 'domestic' && (
+                      <span className="rounded-full bg-violet-100 px-3 py-1 text-caption font-semibold text-violet-600">
+                        {t(`services.items.${service}.badge`)}
+                      </span>
+                    )}
                   </span>
-                  <span className="text-h3">{t(`portal.services.${service}.title`)}</span>
+                  <span className="text-h3">{t(`services.items.${service}.title`)}</span>
                   <span className="text-small text-body">
-                    {t(`portal.services.${service}.text`)}
+                    {t(`services.items.${service}.description`)}
+                  </span>
+                  <span dir="auto" className="text-caption font-semibold text-muted">
+                    {t(`services.items.${service}.tag`)}
                   </span>
                   <span className="mt-auto inline-flex items-center gap-1 text-small font-semibold text-link">
                     {t('portal.newRequest.start')}

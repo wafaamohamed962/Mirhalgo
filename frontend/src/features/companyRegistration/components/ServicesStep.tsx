@@ -5,7 +5,7 @@ import { CheckboxGroup, Input, RadioGroup, Switch } from '../../../components/ui
 import { regionOptions, useRegions } from '../../../services/api/reference';
 import type { CompanyFormValues } from '../model';
 import { regionKind, useCompanyOptions } from '../options';
-import { FormSection, Full } from './FormSection';
+import { FormSection, Full } from '../../../components/FormSection';
 import { LoadError } from './LoadError';
 
 /** Step 2: only the sections of the activities selected in Step 1 (spec A2). */

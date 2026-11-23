@@ -4,7 +4,7 @@ import { createMemoryRouter, Navigate, RouterProvider } from 'react-router';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { Session } from '@supabase/supabase-js';
-import type { MeSummary } from '@mirhalgo/shared';
+import type { MeSummary, OrderDraft } from '@mirhalgo/shared';
 import { Toaster } from '../../src/components/ui/Toast';
 import { AuthContext, type AuthContextValue } from '../../src/features/auth/authContext';
 import AccountPage from '../../src/features/portal/account/AccountPage';
@@ -15,10 +15,12 @@ import NotificationsPage from '../../src/features/portal/notifications/Notificat
 import OrderDetailsPage from '../../src/features/portal/orders/OrderDetailsPage';
 import OrdersPage from '../../src/features/portal/orders/OrdersPage';
 import NewRequestPage from '../../src/features/portal/requests/NewRequestPage';
-import ServicePlaceholderPage from '../../src/features/portal/requests/ServicePlaceholderPage';
 import SupportPage from '../../src/features/portal/support/SupportPage';
 import TicketPage from '../../src/features/portal/support/TicketPage';
+import RequestFormPage from '../../src/features/requests/RequestFormPage';
+import RequestSuccessPage from '../../src/features/requests/RequestSuccessPage';
 import { createMockDb, type MockDb } from '../../src/mocks/db';
+import { referenceResponse } from '../referenceFixtures';
 import { createHandlers } from '../../src/mocks/handlers';
 
 /** One MSW server for the portal tests; each test gets a fresh mock db (see resetPortalDb). */
@@ -53,6 +55,9 @@ const supabaseHandlers = [
  * They are not in src/mocks (those pass through to the server), so the tests answer them here.
  */
 export let apiState: MeSummary;
+/** Server drafts by service and the orders the forms submitted (with their Idempotency-Key). */
+export let draftStore: Record<string, OrderDraft & { updatedAt: string; uploads: [] }>;
+export let submitted: Array<{ key: string | null; body: Record<string, unknown> }>;
 
 const realApiHandlers = [
   http.get('*/api/me/summary', ({ request }) =>
@@ -63,7 +68,50 @@ const realApiHandlers = [
           { status: 401 },
         ),
   ),
+  http.get('*/api/reference/:list', ({ params, request }) => {
+    const data = referenceResponse(String(params.list), new URL(request.url).searchParams);
+    return HttpResponse.json({ ok: true, data: data ?? [] });
+  }),
+  http.get('*/api/orders/drafts/:service', ({ params }) =>
+    HttpResponse.json({ ok: true, data: draftStore[String(params.service)] ?? null }),
+  ),
+  http.put('*/api/orders/drafts/:service', async ({ params, request }) => {
+    const body = (await request.json()) as OrderDraft;
+    draftStore[String(params.service)] = {
+      ...body,
+      updatedAt: new Date().toISOString(),
+      uploads: [],
+    };
+    return HttpResponse.json({ ok: true, data: draftStore[String(params.service)] });
+  }),
+  http.post('*/api/orders', async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    submitted.push({ key: request.headers.get('idempotency-key'), body });
+    if (apiState.balance.remaining === 0)
+      return HttpResponse.json(
+        { ok: false, error: { code: 'NO_BALANCE', message: 'No balance' } },
+        { status: 409 },
+      );
+    apiState.balance.remaining -= 1;
+    const reference = `MG${1000 + submitted.length}`;
+    return HttpResponse.json(
+      {
+        ok: true,
+        data: {
+          reference,
+          service: body.service,
+          status: 'under_review',
+          createdAt: new Date().toISOString(),
+          balance: apiState.balance,
+          replayed: false,
+        },
+      },
+      { status: 201 },
+    );
+  }),
+  http.delete('*/api/uploads/:id', () => HttpResponse.json({ ok: true, data: null })),
   http.delete('*/api/orders/drafts/:service', ({ params }) => {
+    delete draftStore[String(params.service)];
     apiState.drafts = apiState.drafts.filter((draft) => draft.service !== params.service);
     return HttpResponse.json({ ok: true, data: null });
   }),
@@ -79,6 +127,8 @@ export function resetPortalDb() {
     email: 'customer@example.com',
     phone: '+201098765432',
   };
+  draftStore = {};
+  submitted = [];
   apiState = {
     firstName: 'Wafaa',
     gender: 'female',
@@ -137,7 +187,8 @@ export function renderPortal(path: string) {
         children: [
           { index: true, element: <Navigate to="new-request" replace /> },
           page('new-request', <NewRequestPage />, 'newRequest'),
-          page('new-request/:service', <ServicePlaceholderPage />, 'newRequest'),
+          page('new-request/success/:reference', <RequestSuccessPage />, 'newRequest'),
+          page('new-request/:service', <RequestFormPage />, 'newRequest'),
           page('orders', <OrdersPage />, 'orders'),
           page('orders/:id', <OrderDetailsPage />, 'portal.orders.detailTitle'),
           page('companies', <CompaniesPage />, 'companies'),

@@ -12,9 +12,10 @@ import {
 import { Button, EmptyState, QueryState, RadioGroup, Select } from '../../../components/ui';
 import { useDebouncedValue } from '../../../lib/useDebouncedValue';
 import { useCompanies } from '../../../services/api/queries';
+import { companySelection, newRequestFor } from '../requests/shared';
 import { CompanyCardView } from './CompanyCardView';
 
-const sendTo = (ids: string[]) => `/app/new-request?companies=${ids.join(',')}`;
+const sendTo = newRequestFor;
 
 /** /app/companies (spec B5). */
 export default function CompaniesPage() {
@@ -104,7 +105,7 @@ export default function CompaniesPage() {
                   formatted: list.length.toLocaleString(i18n.language),
                 })}
               </p>
-              {category && (
+              {companySelection.enabled && category && (
                 <Button
                   variant="secondary"
                   shape="form"
@@ -125,7 +126,7 @@ export default function CompaniesPage() {
                   <CompanyCardView
                     company={company}
                     selected={selected.includes(company.id)}
-                    onToggle={() => toggle(company.id)}
+                    onToggle={companySelection.enabled ? () => toggle(company.id) : undefined}
                   />
                 </li>
               ))}

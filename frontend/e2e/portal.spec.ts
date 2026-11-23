@@ -96,12 +96,11 @@ test('walk through every section with the mock data', async ({ page, isMobile })
   await page.getByRole('dialog').getByRole('button', { name: 'Accept' }).click();
   await expect(page.getByText(/You selected MirhalGo Partner #001/)).toBeVisible();
 
-  // companies → select → New Request with "Sending to"
+  // companies → "Send request" opens New Request (company selection is off, plan item 9)
   await page.goto('/app/companies');
-  await page.getByRole('checkbox', { name: 'Select Nile Bridge Logistics' }).check();
-  await page.getByRole('button', { name: 'Send request to selected' }).click();
-  await expect(page).toHaveURL(/\/app\/new-request\?companies=co_nile/);
-  await expect(page.getByText('Sending to:')).toBeVisible();
+  await expect(page.getByRole('checkbox')).toHaveCount(0);
+  await page.getByRole('link', { name: 'Send request' }).first().click();
+  await expect(page).toHaveURL(/\/app\/new-request$/);
 
   // account, notifications, support
   await page.goto('/app/account/notifications');

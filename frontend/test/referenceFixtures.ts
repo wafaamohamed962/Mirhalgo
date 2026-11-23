@@ -31,6 +31,13 @@ export const COUNTRIES: ReferenceCountry[] = [
     companySignup: true,
     chinaDelivery: true,
   },
+  {
+    code: 'CN',
+    name: { ar: 'الصين', en: 'China' },
+    dialCode: '86',
+    companySignup: false,
+    chinaDelivery: false,
+  },
 ];
 
 const region = (id: string, ar: string, en: string): ReferenceRegion => ({

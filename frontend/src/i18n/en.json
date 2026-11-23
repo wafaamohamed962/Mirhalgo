@@ -396,6 +396,11 @@
       "remove": "Remove {{name}}",
       "dismiss": "Dismiss",
       "progress": "Upload progress of {{name}}"
+    },
+    "draft": {
+      "restored": "We restored your saved progress.",
+      "startOver": "Start over",
+      "dismiss": "Dismiss this notice"
     }
   },
   "options": {
@@ -506,11 +511,6 @@
         "services": "Services",
         "documents": "Documents",
         "review": "Review & submit"
-      },
-      "draft": {
-        "restored": "We restored your saved progress.",
-        "startOver": "Start over",
-        "dismiss": "Dismiss this notice"
       },
       "leave": {
         "title": "Leave the form?",
