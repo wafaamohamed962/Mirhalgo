@@ -55,7 +55,7 @@ export default function ApplicationStatusPage() {
   const look = status ? LOOK[status] : null;
 
   return (
-    <SimpleLayout actions={<LogoutButton />}>
+    <SimpleLayout actions={<LogoutButton />} back>
       <Card className="w-full max-w-xl p-8 text-center sm:p-10">
         {application.isPending && <Spinner className="mx-auto size-8 text-blue-600" />}
         {application.isError && <Alert tone="error">{t('companyStatus.error')}</Alert>}

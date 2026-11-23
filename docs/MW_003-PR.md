@@ -28,6 +28,27 @@ merged). Spec: [`MW_003.md`](MW_003.md) · plan: [`MW_003-plan.md`](MW_003-plan.
 | Success        | `/app/new-request/success/:reference` (reads `GET /api/orders/:reference`, so a reload works). Print (the card alone, one page) and Download PDF.                                                                              |
 | Cleanup        | Hourly in-process job (single holder via a lease row): orphan uploads > 24 h, drafts > 30 days, unverified company applications > 7 days. Also `npm run cleanup -w backend`.                                                   |
 
+## Addition beyond the spec
+
+- **Navigation and a consistent "Back" button** (requested by the developer on 2026-11-23).
+  - One component (`components/ui/BackButton`): arrow + "رجوع" / "Back". It goes back to the
+    exact previous page inside the app (URL, filters and scroll kept).
+  - When there is no previous page (an email link, a new tab), it goes to the page's logical
+    parent for this user. Guests go home. Customers go from a detail page to its list, else New
+    Request. Companies go to their application status. It never opens a page the role can't
+    open.
+  - A form with unsaved data asks first (the existing confirmation).
+  - Shown on the auth pages, the application status page, the 404 page, and the portal detail
+    pages (order, company, ticket, notifications, Account sections on mobile).
+  - Not on the landing page, the sidebar pages, the request forms (they keep "Back to
+    services") or the success screens.
+  - **No loops or re-submits:** after sign-up, an unverified login, company registration and an
+    order submit, the form page is replaced in the history. Back never returns to login, OTP
+    or a submitted form.
+  - **Filters in the URL:** My Orders (tab, sort, search), Companies (search, category, sort),
+    Notifications (filter) and the Help & Support FAQ search. Back from a detail page restores
+    the list exactly.
+
 ## Assumptions (pending Team Lead confirmation)
 
 Decisions 25–29 in `CLAUDE.md` §15 (made by the developer on 2026-11-22):

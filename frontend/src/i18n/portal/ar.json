@@ -54,9 +54,7 @@
       "draftDiscarded": "تم حذف المسودة.",
       "sendingTo": "سيُرسل إلى:",
       "removeCompany": "إزالة {{name}}",
-      "placeholder": "نموذج الطلب لهذه الخدمة قريبًا.",
-      "selectedCount": "الشركات المختارة: {{formatted}}",
-      "back": "العودة إلى الطلب الجديد"
+      "selectedCount": "الشركات المختارة: {{formatted}}"
     },
     "attempts": {
       "label": "الطلبات المتبقية",
@@ -103,7 +101,6 @@
       "viewOffers": "عرض العروض",
       "detailsOf": "تفاصيل الطلب {{reference}}",
       "viewOffersOf": "عرض عروض الطلب {{reference}}",
-      "back": "العودة إلى طلباتي",
       "detailTitle": "تفاصيل الطلب",
       "detailTabs": "أقسام الطلب",
       "detailTab": {
@@ -221,7 +218,6 @@
       "clear": "مسح",
       "sendSelected": "إرسال إلى المختارة",
       "sendToCategory": "إرسال إلى جميع شركات {{category}} (حتى {{max}})",
-      "back": "العودة إلى الشركات",
       "profileTitle": "ملف الشركة",
       "stats": {
         "rating": "التقييم",
@@ -265,7 +261,6 @@
     },
     "account": {
       "nav": "أقسام الحساب",
-      "back": "العودة إلى الحساب",
       "sections": {
         "profile": "الملف الشخصي",
         "security": "الأمان",
@@ -446,7 +441,6 @@
         "in_progress": "قيد المعالجة",
         "resolved": "تم حلها"
       },
-      "back": "العودة إلى المساعدة والدعم",
       "ticketTitle": "تذكرة دعم",
       "conversation": "المحادثة",
       "you": "أنت",

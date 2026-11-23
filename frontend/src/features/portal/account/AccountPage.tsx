@@ -2,7 +2,6 @@ import type { ComponentType } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
-  ArrowRight,
   Bell,
   ChevronLeft,
   Gauge,
@@ -13,6 +12,7 @@ import {
   UserX,
   type LucideIcon,
 } from 'lucide-react';
+import { BackButton } from '../../../components/ui';
 import { cn } from '../../../lib/utils';
 import { AddressesSection } from './AddressesSection';
 import {
@@ -95,15 +95,7 @@ export default function AccountPage() {
         aria-labelledby="account-section-title"
         className={cn('rounded-lg bg-white p-5 shadow-md sm:p-8', !section && 'hidden md:block')}
       >
-        {section && (
-          <Link
-            to="/app/account"
-            className="mb-4 inline-flex items-center gap-1 text-small font-semibold md:hidden"
-          >
-            <ArrowRight aria-hidden="true" className="size-4 ltr:rotate-180" />
-            {t('portal.account.back')}
-          </Link>
-        )}
+        {section && <BackButton className="mb-4 md:hidden" />}
         <h2 id="account-section-title" className="mb-6 text-h2">
           {label(current.id)}
         </h2>

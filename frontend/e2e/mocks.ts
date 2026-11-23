@@ -7,19 +7,35 @@ const base64url = (value: object) => Buffer.from(JSON.stringify(value)).toString
 
 export const USER = { id: 'user-1', email: 'ali@example.com', firstName: 'Ali' };
 
+export type Role = 'customer' | 'company';
+
 /** Unsigned JWT that supabase-js can decode (it only reads `exp` / `sub` client-side). */
-export const ACCESS_TOKEN = [
-  base64url({ alg: 'HS256', typ: 'JWT' }),
-  base64url({
-    sub: USER.id,
-    email: USER.email,
-    aud: 'authenticated',
-    role: 'authenticated',
-    app_metadata: { role: 'customer' },
-    exp: Math.floor(Date.now() / 1000) + 24 * 3600,
-  }),
-  Buffer.from('test-signature').toString('base64url'),
-].join('.');
+export const accessToken = (role: Role = 'customer') =>
+  [
+    base64url({ alg: 'HS256', typ: 'JWT' }),
+    base64url({
+      sub: USER.id,
+      email: USER.email,
+      aud: 'authenticated',
+      role: 'authenticated',
+      app_metadata: { role },
+      exp: Math.floor(Date.now() / 1000) + 24 * 3600,
+    }),
+    Buffer.from('test-signature').toString('base64url'),
+  ].join('.');
+export const ACCESS_TOKEN = accessToken();
+
+/** The Supabase user object of a verified account with this role. */
+const authUser = (role: Role) => ({
+  id: USER.id,
+  aud: 'authenticated',
+  role: 'authenticated',
+  email: USER.email,
+  email_confirmed_at: '2026-01-01T00:00:00Z',
+  app_metadata: { role },
+  user_metadata: {},
+  created_at: '2026-01-01T00:00:00Z',
+});
 
 const json = (route: Route, status: number, body: unknown) =>
   route.fulfill({
@@ -74,22 +90,13 @@ export const PROFILE_ROW = {
   phone: '+201012345678',
 };
 
-/** Minimal Supabase Auth + PostgREST for a verified, logged-in user. */
-export async function mockSupabase(page: Page) {
+/** Minimal Supabase Auth + PostgREST for a verified, logged-in user (a customer by default). */
+export async function mockSupabase(page: Page, role: Role = 'customer') {
   await page.context().route('http://supabase.test/**', async (route) => {
     const url = new URL(route.request().url());
     if (route.request().method() === 'OPTIONS') return json(route, 204, {});
     if (url.pathname === '/auth/v1/user') {
-      return json(route, 200, {
-        id: USER.id,
-        aud: 'authenticated',
-        role: 'authenticated',
-        email: USER.email,
-        email_confirmed_at: '2026-01-01T00:00:00Z',
-        app_metadata: { role: 'customer' },
-        user_metadata: {},
-        created_at: '2026-01-01T00:00:00Z',
-      });
+      return json(route, 200, authUser(role));
     }
     if (url.pathname === '/auth/v1/logout') return route.fulfill({ status: 204 });
     // the portal reads (and updates) the user's own row: identity is real, not MSW (MW_002)
@@ -132,24 +139,15 @@ export const me: ApiHandler = () => ({
   }),
 });
 
-/** A stored supabase-js session (no network needed while it is valid): logged-in customer. */
-export async function seedCustomerSession(page: Page) {
+/** A stored supabase-js session (no network needed while it is valid): a logged-in user. */
+export async function seedSession(page: Page, role: Role = 'customer') {
   const session = {
-    access_token: ACCESS_TOKEN,
+    access_token: accessToken(role),
     refresh_token: 'refresh-token',
     token_type: 'bearer',
     expires_in: 24 * 3600,
     expires_at: Math.floor(Date.now() / 1000) + 24 * 3600,
-    user: {
-      id: USER.id,
-      aud: 'authenticated',
-      role: 'authenticated',
-      email: USER.email,
-      email_confirmed_at: '2026-01-01T00:00:00Z',
-      app_metadata: { role: 'customer' },
-      user_metadata: {},
-      created_at: '2026-01-01T00:00:00Z',
-    },
+    user: authUser(role),
   };
   await page.addInitScript(
     (value) => localStorage.setItem('mirhalgo.auth', value),

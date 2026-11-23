@@ -60,12 +60,14 @@ export default function SignupCustomerPage() {
     onSuccess: (result, input) => {
       setPendingVerification(result.email, input.password);
       leaveGuard.allowLeave();
-      navigate('/verify-email', { state: { cooldown: result.cooldownSeconds } });
+      // replace: Back never returns to a submitted sign-up form
+      navigate('/verify-email', { replace: true, state: { cooldown: result.cooldownSeconds } });
     },
   });
 
   return (
     <AuthCard
+      back
       wide
       backHome
       title={t('auth.signup.title')}

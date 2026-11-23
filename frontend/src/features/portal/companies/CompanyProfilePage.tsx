@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Controller } from 'react-hook-form';
 import { Link, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, Lock, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { Lock, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { PORTAL_LIMITS, reviewSchema, type CompanyProfile, type Review } from '@mirhalgo/shared';
 import {
   Alert,
   Avatar,
+  BackButton,
   Button,
   QueryState,
   Select,
@@ -175,13 +176,7 @@ export default function CompanyProfilePage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <Link
-        to="/app/companies"
-        className="inline-flex items-center gap-1 self-start text-small font-semibold"
-      >
-        <ArrowRight aria-hidden="true" className="size-4 ltr:rotate-180" />
-        {t('portal.companies.back')}
-      </Link>
+      <BackButton />
       <QueryState query={company} skeleton={<Skeleton className="h-96 rounded-lg" />}>
         {(data) => {
           const { name, logoUrl } = identity(data);

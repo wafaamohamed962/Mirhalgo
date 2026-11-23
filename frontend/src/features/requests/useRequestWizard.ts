@@ -206,7 +206,11 @@ export function useRequestWizard(service: ServiceType, prefill: Prefill) {
       cancelSave();
       leaveGuard.allowLeave();
       await queryClient.invalidateQueries({ queryKey: keys.summary });
-      navigate(`/app/new-request/success/${result.reference}`, { state: { result, service } });
+      // replace: Back from the success screen never returns to the submitted form
+      navigate(`/app/new-request/success/${result.reference}`, {
+        replace: true,
+        state: { result, service },
+      });
     } catch (error) {
       setSubmitError(errorKey(error));
       // a refused order (not a network failure) gets a new key once it is changed

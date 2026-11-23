@@ -11,6 +11,7 @@ export function AuthCard({
   wide = false,
   needsBackend = true,
   backHome = false,
+  back = false,
   children,
 }: {
   title: ReactNode;
@@ -22,10 +23,12 @@ export function AuthCard({
   needsBackend?: boolean;
   /** "Back to home" in the header (sign-up forms, MW_003 A3). */
   backHome?: boolean;
+  /** "Back" under the header: the previous page, else the logical parent. */
+  back?: boolean;
   children: ReactNode;
 }) {
   return (
-    <SimpleLayout backHome={backHome}>
+    <SimpleLayout backHome={backHome} back={back}>
       <Card className={wide ? 'w-full max-w-2xl p-6 sm:p-10' : 'w-full max-w-md p-6 sm:p-8'}>
         <header className="mb-6 text-center">
           <h1 className="text-h2">{title}</h1>

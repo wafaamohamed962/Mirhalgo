@@ -7,6 +7,7 @@ import {
   mockSupabase,
   ok,
   otpSent,
+  seedSession,
   USER,
   setLanguage,
   summary,
@@ -139,7 +140,8 @@ test('too many wrong attempts is reported', async ({ page }) => {
 
 test('verify page without a pending signup redirects to /login', async ({ page }) => {
   await page.goto('/verify-email');
-  await expect(page).toHaveURL('/login');
+  // the guard waits for the session, read after lazy chunks: slow under parallel load
+  await expect(page).toHaveURL('/login', { timeout: 15_000 });
 });
 
 test('forgot password end to end', async ({ page }) => {
@@ -292,4 +294,88 @@ test('"Back to home" on both sign-up forms: fits the header, confirms when the f
     await dialog.getByRole('button', { name: 'Leave' }).click();
     await expect(page).toHaveURL('/');
   }
+});
+
+test('"Back" on the auth pages: under the header, previous page or home, start side in RTL', async ({
+  page,
+  isMobile,
+}) => {
+  await mockApi(page, {});
+  const back = (name: string) => page.getByRole('button', { name });
+
+  // reached inside the app → the previous page
+  await page.goto('/');
+  if (isMobile) await page.getByRole('button', { name: 'Open menu' }).click();
+  await page
+    .getByRole('link', { name: 'Login', exact: true })
+    .filter({ visible: true })
+    .first()
+    .click();
+  await expect(page).toHaveURL('/login');
+  await back('Back to the previous page').click();
+  await expect(page).toHaveURL('/');
+
+  // opened directly (an email link, a new tab) → home
+  for (const path of ['/forgot-password', '/signup', '/signup/customer', '/signup/company']) {
+    await page.goto(path);
+    await back('Back to the previous page').click();
+    await expect(page, path).toHaveURL('/');
+  }
+
+  // Arabic: "رجوع" under the header, on the start (right) side; A3 "Back to home" stays
+  await setLanguage(page, 'ar');
+  await page.goto('/signup/company');
+  const button = back('رجوع إلى الصفحة السابقة');
+  await expect(button).toHaveText('رجوع');
+  await expect(page.getByRole('link', { name: 'العودة إلى الرئيسية' })).toBeVisible();
+  const header = (await page.locator('header').first().boundingBox())!;
+  const box = (await button.boundingBox())!;
+  expect(box.y).toBeGreaterThanOrEqual(header.y + header.height);
+  expect(box.x + box.width).toBeGreaterThan(page.viewportSize()!.width / 2);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test('landing → login → portal: Back never returns to the login page', async ({
+  page,
+  isMobile,
+}) => {
+  await mockApi(page, { '/auth/login': loginSuccess, '/me': me, '/me/summary': summary });
+  await page.goto('/');
+  if (isMobile) await page.getByRole('button', { name: 'Open menu' }).click();
+  await page
+    .getByRole('link', { name: 'Login', exact: true })
+    .filter({ visible: true })
+    .first()
+    .click();
+  await page.getByLabel('Email or phone').fill(USER.email);
+  await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page).toHaveURL('/app/new-request');
+
+  // the login entry was replaced (and /app → /app/new-request too): Back is the landing page
+  await page.goBack();
+  await expect(page).toHaveURL('/');
+});
+
+test('a company opening a customer URL: its status page, and Back never offers a customer page', async ({
+  page,
+}) => {
+  await seedSession(page, 'company');
+  await mockSupabase(page, 'company');
+
+  // the role guard redirects (replace); opened directly, Back goes to a page a company can open
+  await page.goto('/app/orders/ord_118');
+  await expect(page).toHaveURL('/application-status', { timeout: 15_000 });
+  await page.getByRole('button', { name: 'Back to the previous page' }).click();
+  await expect(page).toHaveURL('/');
+
+  // a missing page → the company's home, in Arabic too
+  await setLanguage(page, 'ar');
+  await page.goto('/nowhere');
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await page.getByRole('button', { name: 'رجوع إلى الصفحة السابقة' }).click();
+  await expect(page).toHaveURL('/application-status');
 });

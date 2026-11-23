@@ -18,6 +18,7 @@ export default function SignupRolePage() {
 
   return (
     <AuthCard
+      back
       wide
       title={t('auth.roleSelect.title')}
       subtitle={t('auth.roleSelect.subtitle')}

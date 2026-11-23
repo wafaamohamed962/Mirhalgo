@@ -4,13 +4,7 @@ import arApp from '../src/i18n/ar.json' with { type: 'json' };
 import enApp from '../src/i18n/en.json' with { type: 'json' };
 import arPortal from '../src/i18n/portal/ar.json' with { type: 'json' };
 import enPortal from '../src/i18n/portal/en.json' with { type: 'json' };
-import {
-  mockPortalApi,
-  mockSupabase,
-  PROFILE_ROW,
-  seedCustomerSession,
-  setLanguage,
-} from './mocks';
+import { mockPortalApi, mockSupabase, PROFILE_ROW, seedSession, setLanguage } from './mocks';
 
 /*
  * New Request forms (MW_003 B5) on the portal build (MSW on, the order API mocked like the real
@@ -174,7 +168,7 @@ for (const lang of ['ar', 'en'] as const) {
   test.describe(`New Request forms (${lang})`, () => {
     test.beforeEach(async ({ page }) => {
       await setLanguage(page, lang);
-      await seedCustomerSession(page);
+      await seedSession(page);
       await mockSupabase(page);
     });
 
@@ -344,3 +338,36 @@ for (const lang of ['ar', 'en'] as const) {
     });
   });
 }
+
+test('submit → success → Back never returns to the submitted form', async ({ page }) => {
+  await setLanguage(page, 'en');
+  await seedSession(page);
+  await mockSupabase(page);
+  await mockPortalApi(page, { drafts: false });
+  const f = formDriver(page, 'en');
+
+  await page.goto('/app/new-request');
+  await page.getByRole('link', { name: /Shipping from SHEIN & Chinese sites/ }).click();
+  await f.stepIs(1, 4, 'customer');
+  await f.radio('clientType', 'individual');
+  await f.next();
+  await f.radio('source', 'shein');
+  await f.radio('sheinSite', 'shein_sa');
+  await f.radio('addMethod', 'cart_link');
+  await f.main.getByRole('textbox', { name: /^Cart link/ }).fill('https://sa.shein.com/cart/x');
+  await f.next();
+  await f.radio('mode', 'air');
+  await f.pick('deliveryCountry', NAMES.en.SA);
+  await f.pick('city', NAMES.en.jeddah);
+  await f.input('deliveryAddress').fill('Olaya street 3, Riyadh');
+  await f.next();
+  await f.stepIs(4, 4, 'review');
+  await f.submit();
+  await expect(page).toHaveURL(/\/app\/new-request\/success\/MG\d+$/);
+
+  // the form entry was replaced by the success screen: Back is the service list
+  await page.goBack();
+  await expect(page).toHaveURL('/app/new-request');
+  await page.goForward();
+  await expect(page).toHaveURL(/\/success\/MG\d+$/);
+});

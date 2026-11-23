@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
+import { BackButton } from '../ui/BackButton';
+import { cn } from '../../lib/utils';
 import { Container } from './Container';
 import { LanguageSwitch } from './LanguageSwitch';
 import { Logo } from './Logo';
@@ -10,14 +12,17 @@ import { Logo } from './Logo';
  * Light layout for auth pages, the dashboard placeholder and 404: logo + language switch.
  * `backHome` adds a visible "Back to home" link (sign-up forms, MW_003 A3); leaving a form
  * with data is confirmed by the page's unsaved-changes guard, like the logo link.
+ * `back` adds the "Back" button under the header (the previous page, else the logical parent).
  */
 export function SimpleLayout({
   actions,
   backHome = false,
+  back = false,
   children,
 }: {
   actions?: ReactNode;
   backHome?: boolean;
+  back?: boolean;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -47,7 +52,17 @@ export function SimpleLayout({
           </div>
         </Container>
       </header>
-      <main className="flex flex-1 items-start justify-center px-4 py-10 sm:items-center sm:py-16">
+      {back && (
+        <Container className="pt-4">
+          <BackButton />
+        </Container>
+      )}
+      <main
+        className={cn(
+          'flex flex-1 items-start justify-center px-4 py-10 sm:items-center sm:py-16',
+          back && 'pt-4 sm:pt-6',
+        )}
+      >
         {children}
       </main>
     </div>

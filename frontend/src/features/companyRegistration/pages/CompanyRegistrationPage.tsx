@@ -109,7 +109,8 @@ export default function CompanyRegistrationPage() {
       cancelAutosave();
       clearCompanyDraft();
       setPendingVerification(result.email, null, 'company'); // no auto-login (decision 6)
-      navigate('/verify-email', { state: { cooldown: result.cooldownSeconds } });
+      // replace: Back from "Application submitted" never returns to the submitted wizard
+      navigate('/verify-email', { replace: true, state: { cooldown: result.cooldownSeconds } });
     },
     onError: (error) => {
       if (error instanceof ApiRequestError && FILE_ERRORS.includes(error.code)) goTo('documents');
@@ -144,7 +145,7 @@ export default function CompanyRegistrationPage() {
   }));
 
   return (
-    <SimpleLayout backHome>
+    <SimpleLayout backHome back>
       <Card className="w-full max-w-3xl p-6 sm:p-10">
         <header className="mb-8 text-center">
           <h1 className="text-h2">{t('company.register.title')}</h1>

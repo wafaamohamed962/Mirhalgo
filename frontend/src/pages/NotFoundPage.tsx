@@ -9,7 +9,7 @@ export default function NotFoundPage() {
   usePageMeta('notFound');
 
   return (
-    <SimpleLayout>
+    <SimpleLayout back>
       <div className="max-w-md text-center">
         <p className="text-display font-extrabold text-blue-600">{t('notFound.code')}</p>
         <h1 className="mt-2 text-h2">{t('notFound.title')}</h1>

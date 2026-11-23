@@ -1,8 +1,8 @@
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, Paperclip } from 'lucide-react';
+import { Paperclip } from 'lucide-react';
 import { PORTAL_LIMITS, ticketReplySchema } from '@mirhalgo/shared';
-import { Button, QueryState, Skeleton, Textarea } from '../../../components/ui';
+import { BackButton, Button, QueryState, Skeleton, Textarea } from '../../../components/ui';
 import { useDateFormat } from '../../../lib/dateFormat';
 import { useZodForm } from '../../../lib/forms';
 import { cn, formatFileSize } from '../../../lib/utils';
@@ -26,13 +26,7 @@ export default function TicketPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <Link
-        to="/app/support"
-        className="inline-flex items-center gap-1 self-start text-small font-semibold"
-      >
-        <ArrowRight aria-hidden="true" className="size-4 ltr:rotate-180" />
-        {t('portal.support.back')}
-      </Link>
+      <BackButton />
       <QueryState query={ticket} skeleton={<Skeleton className="h-96 rounded-lg" />}>
         {(data) => (
           <>

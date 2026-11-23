@@ -65,6 +65,7 @@ export default function VerifyEmailPage() {
 
   return (
     <AuthCard
+      back
       title={t('auth.verify.title')}
       subtitle={
         <Trans

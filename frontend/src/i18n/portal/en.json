@@ -54,9 +54,7 @@
       "draftDiscarded": "The draft was discarded.",
       "sendingTo": "Sending to:",
       "removeCompany": "Remove {{name}}",
-      "placeholder": "The request form for this service is coming soon.",
-      "selectedCount": "Selected companies: {{formatted}}",
-      "back": "Back to New Request"
+      "selectedCount": "Selected companies: {{formatted}}"
     },
     "attempts": {
       "label": "Remaining requests",
@@ -103,7 +101,6 @@
       "viewOffers": "View offers",
       "detailsOf": "Details of order {{reference}}",
       "viewOffersOf": "View the offers for order {{reference}}",
-      "back": "Back to My Orders",
       "detailTitle": "Order details",
       "detailTabs": "Order sections",
       "detailTab": {
@@ -221,7 +218,6 @@
       "clear": "Clear",
       "sendSelected": "Send request to selected",
       "sendToCategory": "Send to all {{category}} companies (up to {{max}})",
-      "back": "Back to Companies",
       "profileTitle": "Company profile",
       "stats": {
         "rating": "Rating",
@@ -265,7 +261,6 @@
     },
     "account": {
       "nav": "Account sections",
-      "back": "Back to Account",
       "sections": {
         "profile": "Profile",
         "security": "Security",
@@ -446,7 +441,6 @@
         "in_progress": "In progress",
         "resolved": "Resolved"
       },
-      "back": "Back to Help & Support",
       "ticketTitle": "Support ticket",
       "conversation": "Conversation",
       "you": "You",

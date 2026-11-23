@@ -1217,7 +1217,7 @@ scheduling and idempotency are built in-house.
   - **Still open in B7:** the deployed preview (needs the developer's Render + static-host
     accounts) and Lighthouse there.
 - **Fix (2026-11-23, after B7): A3 "Back to home" asked on an empty form in development**
-  (reported by the developer; not committed yet).
+  (reported by the developer; committed as `cdb3ae9`).
   - Production was fine, which is why the E2E passed.
   - Cause 1: under React StrictMode, react-hook-form's form-level `formState.isDirty` turned
     true right after mount while `dirtyFields` was empty and every value equal to its default.
@@ -1239,3 +1239,70 @@ scheduling and idempotency are built in-house.
     `test/forms.test.ts` covers `hasChanges`. The empty and cleared-form tests fail on the old
     code.
   - Totals: shared 121, backend 123, frontend 123, E2E 57.
+- **Navigation + "Back" button across the site (2026-11-23). ADDITION BEYOND THE MW_003
+  SPEC**, requested by the developer in two steps (not committed yet).
+  - **`components/ui/BackButton`** (no props but `className`): arrow + "رجوع" / "Back", ghost
+    button (44 px, global focus ring), aria-label "رجوع إلى الصفحة السابقة" / "Back to the
+    previous page" (contains the visible word). Arrow: `ArrowLeft` + `rtl:rotate-180`.
+    - **History:** when `hasInAppHistory()` (`lib/navigation.ts`: React Router's
+      `history.state.idx > 0`; never `document.referrer`), it calls `navigate(-1)`. That gives
+      the exact URL + query; `ScrollRestoration` restores the scroll.
+    - **Fallback:** otherwise `navigate(backFallback(pathname, viewer), { replace: true })`.
+      `backFallback` (`features/auth/roles.ts`, next to `homePath`) is the page / parent map:
+      - guest (or pending verification) → `/`;
+      - customer: `/app/orders/:id` → `/app/orders`, `/app/companies/:id` →
+        `/app/companies`, `/app/support/tickets/:id` → `/app/support`,
+        `/app/account/:section` → `/app/account`, anything else → `/app/new-request`;
+      - company → `/application-status` (from that page itself → `/`).
+      - It never returns a page the viewer's role / auth state can't open.
+    - It reads `AuthContext` null-safely (outside the provider = guest). While the session is
+      still loading and there is no in-app history, it is **disabled**. Before this, a company
+      clicking Back on the 404 page before the session loaded was sent to the landing page.
+    - Unsaved data: the page's `useUnsavedChangesGuard` (`useBlocker`) also blocks the POP
+      navigation and shows its dialog. No extra code.
+  - **Shown** under the header / at the top of the content:
+    - `SimpleLayout` / `AuthCard` `back` flag: login, sign-up role, customer + company
+      sign-up (A3 "Back to home" kept), verify-email, forgot-password, application-status, 404.
+    - Portal: order details, company profile, ticket, notifications, Account section (mobile
+      only, `md:hidden`).
+    - **Not** on: the landing page; the sidebar / bottom-nav pages (New Request, My Orders,
+      Companies, Account, Help & Support); the request forms ("Back to services" + step Back
+      kept); the order success page; "Application submitted".
+    - The old per-page links ("Back to My Orders"…) and their keys were removed, with the dead
+      `portal.newRequest.back` / `placeholder`.
+  - **No loops / re-submits (`replace`):**
+    - customer sign-up → verify-email; company registration → verify-email; unverified login →
+      verify-email; order submit → success screen;
+    - already `replace`: login → home, verify → home / submitted, reset → login, every guard,
+      `/app`, `/dashboard`.
+    - Back from the portal never reaches `/login`, and Back from a success screen never reaches
+      the submitted form.
+  - **List state in the URL** (`lib/useUrlState.ts`, writes with `replace`, defaults not
+    written):
+    - `useQueryParam(key, default, allowed)` and `useQuerySearch(key)` (typing is local and
+      debounced into the URL; a URL change from elsewhere fills the box);
+    - My Orders: `tab`, `sort`, `search`; Companies: `search`, `category`, `sort`;
+      Notifications: `filter`; Help & Support: FAQ `q` (the tickets list has no filters);
+    - loaded "load more" pages come back from the TanStack cache (5 min).
+  - Copy: `common.back`, `common.backLabel`.
+  - Tests:
+    - `test/backButton.test.tsx` (12): browser router + StrictMode; history back keeps the
+      query; fallback REPLACE; fallback per role / auth (guest, customer, company, status page);
+      disabled while the session loads; Stay / Leave; name / arrow / focus; the
+      `backFallback` map.
+    - E2E (desktop + 360 px):
+      - auth: Back on auth pages (AR placement, no overflow); landing → login → portal → browser
+        Back = landing, not login; a company opening `/app/orders/…` → status page → Back
+        never reaches a customer page; 404 → `/application-status` (RTL);
+      - portal: list → detail → back; 4 pages opened directly → parent; none on sidebar pages;
+        Account mobile only; My Orders tab + sort + search → details → Back restores all three
+        (EN + AR);
+      - requests: submit → success → browser Back = service list, not the form.
+    - E2E mocks: `accessToken(role)`, `seedSession(page, role)`, `mockSupabase(page, role)`
+      (default customer; `seedCustomerSession` renamed).
+    - Flaky under parallel load, also on the previous commit: the redirect checks (`/verify-email`
+      → `/login`, company → status) need more than the default 5 s while lazy chunks and the
+      session load. They now wait 15 s.
+  - Totals: shared 121, backend 123, frontend 135, E2E 71.
+  - **Type-check note:** `npx tsc --noEmit -p .` in `frontend/` checks nothing (the root
+    tsconfig only has references). Use `npx tsc -b` (what `npm run build` runs).

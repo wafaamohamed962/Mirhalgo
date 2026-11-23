@@ -49,3 +49,14 @@ export function scrollToSection(id: SectionId) {
   document.getElementById(id)?.scrollIntoView();
   window.history.replaceState(window.history.state, '', `#${id}`);
 }
+
+/**
+ * True when the browser history has an earlier entry inside this app. React Router's browser
+ * history keeps the entry index in `history.state.idx` (0 = the first page of the app in this
+ * tab). A page opened from an email link or in a new tab is at 0, and so is a page reached
+ * only through redirects (`replace`).
+ */
+export function hasInAppHistory(): boolean {
+  const idx = (window.history.state as { idx?: unknown } | null)?.idx;
+  return typeof idx === 'number' && idx > 0;
+}
