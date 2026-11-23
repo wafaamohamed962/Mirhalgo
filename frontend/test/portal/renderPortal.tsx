@@ -1,9 +1,16 @@
+import { StrictMode } from 'react';
 import { render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, Navigate, RouterProvider } from 'react-router';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import type { Session } from '@supabase/supabase-js';
+import {
+  ORDER_REFERENCE_PATTERN,
+  type MeSummary,
+  type OrderDraft,
+  type OrderRecord,
+} from '@mirhalgo/shared';
 import { Toaster } from '../../src/components/ui/Toast';
 import { AuthContext, type AuthContextValue } from '../../src/features/auth/authContext';
 import AccountPage from '../../src/features/portal/account/AccountPage';
@@ -14,10 +21,12 @@ import NotificationsPage from '../../src/features/portal/notifications/Notificat
 import OrderDetailsPage from '../../src/features/portal/orders/OrderDetailsPage';
 import OrdersPage from '../../src/features/portal/orders/OrdersPage';
 import NewRequestPage from '../../src/features/portal/requests/NewRequestPage';
-import ServicePlaceholderPage from '../../src/features/portal/requests/ServicePlaceholderPage';
 import SupportPage from '../../src/features/portal/support/SupportPage';
 import TicketPage from '../../src/features/portal/support/TicketPage';
+import RequestFormPage from '../../src/features/requests/RequestFormPage';
+import RequestSuccessPage from '../../src/features/requests/RequestSuccessPage';
 import { createMockDb, type MockDb } from '../../src/mocks/db';
+import { referenceResponse } from '../referenceFixtures';
 import { createHandlers } from '../../src/mocks/handlers';
 
 /** One MSW server for the portal tests; each test gets a fresh mock db (see resetPortalDb). */
@@ -47,6 +56,96 @@ const supabaseHandlers = [
   }),
 ];
 
+/**
+ * Stand-in for the REAL API parts of the portal (MW_003 B2+): GET /me/summary and draft discard.
+ * They are not in src/mocks (those pass through to the server), so the tests answer them here.
+ */
+export let apiState: MeSummary;
+/** Server drafts by service and the orders the forms submitted (with their Idempotency-Key). */
+export let draftStore: Record<string, OrderDraft & { updatedAt: string; uploads: [] }>;
+/** Orders the API knows (filled by submits, or planted by a test). */
+export let orderRecords: Record<string, OrderRecord>;
+export let submitted: Array<{ key: string | null; body: Record<string, unknown> }>;
+
+const realApiHandlers = [
+  http.get('*/api/me/summary', ({ request }) =>
+    request.headers.get('authorization') === 'Bearer test-access-token'
+      ? HttpResponse.json({ ok: true, data: apiState })
+      : HttpResponse.json(
+          { ok: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
+          { status: 401 },
+        ),
+  ),
+  http.get('*/api/reference/:list', ({ params, request }) => {
+    const data = referenceResponse(String(params.list), new URL(request.url).searchParams);
+    return HttpResponse.json({ ok: true, data: data ?? [] });
+  }),
+  http.get('*/api/orders/drafts/:service', ({ params }) =>
+    HttpResponse.json({ ok: true, data: draftStore[String(params.service)] ?? null }),
+  ),
+  http.put('*/api/orders/drafts/:service', async ({ params, request }) => {
+    const body = (await request.json()) as OrderDraft;
+    draftStore[String(params.service)] = {
+      ...body,
+      updatedAt: new Date().toISOString(),
+      uploads: [],
+    };
+    return HttpResponse.json({ ok: true, data: draftStore[String(params.service)] });
+  }),
+  http.post('*/api/orders', async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    submitted.push({ key: request.headers.get('idempotency-key'), body });
+    if (apiState.balance.remaining === 0)
+      return HttpResponse.json(
+        { ok: false, error: { code: 'NO_BALANCE', message: 'No balance' } },
+        { status: 409 },
+      );
+    apiState.balance.remaining -= 1;
+    const reference = `MG${1000 + submitted.length}`;
+    // read back by the success page (GET /orders/:reference, B6)
+    orderRecords[reference] = {
+      reference,
+      service: body.service as OrderRecord['service'],
+      status: 'under_review',
+      submittedAt: new Date().toISOString(),
+      order: body,
+      derived: { items: [], totalContainers: null, totalTrucks: null, totalCbm: null },
+      attachments: [],
+    };
+    return HttpResponse.json(
+      {
+        ok: true,
+        data: {
+          reference,
+          service: body.service,
+          status: 'under_review',
+          createdAt: new Date().toISOString(),
+          balance: apiState.balance,
+          replayed: false,
+        },
+      },
+      { status: 201 },
+    );
+  }),
+  http.delete('*/api/uploads/:id', () => HttpResponse.json({ ok: true, data: null })),
+  http.get('*/api/orders/:reference', ({ params }) => {
+    // mocked My Orders ids (ord_118) fall through to the MSW portal handlers
+    if (!ORDER_REFERENCE_PATTERN.test(String(params.reference))) return undefined;
+    const record = orderRecords[String(params.reference)];
+    return record
+      ? HttpResponse.json({ ok: true, data: record })
+      : HttpResponse.json(
+          { ok: false, error: { code: 'NOT_FOUND', message: 'Not found' } },
+          { status: 404 },
+        );
+  }),
+  http.delete('*/api/orders/drafts/:service', ({ params }) => {
+    delete draftStore[String(params.service)];
+    apiState.drafts = apiState.drafts.filter((draft) => draft.service !== params.service);
+    return HttpResponse.json({ ok: true, data: null });
+  }),
+];
+
 export function resetPortalDb() {
   db = createMockDb();
   profileRow = {
@@ -57,7 +156,22 @@ export function resetPortalDb() {
     email: 'customer@example.com',
     phone: '+201098765432',
   };
-  server.resetHandlers(...supabaseHandlers, ...createHandlers(db, { latency: 0 }));
+  draftStore = {};
+  submitted = [];
+  orderRecords = {};
+  apiState = {
+    firstName: 'Wafaa',
+    gender: 'female',
+    balance: { remaining: 3, total: 5 },
+    drafts: [
+      { service: 'international', updatedAt: new Date(Date.now() - 7_200_000).toISOString() },
+    ],
+  };
+  server.resetHandlers(
+    ...supabaseHandlers,
+    ...realApiHandlers,
+    ...createHandlers(db, { latency: 0 }),
+  );
 }
 
 /** A stored supabase-js session (valid for a day, so no network is needed to read it). */
@@ -103,7 +217,8 @@ export function renderPortal(path: string) {
         children: [
           { index: true, element: <Navigate to="new-request" replace /> },
           page('new-request', <NewRequestPage />, 'newRequest'),
-          page('new-request/:service', <ServicePlaceholderPage />, 'newRequest'),
+          page('new-request/success/:reference', <RequestSuccessPage />, 'newRequest'),
+          page('new-request/:service', <RequestFormPage />, 'newRequest'),
           page('orders', <OrdersPage />, 'orders'),
           page('orders/:id', <OrderDetailsPage />, 'portal.orders.detailTitle'),
           page('companies', <CompaniesPage />, 'companies'),
@@ -120,13 +235,16 @@ export function renderPortal(path: string) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
+  // StrictMode like main.tsx: effects run twice in development (a min-1 list once got 2 rows)
   render(
-    <QueryClientProvider client={queryClient}>
-      <AuthContext.Provider value={customer}>
-        <RouterProvider router={router} />
-        <Toaster />
-      </AuthContext.Provider>
-    </QueryClientProvider>,
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <AuthContext.Provider value={customer}>
+          <RouterProvider router={router} />
+          <Toaster />
+        </AuthContext.Provider>
+      </QueryClientProvider>
+    </StrictMode>,
   );
   return router;
 }

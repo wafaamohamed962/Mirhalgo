@@ -1,9 +1,10 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished } from 'vitest';
 import { flags } from '../../src/lib/env';
-import { db, profileRow, renderPortal, resetPortalDb, server } from './renderPortal';
+import { db, profileRow, renderPortal, resetPortalDb, server, apiState } from './renderPortal';
+import { companySelection } from '../../src/features/portal/requests/shared';
 
 /* Customer portal (MW_002 Part B) against the MSW mocks: the same handlers as the preview. */
 
@@ -96,26 +97,65 @@ describe('own identity = the real profiles row, not the mocks (MW_002 assumption
 });
 
 describe('new request (B3)', () => {
-  it('welcome, attempts, draft banner (discard) and pre-selected companies', async () => {
+  it('welcome, attempts, landing-page service cards, draft banner (discard)', async () => {
     const user = userEvent.setup();
-    renderPortal('/app/new-request?companies=co_nile,co_delta');
+    renderPortal('/app/new-request?companies=co_nile');
     expect(await main().findByRole('heading', { name: 'Welcome, Wafaa' })).toBeInTheDocument();
     expect(await main().findByText('Remaining requests: 3 of 5')).toBeInTheDocument();
-    expect(main().getByText('Sending to:')).toBeInTheDocument();
-    await user.click(await main().findByRole('button', { name: 'Remove Nile Bridge Logistics' }));
-    expect(main().queryByText('Nile Bridge Logistics')).not.toBeInTheDocument();
+    // company selection is off (plan item 9): no "Sending to" bar, plain links
+    expect(main().queryByText('Sending to:')).not.toBeInTheDocument();
+    expect(main().getByText('Most requested')).toBeInTheDocument();
+    expect(main().getByText('SHEIN — Alibaba — 1688 — Taobao')).toBeInTheDocument();
+    expect(main().getByRole('link', { name: /Domestic Land Shipping/ })).toHaveAttribute(
+      'href',
+      '/app/new-request/domestic',
+    );
 
     await user.click(main().getByRole('button', { name: 'Discard' }));
     expect(await screen.findByText('The draft was discarded.')).toBeInTheDocument();
     expect(main().queryByText('You have an unfinished request')).not.toBeInTheDocument();
   });
 
-  it('no requests left: red state and the service cards are disabled', async () => {
-    db.attempts.remaining = 0;
+  it('the summary is the real API: one draft row per service, discard calls DELETE /orders/drafts/:service', async () => {
+    const user = userEvent.setup();
+    apiState.drafts = [
+      { service: 'china', updatedAt: new Date().toISOString() },
+      { service: 'domestic', updatedAt: new Date().toISOString() },
+    ];
+    renderPortal('/app/new-request');
+    expect(await main().findAllByText('You have an unfinished request')).toHaveLength(2);
+    const [china] = main().getAllByRole('button', { name: 'Discard' });
+    await user.click(china!);
+    expect(await screen.findByText('The draft was discarded.')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(main().getAllByText('You have an unfinished request')).toHaveLength(1),
+    );
+    expect(apiState.drafts.map((d) => d.service)).toEqual(['domestic']);
+    expect(main().getByRole('link', { name: 'Continue' })).toHaveAttribute(
+      'href',
+      '/app/new-request/domestic',
+    );
+  });
+
+  it('no requests left: red state, the cards stay open (the form blocks the submit)', async () => {
+    apiState.balance.remaining = 0;
     renderPortal('/app/new-request');
     expect(await main().findByRole('alert')).toHaveTextContent(/no requests left/);
     for (const link of main().getAllByRole('link', { name: /Start request/ })) {
-      expect(link).toHaveAttribute('aria-disabled', 'true');
+      expect(link).not.toHaveAttribute('aria-disabled');
+    }
+  });
+
+  it('company selection on (kept code): "Sending to" bar with remove', async () => {
+    companySelection.enabled = true;
+    try {
+      const user = userEvent.setup();
+      renderPortal('/app/new-request?companies=co_nile,co_delta');
+      expect(await main().findByText('Sending to:')).toBeInTheDocument();
+      await user.click(await main().findByRole('button', { name: 'Remove Nile Bridge Logistics' }));
+      expect(main().queryByText('Nile Bridge Logistics')).not.toBeInTheDocument();
+    } finally {
+      companySelection.enabled = false;
     }
   });
 });
@@ -208,7 +248,23 @@ describe('my orders (B4)', () => {
 });
 
 describe('companies (B5)', () => {
-  it('filter, select, bulk bar → New Request with the selected companies', async () => {
+  it('selection off: no checkboxes or "Send to all", Send request opens New Request', async () => {
+    const user = userEvent.setup();
+    renderPortal('/app/companies');
+    expect(await main().findByText('Companies: 12')).toBeInTheDocument();
+    await user.click(main().getByRole('radio', { name: 'SHEIN / China' }));
+    expect(await main().findByText('Companies: 3')).toBeInTheDocument();
+    expect(main().queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(main().queryByRole('button', { name: /Send to all/ })).not.toBeInTheDocument();
+    for (const link of main().getAllByRole('link', { name: 'Send request' }))
+      expect(link).toHaveAttribute('href', '/app/new-request');
+  });
+
+  it('selection on (kept code): filter, select, bulk bar → New Request with the companies', async () => {
+    companySelection.enabled = true;
+    onTestFinished(() => {
+      companySelection.enabled = false;
+    });
     const user = userEvent.setup();
     const router = renderPortal('/app/companies');
     expect(await main().findByText('Companies: 12')).toBeInTheDocument();
@@ -322,7 +378,7 @@ describe('account (B6)', () => {
   it('addresses: add (validated) and delete', async () => {
     const user = userEvent.setup();
     renderPortal('/app/account/addresses');
-    await main().findAllByText('البيت');
+    await main().findAllByText('المنزل');
     await user.click(main().getByRole('button', { name: 'Add address' }));
     const dialog = screen.getByRole('dialog', { name: 'Add address' });
     await user.click(within(dialog).getByRole('button', { name: 'Save' }));

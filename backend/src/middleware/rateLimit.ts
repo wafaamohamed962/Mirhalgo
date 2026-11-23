@@ -80,3 +80,10 @@ export const contactLimit = limiter({ name: 'contact', windowMs: HOUR, limit: 5 
 
 /** POST /companies/register: 3 / hour / IP (spec A5). Runs before the upload is parsed. */
 export const companyRegisterLimit = limiter({ name: 'company-register', windowMs: HOUR, limit: 3 });
+
+/** Per logged-in user (after requireCustomer), MW_003 spec B9. */
+const perUser = (name: string, windowMs: number, limit: number) =>
+  limiter({ name, windowMs, limit, key: (req) => req.authUser?.id ?? null });
+export const uploadLimit = perUser('upload', HOUR, 60);
+export const draftSaveLimit = perUser('draft-save', MINUTE, 60);
+export const orderSubmitLimit = perUser('order-submit', HOUR, 10);

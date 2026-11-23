@@ -1,20 +1,48 @@
 import { Controller, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { COMPANY_LIMITS, formatTaxNumber, toAsciiDigits } from '@mirhalgo/shared';
+import { LEGAL_FIELDS, formatLegalNumber, legalRule } from '@mirhalgo/shared';
 import { Input } from '../../../components/ui';
 import type { CompanyFormValues } from '../model';
+import { legalCopyCountry } from '../options';
 import { DocumentField } from './DocumentField';
-import { FormSection } from './FormSection';
+import { FormSection } from '../../../components/FormSection';
 
-/** Step 3: legal numbers + documents (spec A2). */
+type LegalField = keyof typeof LEGAL_FIELDS;
+
+/** A legal number: label, hint, keyboard and input mask follow the company country (MW_003 A2). */
+function LegalNumberInput({ name }: { name: LegalField }) {
+  const { t } = useTranslation();
+  const { control, watch } = useFormContext<CompanyFormValues>();
+  const country = watch('country');
+  const copy = `company.register.fields.legal.${legalCopyCountry(country)}.${LEGAL_FIELDS[name]}`;
+  const digits = legalRule(country, name)?.kind !== 'alphanumeric';
+  return (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field, fieldState }) => (
+        <Input
+          label={t(copy)}
+          hint={t(`${copy}Hint`)}
+          inputMode={digits ? 'numeric' : 'text'}
+          autoCapitalize={digits ? undefined : 'characters'}
+          autoComplete="off"
+          dir="ltr"
+          placeholder={country === 'EG' && name === 'taxNumber' ? 'XXX-XXX-XXX' : undefined}
+          required
+          error={fieldState.error?.message}
+          {...field}
+          onChange={(event) => field.onChange(formatLegalNumber(country, name, event.target.value))}
+        />
+      )}
+    />
+  );
+}
+
+/** Step 3: legal numbers + documents (spec A2; rules and names per country, MW_003 A2). */
 export function DocumentsStep() {
   const { t } = useTranslation();
-  const {
-    register,
-    control,
-    watch,
-    formState: { errors },
-  } = useFormContext<CompanyFormValues>();
+  const { watch } = useFormContext<CompanyFormValues>();
   const f = (key: string) => t(`company.register.fields.${key}`);
   const activities = watch('activities') ?? [];
   const scope = watch('international.scope');
@@ -23,34 +51,8 @@ export function DocumentsStep() {
   return (
     <div className="flex flex-col gap-8">
       <FormSection title={t('company.register.sections.legal')}>
-        <Input
-          label={f('commercialRegisterNumber')}
-          inputMode="numeric"
-          dir="ltr"
-          maxLength={COMPANY_LIMITS.commercialRegisterDigits.max}
-          required
-          error={errors.commercialRegisterNumber?.message}
-          {...register('commercialRegisterNumber')}
-        />
-        <Controller
-          control={control}
-          name="taxNumber"
-          render={({ field }) => (
-            <Input
-              label={f('taxNumber')}
-              hint={f('taxNumberHint')}
-              inputMode="numeric"
-              dir="ltr"
-              placeholder="XXX-XXX-XXX"
-              required
-              error={errors.taxNumber?.message}
-              {...field}
-              onChange={(event) =>
-                field.onChange(formatTaxNumber(toAsciiDigits(event.target.value)))
-              }
-            />
-          )}
-        />
+        <LegalNumberInput name="commercialRegisterNumber" />
+        <LegalNumberInput name="taxNumber" />
       </FormSection>
 
       <FormSection title={t('company.register.sections.documents')}>

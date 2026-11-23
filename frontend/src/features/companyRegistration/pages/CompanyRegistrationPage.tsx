@@ -1,29 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FormProvider, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { DraftRestoredNotice } from '../../../components/DraftRestoredNotice';
 import { SimpleLayout } from '../../../components/layout/SimpleLayout';
 import { Alert, Button, Card, ProgressBar, Stepper, type Step } from '../../../components/ui';
 import { ServiceNotice } from '../../../components/ui/ServiceNotice';
 import { ApiRequestError, errorKey } from '../../../lib/apiClient';
 import { usePageMeta } from '../../../lib/usePageMeta';
+import { hasChanges } from '../../../lib/forms';
 import { useUnsavedChangesGuard } from '../../../lib/useUnsavedChangesGuard';
+import { useAutosave, useWizardSteps } from '../../../lib/wizard';
 import { setPendingVerification } from '../../auth/pendingVerification';
 import { registerCompany } from '../api';
 import { AccountStep } from '../components/AccountStep';
 import { DocumentsStep } from '../components/DocumentsStep';
 import { ReviewStep } from '../components/ReviewStep';
 import { ServicesStep } from '../components/ServicesStep';
-import {
-  clearCompanyDraft,
-  loadCompanyDraft,
-  saveCompanyDraft,
-  withDraft,
-  type CompanyDraft,
-} from '../draft';
+import { clearCompanyDraft, loadCompanyDraft, saveCompanyDraft, withDraft } from '../draft';
 import {
   EMPTY_VALUES,
   STEP_IDS,
@@ -46,10 +43,10 @@ export default function CompanyRegistrationPage() {
   usePageMeta('signupCompany');
   const navigate = useNavigate();
 
-  const [step, setStep] = useState<StepId>('account');
-  const [completed, setCompleted] = useState<ReadonlySet<StepId>>(new Set());
-  const [draft, setDraft] = useState<CompanyDraft | null>(loadCompanyDraft);
-  const [formKey, setFormKey] = useState(0); // remounts inputs after a draft is restored
+  const { step, completed, goTo, markCompleted, restart } = useWizardSteps<StepId>('account');
+  const [initialDraft] = useState(loadCompanyDraft); // read once, on arrival
+  const [showRestored, setShowRestored] = useState(initialDraft !== null);
+  const [formKey, setFormKey] = useState(0); // remounts inputs after a reset
   const [progress, setProgress] = useState(0);
 
   // The resolver follows the current step (read through a ref: the form is created once).
@@ -63,7 +60,7 @@ export default function CompanyRegistrationPage() {
     defaultValues: EMPTY_VALUES,
     resolver,
   });
-  const { isDirty } = form.formState;
+  const dirty = hasChanges(form.formState.dirtyFields);
   const activities = form.watch('activities');
 
   const visibleSteps = useMemo(
@@ -72,39 +69,48 @@ export default function CompanyRegistrationPage() {
   );
   const index = visibleSteps.indexOf(step);
 
-  // ── autosave (text only, see draft.ts); paused while the "continue?" prompt is open ──
-  useEffect(() => {
-    if (draft) return;
-    let timer: ReturnType<typeof setTimeout>;
-    const subscription = form.watch(() => {
-      clearTimeout(timer);
-      timer = setTimeout(() => saveCompanyDraft(form.getValues()), AUTOSAVE_DELAY_MS);
-    });
-    return () => {
-      clearTimeout(timer);
-      subscription.unsubscribe();
-    };
-  }, [draft, form]);
+  // ── draft (decision 24): restored automatically on arrival, before the first paint. Same
+  // reset as the old "Continue" button, so the form is dirty (leave guard) exactly as before.
+  useLayoutEffect(() => {
+    if (!initialDraft) return;
+    form.reset(withDraft(EMPTY_VALUES, initialDraft.values), { keepDefaultValues: true });
+    setFormKey((key) => key + 1);
+  }, [form, initialDraft]);
 
-  // leaving with unsaved changes (spec A1)
-  const leaveGuard = useUnsavedChangesGuard(isDirty, {
+  // ── autosave (text only, see draft.ts) after each edit. Resets (restore, start over) have
+  // no field name and are not edits, so they never write a draft.
+  // A save still pending on leave ("Back to home" right after typing) is flushed (MW_003 A3).
+  const { cancel: cancelAutosave } = useAutosave(form, saveCompanyDraft, {
+    delayMs: AUTOSAVE_DELAY_MS,
+  });
+
+  /** "Start over": drop the draft and give the user an empty form on the first step. */
+  const startOver = () => {
+    cancelAutosave(); // a pending save must not bring the draft back
+    clearCompanyDraft();
+    form.reset(EMPTY_VALUES);
+    setFormKey((key) => key + 1);
+    restart();
+    setShowRestored(false);
+    requestAnimationFrame(() => form.setFocus('legalName'));
+  };
+
+  // leaving with unsaved changes (MW_002 A1; "Back to home" in the header, MW_003 A3)
+  const leaveGuard = useUnsavedChangesGuard(dirty, {
     title: t('company.register.leave.title'),
     description: t('company.register.leave.text'),
   });
-
-  const goTo = (next: StepId) => {
-    setStep(next);
-    window.scrollTo({ top: 0 });
-  };
 
   const register = useMutation({
     mutationFn: (values: CompanyFormValues) => registerCompany(values, setProgress),
     onMutate: () => setProgress(0),
     onSuccess: (result) => {
       leaveGuard.allowLeave();
+      cancelAutosave();
       clearCompanyDraft();
       setPendingVerification(result.email, null, 'company'); // no auto-login (decision 6)
-      navigate('/verify-email', { state: { cooldown: result.cooldownSeconds } });
+      // replace: Back from "Application submitted" never returns to the submitted wizard
+      navigate('/verify-email', { replace: true, state: { cooldown: result.cooldownSeconds } });
     },
     onError: (error) => {
       if (error instanceof ApiRequestError && FILE_ERRORS.includes(error.code)) goTo('documents');
@@ -114,7 +120,7 @@ export default function CompanyRegistrationPage() {
   /** Next / Submit: validates this step (all steps on the last one). */
   const onContinue = form.handleSubmit(
     () => {
-      setCompleted((done) => new Set(done).add(step));
+      markCompleted(step);
       if (step === 'review') return register.mutate(form.getValues());
       goTo(visibleSteps[index + 1] ?? 'review');
     },
@@ -139,7 +145,7 @@ export default function CompanyRegistrationPage() {
   }));
 
   return (
-    <SimpleLayout>
+    <SimpleLayout backHome back>
       <Card className="w-full max-w-3xl p-6 sm:p-10">
         <header className="mb-8 text-center">
           <h1 className="text-h2">{t('company.register.title')}</h1>
@@ -149,35 +155,8 @@ export default function CompanyRegistrationPage() {
         <div className="flex flex-col gap-6">
           <ServiceNotice needs="auth" />
 
-          {draft && (
-            <div className="flex flex-col gap-3 rounded-lg border border-blue-600 bg-blue-50 p-5">
-              <h2 className="text-h3">{t('company.register.draft.title')}</h2>
-              <p className="text-small text-body">
-                {t('company.register.draft.text', { date: new Date(draft.savedAt) })}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  shape="form"
-                  onClick={() => {
-                    form.reset(withDraft(EMPTY_VALUES, draft.values), { keepDefaultValues: true });
-                    setFormKey((key) => key + 1);
-                    setDraft(null);
-                  }}
-                >
-                  {t('company.register.draft.continue')}
-                </Button>
-                <Button
-                  variant="secondary"
-                  shape="form"
-                  onClick={() => {
-                    clearCompanyDraft();
-                    setDraft(null);
-                  }}
-                >
-                  {t('company.register.draft.startOver')}
-                </Button>
-              </div>
-            </div>
+          {showRestored && (
+            <DraftRestoredNotice onStartOver={startOver} onDismiss={() => setShowRestored(false)} />
           )}
 
           <Stepper

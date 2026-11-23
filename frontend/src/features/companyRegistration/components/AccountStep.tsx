@@ -1,6 +1,6 @@
 import { Controller, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { COMPANY_LIMITS } from '@mirhalgo/shared';
+import { COMPANY_LIMITS, type CompanyCountry } from '@mirhalgo/shared';
 import {
   CheckboxGroup,
   Input,
@@ -9,9 +9,102 @@ import {
   Select,
   Switch,
 } from '../../../components/ui';
+import {
+  localizedName,
+  regionOptions,
+  useCountries,
+  useRegions,
+} from '../../../services/api/reference';
 import type { CompanyFormValues } from '../model';
-import { useCompanyOptions } from '../options';
-import { FormSection, Full } from './FormSection';
+import { regionKind, useCompanyOptions } from '../options';
+import { FormSection, Full } from '../../../components/FormSection';
+import { LoadError } from './LoadError';
+
+/**
+ * Country → Governorate / Region / Emirate (MW_003 A2): both lists come from the reference API.
+ * A country change by the user clears the region and the Step 2 values of the old country.
+ */
+function CountryRegionFields() {
+  const { t, i18n } = useTranslation();
+  const {
+    control,
+    watch,
+    getValues,
+    setValue,
+    formState: { errors },
+  } = useFormContext<CompanyFormValues>();
+  const f = (key: string) => t(`company.register.fields.${key}`);
+  const country = watch('country');
+  const kind = regionKind(country);
+  const countries = useCountries('company_signup');
+  const regions = useRegions(country);
+
+  const changeCountry = (next: CompanyCountry) => {
+    const edit = { shouldDirty: true } as const;
+    setValue('region', '', edit);
+    setValue('domestic.regions', [], edit);
+    const served = getValues('international.countries') ?? [];
+    if (served.includes(next)) {
+      setValue(
+        'international.countries',
+        served.filter((code) => code !== next),
+        edit,
+      );
+    }
+  };
+
+  return (
+    <>
+      <div className="flex flex-col gap-2">
+        <Controller
+          control={control}
+          name="country"
+          render={({ field }) => (
+            <Select
+              label={f('country')}
+              placeholder={f('countryPlaceholder')}
+              options={(countries.data ?? []).map((c) => ({
+                value: c.code,
+                label: localizedName(c.name, i18n.language),
+              }))}
+              required
+              error={errors.country?.message}
+              {...field}
+              value={field.value ?? ''}
+              onChange={(event) => {
+                const next = event.target.value as CompanyCountry;
+                field.onChange(next);
+                changeCountry(next);
+              }}
+            />
+          )}
+        />
+        {countries.isError && <LoadError onRetry={() => void countries.refetch()} />}
+      </div>
+      <div className="flex flex-col gap-2">
+        <Controller
+          control={control}
+          name="region"
+          render={({ field }) => (
+            <Select
+              label={t(`company.register.fields.region.${kind}`)}
+              placeholder={
+                country ? t(`company.register.fields.regionPlaceholder.${kind}`) : f('regionFirst')
+              }
+              options={regionOptions(regions.data ?? [], i18n.language)}
+              disabled={!country || regions.isPending}
+              required
+              error={errors.region?.message}
+              {...field}
+              value={field.value ?? ''}
+            />
+          )}
+        />
+        {regions.isError && <LoadError onRetry={() => void regions.refetch()} />}
+      </div>
+    </>
+  );
+}
 
 /** Step 1: account & company information (spec A2). */
 export function AccountStep() {
@@ -25,6 +118,7 @@ export function AccountStep() {
   } = useFormContext<CompanyFormValues>();
   const f = (key: string) => t(`company.register.fields.${key}`);
   const sameWhatsapp = watch('whatsappSameAsMobile');
+  const country = watch('country');
   const activities = watch('activities') ?? [];
 
   return (
@@ -71,7 +165,13 @@ export function AccountStep() {
           control={control}
           name="phone"
           render={({ field }) => (
-            <PhoneInput label={f('phone')} required error={errors.phone?.message} {...field} />
+            <PhoneInput
+              label={f('phone')}
+              required
+              defaultCountry={country}
+              error={errors.phone?.message}
+              {...field}
+            />
           )}
         />
         <Full>
@@ -82,7 +182,12 @@ export function AccountStep() {
             control={control}
             name="whatsapp"
             render={({ field }) => (
-              <PhoneInput label={f('whatsapp')} error={errors.whatsapp?.message} {...field} />
+              <PhoneInput
+                label={f('whatsapp')}
+                defaultCountry={country}
+                error={errors.whatsapp?.message}
+                {...field}
+              />
             )}
           />
         )}
@@ -110,14 +215,7 @@ export function AccountStep() {
       </FormSection>
 
       <FormSection title={t('company.register.sections.address')}>
-        <Select
-          label={f('governorate')}
-          placeholder={f('governoratePlaceholder')}
-          options={options.governorates.map((o) => ({ value: o.value, label: String(o.label) }))}
-          required
-          error={errors.governorate?.message}
-          {...register('governorate')}
-        />
+        <CountryRegionFields />
         <Input
           label={f('city')}
           autoComplete="address-level2"

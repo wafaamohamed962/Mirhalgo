@@ -19,7 +19,7 @@ function unwrap<T>(json: ApiResponse<T> | null, status: number): T {
   return json.data;
 }
 
-type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 /** The logged-in user's access token (supabase-js is loaded lazily, see AuthProvider). */
 async function accessToken(): Promise<string | null> {
@@ -34,10 +34,14 @@ async function accessToken(): Promise<string | null> {
 export async function apiRequest<T>(
   method: Method,
   path: `/${string}`,
-  { body, auth = false }: { body?: unknown; auth?: boolean } = {},
+  {
+    body,
+    auth = false,
+    headers: extraHeaders = {},
+  }: { body?: unknown; auth?: boolean; headers?: Record<string, string> } = {},
 ): Promise<T> {
   assertConfigured(missingApiEnv);
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...extraHeaders };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (auth) {
     const token = await accessToken();
@@ -65,18 +69,21 @@ export const apiPost = <T>(path: `/${string}`, body: unknown) =>
 
 /**
  * multipart/form-data POST with upload progress (0–100). Uses XMLHttpRequest because
- * fetch cannot report upload progress.
+ * fetch cannot report upload progress. `auth` sends the session (order attachments, MW_003 B3).
  */
-export function apiUpload<T>(
+export async function apiUpload<T>(
   path: `/${string}`,
   body: FormData,
   onProgress?: (percent: number) => void,
+  { auth = false }: { auth?: boolean } = {},
 ): Promise<T> {
   assertConfigured(missingApiEnv);
+  const token = auth ? await accessToken() : null;
 
   return new Promise<T>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${env.apiUrl}/api${path}`);
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     xhr.responseType = 'json';
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) onProgress?.((event.loaded / event.total) * 100);

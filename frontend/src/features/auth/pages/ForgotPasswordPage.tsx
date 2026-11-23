@@ -21,6 +21,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthCard
+      back
       title={t(sent ? 'auth.forgot.resetTitle' : 'auth.forgot.title')}
       subtitle={sent ? undefined : t('auth.forgot.subtitle')}
       footer={

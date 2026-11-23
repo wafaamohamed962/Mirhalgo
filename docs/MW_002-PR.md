@@ -3,6 +3,19 @@
 ## Assumptions (pending Team Lead confirmation)
 
 - Decisions 1–21 in `CLAUDE.md` §14 (made by the developer on 2026-11-21).
+- **Decision 24 (2026-11-22): company registration draft is restored automatically.** This
+  replaces the spec's "Continue your application?" prompt. On return the saved draft is
+  restored, and a small inline notice (`role="status"`) says "We restored your saved progress."
+  with a "Start over" link (clears the draft and resets the form) and a dismiss button.
+  Autosave rules are unchanged: same fields, 7-day expiry, never passwords, legal numbers or
+  files, cleared on submit and on logout.
+- **Decision 23 (2026-11-22): Arabic copy is Modern Standard Arabic, not the spec's Egyptian
+  colloquial wording.** All Arabic text (UI, portal, emails, SEO meta, mock data) was rewritten
+  in simple, professional MSA with consistent terms (تسجيل الدخول، إنشاء حساب، كلمة المرور،
+  البريد الإلكتروني، رقم الهاتف، رمز التحقق). The spec's Arabic marketing copy (hero, about,
+  services, footer) was translated with the same meaning, e.g. "اشحن أي حاجة لأي مكان" →
+  "اشحن أي شيء إلى أي مكان". i18n keys and English text are unchanged. RTL layouts were
+  re-checked on desktop and 360 px mobile (every page, menus, dialogs, form errors).
 - **Decision 22 (2026-11-22): the customer portal shows the user's real identity, not MSW.**
   First/last name, gender, email and phone come from the logged-in user's own `profiles` row
   (RLS owner select) through the service layer (`portalApi.getMe` / `updateProfile`, same `Me`

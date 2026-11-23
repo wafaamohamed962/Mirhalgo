@@ -28,16 +28,16 @@ export default defineConfig({
   reporter: 'list',
   use: { baseURL: `http://localhost:${PORT}`, trace: 'retain-on-failure' },
   projects: [
-    { name: 'desktop', testIgnore: /portal.spec/, use: desktop },
-    { name: 'mobile', testIgnore: /portal.spec/, use: mobile },
+    { name: 'desktop', testIgnore: /portal\w*\.spec/, use: desktop },
+    { name: 'mobile', testIgnore: /portal\w*\.spec/, use: mobile },
     {
       name: 'portal-desktop',
-      testMatch: /portal.spec/,
+      testMatch: /portal\w*\.spec/,
       use: { ...desktop, baseURL: `http://localhost:${PORTAL_PORT}` },
     },
     {
       name: 'portal-mobile',
-      testMatch: /portal.spec/,
+      testMatch: /portal\w*\.spec/,
       use: { ...mobile, baseURL: `http://localhost:${PORTAL_PORT}` },
     },
   ],

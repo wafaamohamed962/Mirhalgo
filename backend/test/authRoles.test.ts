@@ -18,6 +18,7 @@ const calls = {
   createCustomer: vi.fn(),
   refreshUnverifiedCustomer: vi.fn(),
   complete: vi.fn(async () => ({ referenceNumber: 'MG-C-2026-000001', status: 'pending_review' })),
+  grant: vi.fn(async (_id: string) => 5),
 };
 
 vi.mock('../src/lib/supabase.js', () => ({
@@ -38,6 +39,7 @@ vi.mock('../src/services/otp.js', () => ({
   verifyOtp: async () => 'user-1',
 }));
 vi.mock('../src/services/companies.js', () => ({ completeCompanyVerification: calls.complete }));
+vi.mock('../src/services/balance.js', () => ({ grantInitialBalance: calls.grant }));
 vi.mock('../src/services/mail/index.js', () => ({
   assertMailConfigured: () => {},
   mail: { accountExists: vi.fn(), phoneTaken: vi.fn() },
@@ -94,6 +96,17 @@ describe('verifyEmail', () => {
     });
     expect(calls.complete).not.toHaveBeenCalled();
     expect(calls.confirmEmail).toHaveBeenCalledWith('user-1');
+    expect(calls.grant).toHaveBeenCalledWith('user-1', undefined); // 5 requests (MW_003 B7)
+  });
+
+  it('customer: a failed balance grant never fails the verification (summary retries it)', async () => {
+    state.profile = { id: 'user-1', email: 'a@b.com', role: 'customer', email_verified_at: null };
+    calls.grant.mockRejectedValueOnce(new Error('db down'));
+    expect(await auth.verifyEmail({ email: 'a@b.com', code: '123456' }, {})).toEqual({
+      verified: true,
+      role: 'customer',
+    });
+    expect(calls.confirmEmail).toHaveBeenCalled();
   });
 
   it('company: moves the application first, then confirms; returns the reference', async () => {
@@ -115,6 +128,7 @@ describe('verifyEmail', () => {
       application: { referenceNumber: 'MG-C-2026-000001', status: 'pending_review' },
     });
     expect(order).toEqual(['application', 'email']);
+    expect(calls.grant).not.toHaveBeenCalled(); // companies have no request balance
   });
 });
 

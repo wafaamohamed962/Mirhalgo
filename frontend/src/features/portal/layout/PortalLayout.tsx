@@ -198,17 +198,17 @@ export function PortalLayout() {
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
 
   return (
-    <div className="flex min-h-dvh bg-slate-50">
+    <div className="flex min-h-dvh bg-slate-50 print:block print:min-h-0 print:bg-white">
       <a
         href="#portal-main"
-        className="sr-only z-50 rounded-sm bg-white p-3 focus:not-sr-only focus:fixed focus:start-3 focus:top-3"
+        className="sr-only z-50 rounded-sm bg-white p-3 focus:not-sr-only focus:fixed focus:start-3 focus:top-3 print:hidden"
       >
         {t('portal.skipToContent')}
       </a>
 
       <aside
         className={cn(
-          'sticky top-0 hidden h-dvh shrink-0 flex-col gap-2 bg-navy-900 p-3 transition-[width] duration-200 ease-out md:flex',
+          'sticky top-0 hidden h-dvh shrink-0 flex-col gap-2 bg-navy-900 p-3 transition-[width] duration-200 ease-out md:flex print:hidden!',
           collapsed ? 'w-20' : 'w-64',
         )}
       >
@@ -259,14 +259,18 @@ export function PortalLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white px-4 sm:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white px-4 sm:px-6 print:hidden!">
           <h1 className="min-w-0 flex-1 truncate text-h3">{title}</h1>
           <OrderSearch />
           <NotificationBell />
           <UserMenu />
         </header>
 
-        <main id="portal-main" tabIndex={-1} className="flex-1 px-4 py-6 pb-28 sm:px-6 md:pb-10">
+        <main
+          id="portal-main"
+          tabIndex={-1}
+          className="flex-1 px-4 py-6 pb-28 sm:px-6 md:pb-10 print:p-0"
+        >
           <div className="mx-auto w-full max-w-site">
             <Outlet />
           </div>
@@ -275,7 +279,7 @@ export function PortalLayout() {
 
       <nav
         aria-label={t('portal.mainNav')}
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden print:hidden!"
       >
         {MAIN_NAV.map((item) => (
           <NavLink

@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Package, Search } from 'lucide-react';
 import { ORDER_TABS, type OrderSummary, type OrderTab } from '@mirhalgo/shared';
@@ -13,7 +12,7 @@ import {
   tabPanelProps,
 } from '../../../components/ui';
 import { useDateFormat } from '../../../lib/dateFormat';
-import { useDebouncedValue } from '../../../lib/useDebouncedValue';
+import { useQueryParam, useQuerySearch } from '../../../lib/useUrlState';
 import { useOrders } from '../../../services/api/queries';
 import { OrderStatusBadge } from '../components/StatusBadge';
 
@@ -65,26 +64,15 @@ function OrderCard({ order }: { order: OrderSummary }) {
   );
 }
 
+const ORDER_SORTS = ['newest', 'oldest'] as const;
+
 /** /app/orders (spec B4): status tabs with counts, search, sort, load more. */
 export default function OrdersPage() {
   const { t } = useTranslation();
-  const [params, setParams] = useSearchParams();
-  const tab = (ORDER_TABS as readonly string[]).includes(params.get('tab') ?? '')
-    ? (params.get('tab') as OrderTab)
-    : 'all';
-  const sort = params.get('sort') === 'oldest' ? 'oldest' : 'newest';
-  // typing is local + debounced; `?search=` (top-bar search) only fills the input
-  const urlSearch = params.get('search') ?? '';
-  const [searchInput, setSearchInput] = useState(urlSearch);
-  useEffect(() => setSearchInput(urlSearch), [urlSearch]);
-  const search = useDebouncedValue(searchInput.trim());
-
-  const update = (next: Record<string, string>) => {
-    const merged = { ...Object.fromEntries(params), ...next };
-    setParams(Object.fromEntries(Object.entries(merged).filter(([, v]) => v && v !== 'all')), {
-      replace: true,
-    });
-  };
+  // tab, sort and search live in the URL: Back from an order restores the list exactly
+  const [tab, setTab] = useQueryParam<OrderTab>('tab', 'all', ORDER_TABS);
+  const [sort, setSort] = useQueryParam('sort', 'newest', ORDER_SORTS);
+  const { input: searchInput, setInput: setSearchInput, search } = useQuerySearch('search');
 
   const orders = useOrders({ tab, search, sort });
   const counts = orders.data?.pages[0]?.counts;
@@ -118,7 +106,7 @@ export default function OrdersPage() {
           <Select
             label={t('portal.orders.sort')}
             value={sort}
-            onChange={(event) => update({ sort: event.target.value })}
+            onChange={(event) => setSort(event.target.value as (typeof ORDER_SORTS)[number])}
             options={[
               { value: 'newest', label: t('portal.orders.newest') },
               { value: 'oldest', label: t('portal.orders.oldest') },
@@ -131,7 +119,7 @@ export default function OrdersPage() {
         id="orders"
         label={t('portal.orders.tabsLabel')}
         value={tab}
-        onChange={(value) => update({ tab: value })}
+        onChange={(value) => setTab(value as OrderTab)}
         items={ORDER_TABS.map((value) => ({
           value,
           label: t(`portal.orders.tabs.${value}`),

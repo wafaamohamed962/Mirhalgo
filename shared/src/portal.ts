@@ -9,8 +9,10 @@ import type { Governorate } from './company.js';
 export const SERVICE_TYPES = ['international', 'domestic', 'china'] as const;
 export type ServiceType = (typeof SERVICE_TYPES)[number];
 
-/** Request quota (spec B3). */
+/** Request quota (spec B3): the "X of 5" total shown to the customer. */
 export const MAX_REQUEST_ATTEMPTS = 5;
+/** Requests granted when a customer verifies the email (MW_003 B7, backfilled for MW_001 users). */
+export const INITIAL_REQUEST_BALANCE = 5;
 /** "Send to all companies in this category": max companies per request (decision 19). */
 export const MAX_COMPANIES_PER_REQUEST = 10;
 
@@ -32,7 +34,20 @@ export type Attempts = { remaining: number; total: number };
 
 export type RequestDraft = { service: ServiceType; updatedAt: string };
 
+/**
+ * GET /api/me/summary (MW_003 B2, real API): what the New Request page needs in one call.
+ * `drafts`: one per service with a saved draft (B3), most recent first.
+ */
+export type MeSummary = {
+  firstName: string;
+  gender: Gender;
+  balance: Attempts;
+  drafts: RequestDraft[];
+};
+
+/** `under_review`: just submitted, before the admin publishes it to companies (MW_003 B4). */
 export const ORDER_STATUSES = [
+  'under_review',
   'awaiting_offers',
   'offers_received',
   'awaiting_approval',

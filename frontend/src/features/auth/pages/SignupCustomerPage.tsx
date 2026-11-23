@@ -13,20 +13,28 @@ import {
   Select,
 } from '../../../components/ui';
 import { errorKey } from '../../../lib/apiClient';
-import { useZodForm } from '../../../lib/forms';
+import { hasChanges, useZodForm } from '../../../lib/forms';
 import { usePageMeta } from '../../../lib/usePageMeta';
+import { useUnsavedChangesGuard } from '../../../lib/useUnsavedChangesGuard';
 import { authApi } from '../api';
 import { AuthCard } from '../components/AuthCard';
 import { setPendingVerification } from '../pendingVerification';
 
-// gender / terms start unset: the placeholder option and an unchecked box
-const DEFAULTS: Partial<SignupInput> = {
+/**
+ * Every field has a default equal to what the page shows (gender: the placeholder option,
+ * terms: an unchecked box). Without one, react-hook-form compared '' / false with undefined and
+ * marked gender and terms as changed, so "Back to home" asked to confirm after the user typed and
+ * cleared a field (MW_003 A3). The schema still requires a gender and the box ticked.
+ */
+const DEFAULTS = {
   firstName: '',
   lastName: '',
   email: '',
   phone: '',
   password: '',
   confirmPassword: '',
+  gender: '' as SignupInput['gender'],
+  acceptTerms: false as SignupInput['acceptTerms'],
 };
 
 /** /signup/customer (spec 4.2) → POST /api/auth/signup → /verify-email. */
@@ -38,20 +46,30 @@ export default function SignupCustomerPage() {
     register,
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useZodForm(signupSchema, { defaultValues: DEFAULTS });
+
+  // "Back to home" (or any link) with data typed: confirm first (MW_003 A3). No draft here.
+  const leaveGuard = useUnsavedChangesGuard(hasChanges(dirtyFields), {
+    title: t('auth.signup.leave.title'),
+    description: t('auth.signup.leave.text'),
+  });
 
   const signup = useMutation({
     mutationFn: authApi.signup,
     onSuccess: (result, input) => {
       setPendingVerification(result.email, input.password);
-      navigate('/verify-email', { state: { cooldown: result.cooldownSeconds } });
+      leaveGuard.allowLeave();
+      // replace: Back never returns to a submitted sign-up form
+      navigate('/verify-email', { replace: true, state: { cooldown: result.cooldownSeconds } });
     },
   });
 
   return (
     <AuthCard
+      back
       wide
+      backHome
       title={t('auth.signup.title')}
       subtitle={t('auth.signup.subtitle')}
       footer={
@@ -157,6 +175,7 @@ export default function SignupCustomerPage() {
           </Button>
         </div>
       </form>
+      {leaveGuard.dialog}
     </AuthCard>
   );
 }

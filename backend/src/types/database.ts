@@ -1,9 +1,15 @@
 import type {
   ApplicationStatus,
+  AttachmentSlot,
   DocumentType,
   Gender,
+  OrderMime,
+  OrderUploadPurpose,
   OtpPurpose,
+  ServiceType,
   StatusActorType,
+  TransitMethod,
+  TransitSource,
   UserRole,
 } from '@mirhalgo/shared';
 
@@ -91,10 +97,83 @@ export type CompanyApplicationRow = {
 export type CompanyRow = {
   id: string;
   legal_name: string;
-  governorate: string;
+  country_code: string;
+  region_id: string;
   activities: string[];
   commercial_register_number: string;
   tax_number: string;
+};
+
+/** Reference lists (MW_003): public read of active rows, written by migrations only. */
+export type CountryRow = {
+  code: string;
+  name_ar: string;
+  name_en: string;
+  dial_code: string | null;
+  company_signup: boolean;
+  china_delivery: boolean;
+  sort: number;
+  active: boolean;
+};
+
+export type RegionRow = {
+  id: string;
+  country_code: string;
+  name_ar: string;
+  name_en: string;
+  sort: number;
+  active: boolean;
+};
+
+/** Cities, airports: same shape as regions (id + country + names). Ports add the UN/LOCODE. */
+export type PlaceRow = RegionRow;
+export type PortRow = RegionRow & { unlocode: string | null };
+
+/** Container types, truck types, shipping lines. */
+export type OptionRow = {
+  id: string;
+  name_ar: string;
+  name_en: string;
+  sort: number;
+  active: boolean;
+};
+
+export type TransitEstimateRow = {
+  source: TransitSource;
+  method: TransitMethod;
+  min_days: number;
+  max_days: number;
+  active: boolean;
+};
+
+/** Request balance (MW_003 B2): written only by grant_balance() / submit_order(). */
+export type CustomerBalanceRow = { customer_id: string; balance: number; updated_at: Timestamp };
+
+/** Drafts + uploads (MW_003 B3). Written by the backend only. */
+export type OrderDraftRow = {
+  id: string;
+  customer_id: string;
+  service: ServiceType;
+  payload: Record<string, unknown>;
+  form_version: string;
+  created_at: Timestamp;
+  updated_at: Timestamp;
+};
+
+export type OrderUploadRow = {
+  id: string;
+  customer_id: string;
+  purpose: OrderUploadPurpose;
+  storage_path: string;
+  original_name: string;
+  mime_type: OrderMime;
+  size_bytes: number;
+  draft_id: string | null;
+  order_id: string | null;
+  /** set with order_id by submit_order() (MW_003 B4) */
+  slot: AttachmentSlot | null;
+  cargo_item_id: number | null;
+  created_at: Timestamp;
 };
 
 /** A stored file: bucket + path (from list_expired_company_registrations / company_documents). */
@@ -127,6 +206,35 @@ export type Database = {
       companies: Table<CompanyRow, never, never>;
       company_documents: Table<CompanyDocumentRow, never, never>;
       company_applications: Table<CompanyApplicationRow, never, never>;
+      // MW_003
+      countries: Table<CountryRow, never, never>;
+      regions: Table<RegionRow, never, never>;
+      cities: Table<PlaceRow, never, never>;
+      ports: Table<PortRow, never, never>;
+      airports: Table<PlaceRow, never, never>;
+      container_types: Table<OptionRow, never, never>;
+      truck_types: Table<OptionRow, never, never>;
+      shipping_lines: Table<OptionRow, never, never>;
+      transit_estimates: Table<TransitEstimateRow, never, never>;
+      customer_balances: Table<CustomerBalanceRow, never, never>;
+      order_drafts: Table<OrderDraftRow, never, never>;
+      // MW_003 B4: written only by submit_order(); read back as plain rows (orderRows.ts)
+      orders: Table<Record<string, unknown> & { id: string; reference: string }, never, never>;
+      order_shipments: Table<Record<string, unknown>, never, never>;
+      order_container_groups: Table<Record<string, unknown>, never, never>;
+      order_truck_groups: Table<Record<string, unknown>, never, never>;
+      order_cargo_items: Table<Record<string, unknown>, never, never>;
+      order_china_details: Table<Record<string, unknown>, never, never>;
+      order_china_products: Table<Record<string, unknown>, never, never>;
+      order_china_product_variants: Table<Record<string, unknown>, never, never>;
+      order_uploads: Table<
+        OrderUploadRow,
+        Pick<
+          OrderUploadRow,
+          'customer_id' | 'purpose' | 'storage_path' | 'original_name' | 'mime_type' | 'size_bytes'
+        >,
+        never
+      >;
     };
     Views: Record<never, never>;
     Functions: {
@@ -147,6 +255,8 @@ export type Database = {
           p_phone: string;
           p_company: Record<string, unknown>;
           p_services: Record<string, unknown>;
+          /** Region ids of the company country (MW_003); empty with domestic_all_regions. */
+          p_domestic_regions: string[];
           p_documents: Array<
             Pick<
               CompanyDocumentRow,
@@ -161,6 +271,52 @@ export type Database = {
           p_consent: { terms_version: string; submit_ip: string | null; user_agent: string | null };
         };
         Returns: Array<{ application_id: string; reference_number: string }>;
+      };
+      save_order_draft: {
+        Args: {
+          p_customer_id: string;
+          p_service: ServiceType;
+          p_payload: Record<string, unknown>;
+          p_form_version: string;
+          p_upload_ids: string[];
+        };
+        Returns: Array<{ draft_id: string; updated_at: Timestamp }>;
+      };
+      list_orphan_uploads: {
+        Args: { p_older_than?: string; p_limit?: number };
+        Returns: Array<{ upload_id: string; storage_path: string }>;
+      };
+      list_expired_drafts: {
+        Args: { p_older_than?: string; p_limit?: number };
+        Returns: Array<{ draft_id: string; files: Array<{ id: string; path: string }> }>;
+      };
+      claim_job_lease: { Args: { p_name: string; p_seconds: number }; Returns: boolean };
+      submit_order: {
+        Args: {
+          p_customer_id: string;
+          p_order: Record<string, unknown>;
+          p_attachments: Array<Record<string, unknown>>;
+          p_idempotency_key: string;
+          p_payload_hash: string;
+        };
+        Returns: Array<{
+          order_id: string;
+          reference: string;
+          balance_after: number;
+          replayed: boolean;
+        }>;
+      };
+      grant_balance: {
+        Args: {
+          p_customer_id: string;
+          p_amount: number;
+          p_reason: string;
+          p_unique_key: string;
+          p_actor_type?: 'system' | 'customer' | 'admin';
+          p_actor_id?: string | null;
+        };
+        /** The balance after the call. */
+        Returns: number;
       };
       transition_application_status: {
         Args: {

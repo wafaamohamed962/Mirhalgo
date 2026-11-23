@@ -29,6 +29,12 @@ export const ERROR_CODES = [
   'CORS_NOT_ALLOWED',
   'PAYLOAD_TOO_LARGE',
   'INVALID_JSON',
+  // authenticated endpoints (MW_003): no / expired session, or the wrong role
+  // New Request orders (MW_003 B4): no requests left; an Idempotency-Key reused for another order
+  'NO_BALANCE',
+  'IDEMPOTENCY_KEY_REUSED',
+  'UNAUTHORIZED',
+  'FORBIDDEN',
   'NOT_FOUND',
   'INTERNAL',
   'NETWORK_ERROR',

@@ -1,6 +1,7 @@
-import { delay, http, HttpResponse, type JsonBodyType } from 'msw';
+import { delay, http, HttpResponse, passthrough, type JsonBodyType } from 'msw';
 import {
   CANCELLABLE_STATUSES,
+  ORDER_REFERENCE_PATTERN,
   ORDER_TABS,
   type ApiError,
   type CompanyProfile,
@@ -88,13 +89,8 @@ export function createHandlers(db: MockDb, { latency = 400 }: { latency?: number
         return ok(db.me);
       }),
     ]),
-    http.get(api('/me/attempts'), async () => (await wait(), ok(db.attempts))),
-    http.get(api('/requests/draft'), async () => (await wait(), ok(db.draft))),
-    http.delete(api('/requests/draft'), async () => {
-      await wait();
-      db.draft = null;
-      return ok(null);
-    }),
+    // GET /me/summary and the drafts are the real API (MW_003 B2/B3): not mocked, they pass
+    // through to the server.
 
     // ── orders ─────────────────────────────────────────────────────────────
     http.get(api('/orders'), async ({ request }) => {
@@ -124,6 +120,8 @@ export function createHandlers(db: MockDb, { latency = 400 }: { latency?: number
       });
     }),
     http.get(api('/orders/:id'), async ({ params }) => {
+      // a real order reference (MW_003 B4: GET /orders/:reference, success page) is the real API
+      if (ORDER_REFERENCE_PATTERN.test(String(params.id))) return passthrough();
       await wait();
       const order = findOrder(String(params.id));
       if (!order) return fail(404, 'NOT_FOUND');

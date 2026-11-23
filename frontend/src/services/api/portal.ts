@@ -2,7 +2,6 @@ import type {
   Address,
   AddressInput,
   AppNotification,
-  Attempts,
   Balance,
   ChangePasswordInput,
   CompanyCard,
@@ -11,28 +10,31 @@ import type {
   CompanySort,
   DeleteAccountInput,
   Me,
+  MeSummary,
   NotificationEvent,
   NotificationPrefs,
   OrderDetails,
   OrderList,
   OrderListParams,
   ProfileInput,
-  RequestDraft,
   Review,
   ReviewInput,
   SecurityOverview,
+  ServiceType,
   Ticket,
   TicketInput,
   TicketSummary,
 } from '@mirhalgo/shared';
 import { apiRequest } from '../../lib/apiClient';
+import { ordersApi } from './orders';
 import { ownProfile, type Identity } from './ownProfile';
 
 /*
  * Customer portal service layer (MW_002 B2). Function names and response shapes are the
  * contract of the future real API (types in @mirhalgo/shared/portal). Today MSW answers
- * these requests (src/mocks), except the user's own identity (getMe / updateProfile), which
- * already comes from the real profiles row. Removing the mocks is the only change needed later.
+ * these requests (src/mocks), except the parts that are already real: the user's own identity
+ * (getMe / updateProfile: the profiles row) and, since MW_003 B2, the New Request summary
+ * (balance + drafts, GET /me/summary). Removing the mocks is the only change needed later.
  */
 
 const get = <T>(path: `/${string}`) => apiRequest<T>('GET', path, { auth: true });
@@ -73,9 +75,9 @@ export const portalApi = {
   confirmEmailChange: (code: string) => send<Me>('POST', '/me/email/confirm', { code }),
   requestPhoneChange: (phone: string) => send<null>('POST', '/me/phone', { phone }),
   confirmPhoneChange: (code: string) => send<Me>('POST', '/me/phone/confirm', { code }),
-  getAttempts: () => get<Attempts>('/me/attempts'),
-  getRequestDraft: () => get<RequestDraft | null>('/requests/draft'),
-  discardRequestDraft: () => send<null>('DELETE', '/requests/draft'),
+  // real API (MW_003 B2 / B3)
+  getSummary: () => get<MeSummary>('/me/summary'),
+  discardRequestDraft: (service: ServiceType) => ordersApi.discardDraft(service),
 
   // orders
   listOrders: (params: OrderListParams) => get<OrderList>(`/orders?${query(params)}`),

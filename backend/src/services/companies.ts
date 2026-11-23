@@ -11,13 +11,15 @@ import type { StoredFile } from '../types/database.js';
 import { prepareFiles, type IncomingFiles, type PreparedFile } from './companyFiles.js';
 import { assertMailConfigured, mail } from './mail/index.js';
 import { issueOtp, otpSentResult } from './otp.js';
+import { assertCompanyLocation, regionLabel } from './reference.js';
 import { removeFiles, uploadCompanyFiles, type StoredDocument } from './storage.js';
 import { UNIQUE_VIOLATION, deleteUser, findProfileByEmail, findProfileByPhone } from './users.js';
 
 /*
  * Company registration (MW_002 spec A3). Duplicates (decision 1):
  *   email / phone → the same neutral answer as customer signup (+ an explanatory email);
- *   commercial register / tax number → explicit 409 COMPANY_ALREADY_REGISTERED.
+ *   commercial register / tax number → explicit 409 COMPANY_ALREADY_REGISTERED. Since MW_003
+ *   the legal numbers are unique per country (an Egyptian and a Saudi company may share one).
  * All-or-nothing: the rows are written by ONE SQL function (one transaction); if anything
  * fails after the auth user was created, the uploaded files and the user are deleted.
  */
@@ -42,10 +44,11 @@ function uniqueConflict(error: unknown): Conflict | null {
 }
 
 async function assertLegalNumbersFree(app: CompanyRegistration, ignoreCompanyId?: string) {
-  // both values are digits only (shared schema), safe inside the filter string
+  // normalised by the shared schema: digits, or A-Z/0-9/hyphen (UAE): safe inside the filter
   const { data, error } = await db
     .from('companies')
     .select('id')
+    .eq('country_code', app.country)
     .or(
       `commercial_register_number.eq.${app.commercialRegisterNumber},tax_number.eq.${app.taxNumber}`,
     );
@@ -71,7 +74,8 @@ function toRegistrationArgs(
       whatsapp: app.whatsapp ?? null,
       landline: app.landline ?? null,
       website: app.website ?? null,
-      governorate: app.governorate,
+      country_code: app.country,
+      region_id: app.region,
       city: app.city,
       street: app.street,
       activities: app.activities,
@@ -86,8 +90,7 @@ function toRegistrationArgs(
       international_scope: app.international?.scope ?? null,
       international_countries: app.international?.countries ?? [],
       international_regions: app.international?.regions ?? [],
-      domestic_all_governorates: app.domestic?.allGovernorates ?? false,
-      domestic_governorates: app.domestic?.governorates ?? [],
+      domestic_all_regions: app.domestic?.allRegions ?? false,
       vehicle_types: app.domestic?.vehicleTypes ?? [],
       vehicle_type_other: app.domestic?.vehicleTypeOther ?? null,
       fleet_size: app.domestic?.fleetSize ?? null,
@@ -95,6 +98,7 @@ function toRegistrationArgs(
       china_site_other: app.china?.siteOther ?? null,
       china_services: app.china?.services ?? [],
     },
+    p_domestic_regions: app.domestic?.regions ?? [],
     p_documents: stored.map(({ bucket, path, file }) => ({
       type: file.type,
       storage_bucket: bucket,
@@ -189,6 +193,7 @@ export async function registerCompany(
   ctx: Ctx,
 ): Promise<OtpSentResult> {
   assertMailConfigured(); // every branch below sends an email (same answer for everybody)
+  await assertCompanyLocation(app); // input check, before any account lookup
   const files = await prepareFiles(incomingFiles);
   const existing = await findProfileByEmail(app.email);
 
@@ -280,20 +285,21 @@ export async function completeCompanyVerification(
 
   const company = await db
     .from('companies')
-    .select('legal_name, governorate, activities')
+    .select('legal_name, region_id, activities')
     .eq('id', userId)
     .single();
   if (company.error) throw company.error;
 
   // Email failures are logged by mail.send(); they never undo a successful verification.
-  const { legal_name: legalName, governorate, activities } = company.data;
+  const { legal_name: legalName, region_id: regionId, activities } = company.data;
+  const region = await regionLabel(regionId).catch(() => regionId);
   await Promise.allSettled([
     mail.companyApplicationReceived(email, { referenceNumber: result.referenceNumber, legalName }),
     mail.newCompanyApplication({
       referenceNumber: result.referenceNumber,
       legalName,
       email,
-      governorate,
+      region,
       activities,
     }),
   ]);

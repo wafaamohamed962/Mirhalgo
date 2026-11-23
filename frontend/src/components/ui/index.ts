@@ -1,7 +1,10 @@
+// Combobox and Flag are imported from their own files: they load the flag stylesheet, which
+// only the pages that use them should download (MW_003 B1).
 export { Accordion } from './Accordion';
 export { Alert } from './Alert';
 export { Avatar } from './Avatar';
 export { Badge } from './Badge';
+export { BackButton } from './BackButton';
 export { Button } from './Button';
 export { Card } from './Card';
 export { Checkbox } from './Checkbox';

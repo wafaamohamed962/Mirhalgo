@@ -53,7 +53,7 @@ export function NotificationsSection() {
   return (
     <QueryState query={prefs}>
       {(data) => (
-        <div className="overflow-x-auto rounded-sm border border-slate-200">
+        <div className="relative overflow-x-auto rounded-sm border border-slate-200">
           <table className="w-full min-w-md text-small">
             <thead className="bg-slate-50 text-muted">
               <tr>
@@ -134,7 +134,7 @@ export function BalanceSection() {
               ))}
             </ul>
           </section>
-          <div className="overflow-x-auto rounded-sm border border-slate-200">
+          <div className="relative overflow-x-auto rounded-sm border border-slate-200">
             <table className="w-full min-w-xl text-small">
               <thead className="bg-slate-50 text-muted">
                 <tr>

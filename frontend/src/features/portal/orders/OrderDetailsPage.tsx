@@ -1,9 +1,17 @@
 import { useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router';
+import { useParams, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { CANCELLABLE_STATUSES, TIMELINE_STEPS, type OrderDetails } from '@mirhalgo/shared';
-import { Alert, Button, QueryState, Skeleton, Tabs, tabPanelProps } from '../../../components/ui';
+import {
+  Alert,
+  BackButton,
+  Button,
+  QueryState,
+  Skeleton,
+  Tabs,
+  tabPanelProps,
+} from '../../../components/ui';
 import { useDateFormat } from '../../../lib/dateFormat';
 import { cn } from '../../../lib/utils';
 import { portalApi } from '../../../services/api/portal';
@@ -146,13 +154,7 @@ export default function OrderDetailsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <Link
-        to="/app/orders"
-        className="inline-flex items-center gap-1 self-start text-small font-semibold"
-      >
-        <ArrowRight aria-hidden="true" className="size-4 ltr:rotate-180" />
-        {t('portal.orders.back')}
-      </Link>
+      <BackButton />
       <QueryState query={order} skeleton={<Skeleton className="h-96 rounded-lg" />}>
         {(data) => (
           <>

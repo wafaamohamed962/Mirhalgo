@@ -14,6 +14,7 @@ import type { z } from 'zod';
 import { logEvent } from '../lib/logger.js';
 import { createSignInClient } from '../lib/supabase.js';
 import { HttpError } from '../middleware/errorHandler.js';
+import { grantInitialBalance } from './balance.js';
 import { completeCompanyVerification } from './companies.js';
 import { assertMailConfigured, mail } from './mail/index.js';
 import { issueOtp, otpSentResult, verifyOtp } from './otp.js';
@@ -119,6 +120,13 @@ export async function verifyEmail(
     profile?.role === 'company' ? await completeCompanyVerification(userId, email, { ip }) : null;
   await confirmEmail(userId);
   logEvent('email_verified', ip, { userId });
+  if (!application) {
+    // 5 requests for a new customer (MW_003 B7). Never fails the verification: GET /me/summary
+    // repeats the same idempotent grant if this one did not go through.
+    await grantInitialBalance(userId, ip).catch((error: Error) => {
+      logEvent('balance_initial_grant_failed', ip, { userId, reason: error.message });
+    });
+  }
 
   return application
     ? { verified: true, role: 'company', application }

@@ -7,20 +7,19 @@ import { Button, ProgressBar, QueryState, Skeleton, buttonClasses } from '../../
 import { useDateFormat } from '../../../lib/dateFormat';
 import { cn } from '../../../lib/utils';
 import { portalApi } from '../../../services/api/portal';
-import {
-  keys,
-  useApiMutation,
-  useAttempts,
-  useCompanies,
-  useMe,
-  useRequestDraft,
-} from '../../../services/api/queries';
+import type { RequestDraft } from '@mirhalgo/shared';
+import { keys, useApiMutation, useCompanies, useMeSummary } from '../../../services/api/queries';
 import { useCompanyIdentity } from '../components/companyIdentity';
-import { SERVICE_ICONS, useSelectedCompanies } from './shared';
+import { companySelection, SERVICE_ICONS, useSelectedCompanies } from './shared';
+
+/*
+ * Header of /app/new-request: welcome, balance and drafts all come from the real
+ * GET /api/me/summary (MW_003 B2), one cached query shared by the three blocks.
+ */
 
 function Welcome() {
   const { t } = useTranslation();
-  const me = useMe();
+  const me = useMeSummary();
   const Icon = me.data?.gender === 'female' ? FaPersonDress : FaPerson;
   return (
     <section className="flex items-center gap-4 rounded-lg bg-navy-900 p-6 text-on-dark sm:p-8">
@@ -43,10 +42,10 @@ function Welcome() {
 
 function AttemptsCard() {
   const { t, i18n } = useTranslation();
-  const attempts = useAttempts();
+  const summary = useMeSummary();
   return (
-    <QueryState query={attempts} skeleton={<Skeleton className="h-28 rounded-lg" />}>
-      {({ remaining, total }) => {
+    <QueryState query={summary} skeleton={<Skeleton className="h-28 rounded-lg" />}>
+      {({ balance: { remaining, total } }) => {
         const empty = remaining === 0;
         return (
           <section
@@ -83,15 +82,14 @@ function AttemptsCard() {
   );
 }
 
-function DraftBanner() {
+/** One row per service with a saved draft (B3): Continue / Discard. */
+function DraftRow({ draft }: { draft: RequestDraft }) {
   const { t } = useTranslation();
   const { formatDate } = useDateFormat();
-  const draft = useRequestDraft();
   const discard = useApiMutation(portalApi.discardRequestDraft, {
     success: 'portal.newRequest.draftDiscarded',
-    setData: keys.draft,
+    invalidate: [keys.summary],
   });
-  if (!draft.data) return null;
   return (
     <section className="flex flex-col gap-3 rounded-lg border border-blue-600 bg-blue-50 p-5 sm:flex-row sm:items-center">
       <FileClock aria-hidden="true" className="size-6 shrink-0 text-blue-600" />
@@ -99,29 +97,31 @@ function DraftBanner() {
         <h2 className="font-semibold text-heading">{t('portal.newRequest.draftTitle')}</h2>
         <p className="text-small text-body">
           {t('portal.newRequest.draftText', {
-            service: t(`portal.services.${draft.data.service}.title`),
-            date: formatDate(draft.data.updatedAt, true),
+            service: t(`portal.services.${draft.service}.title`),
+            date: formatDate(draft.updatedAt, true),
           })}
         </p>
       </div>
       <div className="flex gap-2">
-        <Link
-          to={`/app/new-request/${draft.data.service}`}
-          className={buttonClasses({ shape: 'form' })}
-        >
+        <Link to={`/app/new-request/${draft.service}`} className={buttonClasses({ shape: 'form' })}>
           {t('portal.newRequest.continue')}
         </Link>
         <Button
           variant="secondary"
           shape="form"
           loading={discard.isPending}
-          onClick={() => discard.mutate(undefined)}
+          onClick={() => discard.mutate(draft.service)}
         >
           {t('portal.newRequest.discard')}
         </Button>
       </div>
     </section>
   );
+}
+
+function DraftBanner() {
+  const drafts = useMeSummary().data?.drafts ?? [];
+  return drafts.map((draft) => <DraftRow key={draft.service} draft={draft} />);
 }
 
 function SelectedCompanies() {
@@ -160,13 +160,14 @@ function SelectedCompanies() {
   );
 }
 
-/** /app/new-request (spec B3). The service forms come in a later plan (placeholder pages). */
+/**
+ * /app/new-request (MW_003 B1): the three landing-page service cards (same copy). With no
+ * requests left the cards stay open; the form blocks only the submit (spec B1).
+ */
 export default function NewRequestPage() {
   const { t } = useTranslation();
-  const attempts = useAttempts();
   const { ids } = useSelectedCompanies();
-  const blocked = attempts.data?.remaining === 0;
-  const query = ids.length ? `?companies=${ids.join(',')}` : '';
+  const query = companySelection.enabled && ids.length ? `?companies=${ids.join(',')}` : '';
 
   return (
     <div className="flex flex-col gap-6">
@@ -174,7 +175,7 @@ export default function NewRequestPage() {
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-6">
           <DraftBanner />
-          <SelectedCompanies />
+          {companySelection.enabled && <SelectedCompanies />}
         </div>
         <AttemptsCard />
       </div>
@@ -190,19 +191,24 @@ export default function NewRequestPage() {
               <li key={service}>
                 <Link
                   to={`/app/new-request/${service}${query}`}
-                  aria-disabled={blocked || undefined}
-                  onClick={(event) => blocked && event.preventDefault()}
-                  className={cn(
-                    'group flex h-full flex-col gap-3 rounded-lg bg-white p-6 no-underline shadow-md transition duration-300 ease-out hover:-translate-y-1 hover:shadow-lg',
-                    blocked && 'pointer-events-none opacity-50',
-                  )}
+                  className="group flex h-full flex-col gap-3 rounded-lg bg-white p-6 no-underline shadow-md transition duration-300 ease-out hover:-translate-y-1 hover:shadow-lg"
                 >
-                  <span className="flex size-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                    <Icon aria-hidden="true" className="size-6" />
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="flex size-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                      <Icon aria-hidden="true" className="size-6" />
+                    </span>
+                    {service !== 'domestic' && (
+                      <span className="rounded-full bg-violet-100 px-3 py-1 text-caption font-semibold text-violet-600">
+                        {t(`services.items.${service}.badge`)}
+                      </span>
+                    )}
                   </span>
-                  <span className="text-h3">{t(`portal.services.${service}.title`)}</span>
+                  <span className="text-h3">{t(`services.items.${service}.title`)}</span>
                   <span className="text-small text-body">
-                    {t(`portal.services.${service}.text`)}
+                    {t(`services.items.${service}.description`)}
+                  </span>
+                  <span dir="auto" className="text-caption font-semibold text-muted">
+                    {t(`services.items.${service}.tag`)}
                   </span>
                   <span className="mt-auto inline-flex items-center gap-1 text-small font-semibold text-link">
                     {t('portal.newRequest.start')}

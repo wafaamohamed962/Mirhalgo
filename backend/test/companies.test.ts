@@ -22,6 +22,7 @@ const state = {
   uploadError: null as Error | null,
   rpcError: null as null | { code?: string; message: string },
   removeOk: true,
+  locationError: null as Error | null,
 };
 
 const calls = {
@@ -31,6 +32,7 @@ const calls = {
   upload: vi.fn(),
   remove: vi.fn(),
   issueOtp: vi.fn(),
+  eq: vi.fn(),
   mail: {
     accountExists: vi.fn(),
     phoneTaken: vi.fn(),
@@ -43,7 +45,11 @@ const calls = {
 function query(result: (columns: string) => unknown) {
   let columns = '';
   const builder: Record<string, unknown> = {};
-  for (const m of ['eq', 'or']) builder[m] = () => builder;
+  builder.or = () => builder;
+  builder.eq = (column: string, value: unknown) => {
+    calls.eq(column, value);
+    return builder;
+  };
   builder.select = (cols: string) => {
     columns = cols;
     return builder;
@@ -74,7 +80,7 @@ vi.mock('../src/lib/supabase.js', () => ({
             data:
               columns === 'id'
                 ? state.legalRows // uniqueness pre-check
-                : { legal_name: 'Nile & Co', governorate: 'cairo', activities: ['china'] },
+                : { legal_name: 'Nile & Co', region_id: 'EG-GZ', activities: ['china'] },
             error: null,
           };
         if (table === 'company_applications') return { data: state.application, error: null };
@@ -143,6 +149,12 @@ vi.mock('../src/services/companyFiles.js', () => ({
     },
   ],
 }));
+vi.mock('../src/services/reference.js', () => ({
+  assertCompanyLocation: async () => {
+    if (state.locationError) throw state.locationError;
+  },
+  regionLabel: async (id: string) => (id === 'EG-GZ' ? 'Giza (EG)' : id),
+}));
 vi.mock('../src/services/otp.js', () => ({
   otpSentResult: (email: string) => ({ email, cooldownSeconds: 60 }),
   issueOtp: async (args: unknown) => calls.issueOtp(args),
@@ -164,7 +176,8 @@ const app: CompanyRegistration = companyRegistrationSchema.parse({
   email: 'ops@nile.com',
   phone: '+201012345678',
   whatsappSameAsMobile: true,
-  governorate: 'cairo',
+  country: 'EG',
+  region: 'EG-GZ',
   city: 'Nasr City',
   street: '12 Abbas St',
   website: 'nile.com',
@@ -202,6 +215,7 @@ beforeEach(() => {
     uploadError: null,
     rpcError: null,
     removeOk: true,
+    locationError: null,
   });
   vi.clearAllMocks();
   calls.deleteUser.mockReset();
@@ -226,6 +240,8 @@ describe('registerCompany', () => {
       p_phone: '+201012345678',
       p_company: {
         legal_name: 'Nile & Co',
+        country_code: 'EG',
+        region_id: 'EG-GZ',
         whatsapp: '+201012345678',
         website: 'https://nile.com',
         activities: ['china'],
@@ -237,8 +253,9 @@ describe('registerCompany', () => {
         china_sites: ['shein'],
         international_modes: [],
         international_scope: null,
-        domestic_all_governorates: false,
+        domestic_all_regions: false,
       },
+      p_domestic_regions: [],
       p_documents: [
         {
           type: 'commercial_register',
@@ -306,6 +323,19 @@ describe('registerCompany', () => {
     expect(await code(registerCompany(app, {}, ctx))).toMatch(/could not remove/);
     expect(calls.deleteUser).not.toHaveBeenCalled();
     expect(calls.createUser).not.toHaveBeenCalled();
+  });
+
+  it('unknown country / region (checked against the reference tables) → 400 before anything else', async () => {
+    const { HttpError } = await import('../src/middleware/errorHandler.js');
+    state.locationError = new HttpError(400, 'VALIDATION_ERROR', 'Invalid input');
+    expect(await code(registerCompany(app, {}, ctx))).toBe('VALIDATION_ERROR');
+    expect(calls.createUser).not.toHaveBeenCalled();
+    expect(calls.mail.accountExists).not.toHaveBeenCalled();
+  });
+
+  it('checks the legal numbers within the company country only (MW_003)', async () => {
+    await registerCompany(app, {}, ctx);
+    expect(calls.eq).toHaveBeenCalledWith('country_code', 'EG');
   });
 
   it('duplicate commercial register / tax number → 409 COMPANY_ALREADY_REGISTERED (decision 1)', async () => {
@@ -384,7 +414,11 @@ describe('completeCompanyVerification', () => {
       legalName: 'Nile & Co',
     });
     expect(calls.mail.newCompanyApplication).toHaveBeenCalledWith(
-      expect.objectContaining({ referenceNumber: 'MG-C-2026-000007', email: 'ops@nile.com' }),
+      expect.objectContaining({
+        referenceNumber: 'MG-C-2026-000007',
+        email: 'ops@nile.com',
+        region: 'Giza (EG)',
+      }),
     );
   });
 

@@ -10,20 +10,27 @@ import {
   type CompanySort,
 } from '@mirhalgo/shared';
 import { Button, EmptyState, QueryState, RadioGroup, Select } from '../../../components/ui';
-import { useDebouncedValue } from '../../../lib/useDebouncedValue';
+import { useQueryParam, useQuerySearch } from '../../../lib/useUrlState';
 import { useCompanies } from '../../../services/api/queries';
+import { companySelection, newRequestFor } from '../requests/shared';
 import { CompanyCardView } from './CompanyCardView';
 
-const sendTo = (ids: string[]) => `/app/new-request?companies=${ids.join(',')}`;
+const sendTo = newRequestFor;
+const CATEGORY_FILTERS = ['all', ...COMPANY_CATEGORIES] as const;
 
 /** /app/companies (spec B5). */
 export default function CompaniesPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [searchInput, setSearchInput] = useState('');
-  const search = useDebouncedValue(searchInput.trim());
-  const [category, setCategory] = useState<CompanyCategory | ''>('');
-  const [sort, setSort] = useState<CompanySort>('top_rated');
+  // filters live in the URL: Back from a company profile restores the directory exactly
+  const { input: searchInput, setInput: setSearchInput, search } = useQuerySearch('search');
+  const [categoryParam, setCategoryParam] = useQueryParam<CompanyCategory | 'all'>(
+    'category',
+    'all',
+    CATEGORY_FILTERS,
+  );
+  const category = categoryParam === 'all' ? '' : categoryParam;
+  const [sort, setSort] = useQueryParam<CompanySort>('sort', 'top_rated', COMPANY_SORTS);
   const [selected, setSelected] = useState<string[]>([]);
   const companies = useCompanies({ search, category, sort });
 
@@ -74,7 +81,7 @@ export default function CompaniesPage() {
       <RadioGroup
         legend={t('portal.companies.filter')}
         value={category || 'all'}
-        onChange={(value) => setCategory(value === 'all' ? '' : value)}
+        onChange={setCategoryParam}
         options={[
           { value: 'all' as const, label: t('portal.companies.all') },
           ...COMPANY_CATEGORIES.map((value) => ({
@@ -104,7 +111,7 @@ export default function CompaniesPage() {
                   formatted: list.length.toLocaleString(i18n.language),
                 })}
               </p>
-              {category && (
+              {companySelection.enabled && category && (
                 <Button
                   variant="secondary"
                   shape="form"
@@ -125,7 +132,7 @@ export default function CompaniesPage() {
                   <CompanyCardView
                     company={company}
                     selected={selected.includes(company.id)}
-                    onToggle={() => toggle(company.id)}
+                    onToggle={companySelection.enabled ? () => toggle(company.id) : undefined}
                   />
                 </li>
               ))}

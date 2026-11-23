@@ -8,11 +8,9 @@ export function createMockDb() {
   const copy = <T>(value: T): T => structuredClone(value);
   return {
     me: copy(fixtures.me),
+    // only for the (still mocked) Account › Requests balance page; the New Request page reads
+    // the real balance from GET /me/summary (MW_003 B2)
     attempts: { remaining: fixtures.attemptsRemaining, total: fixtures.ATTEMPTS_TOTAL },
-    draft: { service: 'international' as const, updatedAt: fixtures.ago(2 * 60 * 60 * 1000) } as {
-      service: 'international' | 'domestic' | 'china';
-      updatedAt: string;
-    } | null,
     orders: copy(fixtures.orders),
     companies: copy(fixtures.companies),
     reviews: copy(fixtures.reviews),

@@ -6,6 +6,8 @@ import { Field } from './Field';
 import { controlClasses } from './styles';
 import { useField } from './useField';
 
+const findCountry = (iso: string | undefined) => COUNTRIES.find((c) => c.iso === iso);
+
 type PhoneInputProps = {
   label: ReactNode;
   /** E.164 value, e.g. "+201012345678" ("" while empty). */
@@ -17,6 +19,11 @@ type PhoneInputProps = {
   error?: string;
   required?: boolean;
   disabled?: boolean;
+  /**
+   * ISO code of the dial code to offer while the number is empty (e.g. the company country,
+   * MW_003 A2). A number the user already typed is never changed.
+   */
+  defaultCountry?: string;
 };
 
 /**
@@ -24,15 +31,25 @@ type PhoneInputProps = {
  * Use with React Hook Form's <Controller>.
  */
 export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(function PhoneInput(
-  { label, value = '', onChange, onBlur, name, id, error, required, disabled },
+  { label, value = '', onChange, onBlur, name, id, error, required, disabled, defaultCountry },
   ref,
 ) {
   const { t, i18n } = useTranslation();
   const { fieldId, errorId, hintId, ariaProps } = useField({ id, error });
   // a value set from outside (restored draft) is shown; afterwards the input owns the text
   const [initial] = useState(() => splitE164(value));
-  const [country, setCountry] = useState<Country>(initial?.country ?? DEFAULT_COUNTRY);
+  const [country, setCountry] = useState<Country>(
+    initial?.country ?? findCountry(defaultCountry) ?? DEFAULT_COUNTRY,
+  );
   const [national, setNational] = useState(initial?.national ?? '');
+
+  // Follow the default country while nothing is typed yet.
+  useEffect(() => {
+    const next = findCountry(defaultCountry);
+    if (next && !national) setCountry(next);
+    // only when the default changes: not when the user picks a code and then clears the number
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultCountry]);
 
   // Clear the local text when the form is reset from outside.
   useEffect(() => {

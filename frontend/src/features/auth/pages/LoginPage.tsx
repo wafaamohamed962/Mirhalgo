@@ -41,13 +41,15 @@ export default function LoginPage() {
         }
         // right password, unverified email: a fresh code was sent (spec 4.4)
         setPendingVerification(result.email, input.password);
-        navigate('/verify-email', { state: { notice: 'unverified' } });
+        // replace: after the code, Back must not return to /login (GuestRoute would bounce)
+        navigate('/verify-email', { replace: true, state: { notice: 'unverified' } });
       },
     });
   });
 
   return (
     <AuthCard
+      back
       title={t('auth.login.title')}
       subtitle={t('auth.login.subtitle')}
       footer={

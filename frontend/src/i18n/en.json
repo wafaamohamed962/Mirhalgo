@@ -3,7 +3,10 @@
     "brand": "MirhalGo",
     "appName": "MirhalGo",
     "backHome": "Back to home",
-    "loading": "Loading…"
+    "home": "Home",
+    "loading": "Loading…",
+    "back": "Back",
+    "backLabel": "Back to the previous page"
   },
   "meta": {
     "home": {
@@ -171,7 +174,11 @@
       "terms": "I agree to the <terms>Terms</terms> and <privacy>Privacy Policy</privacy>",
       "submit": "Create account",
       "haveAccount": "Already have an account?",
-      "login": "Log in"
+      "login": "Log in",
+      "leave": {
+        "title": "Leave the form?",
+        "text": "The information you entered will be lost."
+      }
     },
     "verify": {
       "title": "Verify your email",
@@ -243,8 +250,20 @@
     "otherOptionLength": "Must be 3–100 characters",
     "landline": "Enter 7–12 digits",
     "url": "Enter a valid link starting with http:// or https://",
-    "commercialRegister": "Enter 1–10 digits",
-    "taxNumber": "Enter the 9-digit tax card number",
+    "legal": {
+      "EG": {
+        "registration": "Enter 1–10 digits",
+        "tax": "Enter the 9-digit tax card number"
+      },
+      "SA": {
+        "registration": "Enter the 10-digit Commercial Registration (CR) number",
+        "tax": "Enter the 15-digit VAT number"
+      },
+      "AE": {
+        "registration": "Enter the trade license number (3–20 letters or digits)",
+        "tax": "Enter the 15-digit Tax Registration Number (TRN)"
+      }
+    },
     "yearsInBusiness": "Enter a whole number from 0 to 100",
     "fleetSize": "Enter a whole number from 0 to 10,000",
     "notesLength": "Notes can be up to 1000 characters",
@@ -262,7 +281,22 @@
     "rating": "Choose a rating from 1 to 5 stars",
     "reviewLength": "Up to 500 characters",
     "subjectLength": "Must be 3–120 characters",
-    "typeDelete": "Type DELETE in capital letters"
+    "typeDelete": "Type DELETE in capital letters",
+    "orderFileType": "Upload a PDF, Word, Excel, CSV or image file (JPG, PNG, WEBP)",
+    "screenshotType": "Upload an image (JPG, PNG or WEBP)",
+    "orderFileSize": "Documents can be up to 10 MB and images up to 5 MB",
+    "draftTooLarge": "The draft is too large to save",
+    "addressLength": "Enter an address of 5–300 characters",
+    "descriptionLength": "Enter a description of 3–500 characters",
+    "fullNameLength": "Enter a name of 3–80 characters",
+    "httpsUrl": "Enter a link that starts with https://",
+    "maxItems": "You have reached the maximum number of entries",
+    "notAllowed": "This field does not apply to your choices",
+    "positiveNumber": "Enter a valid number",
+    "productNameOrUrl": "Enter the product link or its name",
+    "quantitiesMustMatch": "The quantities must add up to the product quantity",
+    "readyDate": "Choose today or a later date",
+    "wholeNumber": "Enter a whole number"
   },
   "errors": {
     "VALIDATION_ERROR": "Please check the highlighted fields.",
@@ -276,6 +310,10 @@
     "CORS_NOT_ALLOWED": "Request not allowed.",
     "PAYLOAD_TOO_LARGE": "The request is too large.",
     "INVALID_JSON": "Invalid request.",
+    "NO_BALANCE": "You have no requests left. You can't send a new request now.",
+    "IDEMPOTENCY_KEY_REUSED": "This request was already sent with different details. Please try again.",
+    "UNAUTHORIZED": "Please log in again.",
+    "FORBIDDEN": "You don't have access to this.",
     "NOT_FOUND": "Not found.",
     "INTERNAL": "Something went wrong. Please try again.",
     "NETWORK_ERROR": "Can't reach the server. Check your connection and try again.",
@@ -346,6 +384,25 @@
         "4": "Very good",
         "5": "Excellent"
       }
+    },
+    "combobox": {
+      "noResults": "No matches"
+    },
+    "attachments": {
+      "choose": "Choose files",
+      "documentsHint": "PDF, Word, Excel, CSV or images · documents up to 10 MB, images up to 5 MB",
+      "screenshotsHint": "JPG, PNG or WEBP · up to 5 MB per image",
+      "maxFiles": "Up to {{max}} files",
+      "tooMany": "You can attach up to {{max}} files.",
+      "uploading": "Uploading {{name}}",
+      "remove": "Remove {{name}}",
+      "dismiss": "Dismiss",
+      "progress": "Upload progress of {{name}}"
+    },
+    "draft": {
+      "restored": "We restored your saved progress.",
+      "startOver": "Start over",
+      "dismiss": "Dismiss this notice"
     }
   },
   "options": {
@@ -433,6 +490,16 @@
       "tax_card": "Tax card copy",
       "customs_license": "Customs broker license",
       "logo": "Company logo"
+    },
+    "legalDocument": {
+      "SA": {
+        "commercial_register": "Commercial Registration (CR) copy",
+        "tax_card": "VAT registration certificate"
+      },
+      "AE": {
+        "commercial_register": "Trade license copy",
+        "tax_card": "TRN certificate"
+      }
     }
   },
   "company": {
@@ -447,15 +514,9 @@
         "documents": "Documents",
         "review": "Review & submit"
       },
-      "draft": {
-        "title": "Continue your application?",
-        "text": "We saved what you typed on this device on {{date, datetime}}. Passwords, legal numbers and files are never saved.",
-        "continue": "Continue",
-        "startOver": "Start over"
-      },
       "leave": {
-        "title": "Leave the registration?",
-        "text": "Your text is saved on this device for 7 days, but passwords, legal numbers and files will be lost.",
+        "title": "Leave the form?",
+        "text": "Your draft is saved on this device for 7 days. Passwords, legal numbers and files are not saved.",
         "stay": "Stay",
         "leave": "Leave"
       },
@@ -494,6 +555,50 @@
         "websiteHint": "e.g. https://facebook.com/yourcompany",
         "governorate": "Governorate",
         "governoratePlaceholder": "Select a governorate",
+        "country": "Country",
+        "countryPlaceholder": "Select a country",
+        "region": {
+          "governorate": "Governorate",
+          "region": "Region",
+          "emirate": "Emirate"
+        },
+        "regionPlaceholder": {
+          "governorate": "Select a governorate",
+          "region": "Select a region",
+          "emirate": "Select an emirate"
+        },
+        "regionFirst": "Select a country first",
+        "regionsError": "We couldn't load the list. Try again.",
+        "coverageAll": {
+          "governorate": "All governorates",
+          "region": "All regions",
+          "emirate": "All emirates"
+        },
+        "coverageList": {
+          "governorate": "Covered governorates",
+          "region": "Covered regions",
+          "emirate": "Covered emirates"
+        },
+        "legal": {
+          "EG": {
+            "registration": "Commercial register number",
+            "registrationHint": "1–10 digits",
+            "tax": "Tax card number",
+            "taxHint": "9 digits"
+          },
+          "SA": {
+            "registration": "Commercial Registration number (CR)",
+            "registrationHint": "10 digits",
+            "tax": "VAT number",
+            "taxHint": "15 digits"
+          },
+          "AE": {
+            "registration": "Trade license number",
+            "registrationHint": "Letters and digits, as shown on the license",
+            "tax": "Tax Registration Number (TRN)",
+            "taxHint": "15 digits"
+          }
+        },
         "city": "City / Area",
         "street": "Street address",
         "password": "Password",
@@ -505,8 +610,6 @@
         "countries": "Main countries served",
         "regions": "Main regions served",
         "servedHint": "Optional",
-        "allGovernorates": "All governorates",
-        "governorates": "Covered governorates",
         "vehicleTypes": "Vehicle types",
         "vehicleTypeOther": "Other vehicle type",
         "fleetSize": "Fleet size (approx.)",
@@ -514,9 +617,6 @@
         "siteOther": "Other site",
         "chinaServices": "Services",
         "yearsInBusiness": "Years in business",
-        "commercialRegisterNumber": "Commercial register number",
-        "taxNumber": "Tax card number",
-        "taxNumberHint": "9 digits",
         "customsRecommended": "Recommended because you offer customs clearance.",
         "notes": "Anything else we should know? (optional)",
         "notesCounter": "{{count, number}} / {{max, number}}",

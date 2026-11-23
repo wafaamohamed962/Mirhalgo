@@ -5,8 +5,20 @@ import { Pencil } from 'lucide-react';
 import { COMPANY_LIMITS, DOCUMENT_TYPES } from '@mirhalgo/shared';
 import { Checkbox, Textarea } from '../../../components/ui';
 import { formatFileSize } from '../../../lib/utils';
+import {
+  localizedName,
+  regionOptions,
+  useCountries,
+  useRegions,
+} from '../../../services/api/reference';
 import { isStepSkipped, type CompanyFormValues, type StepId } from '../model';
-import { labelsOf, useCompanyOptions } from '../options';
+import {
+  documentLabelKey,
+  labelsOf,
+  legalCopyCountry,
+  regionKind,
+  useCompanyOptions,
+} from '../options';
 
 type Row = [label: string, value: ReactNode];
 
@@ -57,6 +69,12 @@ export function ReviewStep({ goTo }: { goTo: (step: StepId) => void }) {
     labelsOf(opts, values, i18n.language);
   const activities = v.activities ?? [];
   const notesLength = v.notes?.length ?? 0;
+  // names of the chosen country / regions (cached lists, already loaded by Steps 1–2)
+  const kind = regionKind(v.country);
+  const regions = regionOptions(useRegions(v.country).data ?? [], i18n.language);
+  const country = useCountries('company_signup').data?.find((c) => c.code === v.country);
+  const legal = (key: string) =>
+    t(`company.register.fields.legal.${legalCopyCountry(v.country)}.${key}`);
 
   const services: Row[] = [];
   if (activities.includes('international')) {
@@ -70,10 +88,10 @@ export function ReviewStep({ goTo }: { goTo: (step: StepId) => void }) {
   if (activities.includes('domestic')) {
     services.push(
       [
-        `${s('domestic')}: ${f('governorates')}`,
-        v.domestic?.allGovernorates
-          ? f('allGovernorates')
-          : list(options.governorates, v.domestic?.governorates),
+        `${s('domestic')}: ${t(`company.register.fields.coverageList.${kind}`)}`,
+        v.domestic?.allRegions
+          ? t(`company.register.fields.coverageAll.${kind}`)
+          : list(regions, v.domestic?.regions),
       ],
       [
         f('vehicleTypes'),
@@ -113,9 +131,12 @@ export function ReviewStep({ goTo }: { goTo: (step: StepId) => void }) {
           [
             s('address'),
             new Intl.ListFormat(i18n.language, { type: 'unit' }).format(
-              [v.street, v.city, v.governorate && t(`options.governorate.${v.governorate}`)].filter(
-                (part): part is string => Boolean(part),
-              ),
+              [
+                v.street,
+                v.city,
+                regions.find((r) => r.value === v.region)?.label,
+                country && localizedName(country.name, i18n.language),
+              ].filter((part): part is string => Boolean(part)),
             ),
           ],
           [f('password'), t('company.register.review.hidden')],
@@ -138,12 +159,12 @@ export function ReviewStep({ goTo }: { goTo: (step: StepId) => void }) {
         title={t('company.register.steps.documents')}
         onEdit={() => goTo('documents')}
         rows={[
-          [f('commercialRegisterNumber'), <span dir="ltr">{v.commercialRegisterNumber}</span>],
-          [f('taxNumber'), <span dir="ltr">{v.taxNumber}</span>],
+          [legal('registration'), <span dir="ltr">{v.commercialRegisterNumber}</span>],
+          [legal('tax'), <span dir="ltr">{v.taxNumber}</span>],
           ...DOCUMENT_TYPES.map((type): Row => {
             const file = v.files?.[type];
             return [
-              t(`options.document.${type}`),
+              t(documentLabelKey(type, v.country)),
               file
                 ? `${file.name} (${formatFileSize(file.size, i18n.language)})`
                 : t('company.register.review.notUploaded'),

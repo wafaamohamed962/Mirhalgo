@@ -118,7 +118,7 @@ export function SecuritySection() {
 
             <section className="flex flex-col gap-3">
               <h3 className="text-h3">{t('portal.security.activity')}</h3>
-              <div className="overflow-x-auto rounded-sm border border-slate-200">
+              <div className="relative overflow-x-auto rounded-sm border border-slate-200">
                 <table className="w-full min-w-lg text-small">
                   <thead className="bg-slate-50 text-muted">
                     <tr>

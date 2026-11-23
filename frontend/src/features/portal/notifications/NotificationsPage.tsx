@@ -1,23 +1,32 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BellOff } from 'lucide-react';
-import { Button, EmptyState, QueryState, Tabs, tabPanelProps } from '../../../components/ui';
+import {
+  BackButton,
+  Button,
+  EmptyState,
+  QueryState,
+  Tabs,
+  tabPanelProps,
+} from '../../../components/ui';
+import { useQueryParam } from '../../../lib/useUrlState';
 import { useNotifications } from '../../../services/api/queries';
 import { NotificationItem } from './NotificationItem';
 import { useMarkAllRead } from './useMarkAllRead';
 
-type Filter = 'all' | 'unread';
+const FILTERS = ['all', 'unread'] as const;
 
 /** /app/notifications (spec B7): All / Unread, each item opens its order or page. */
 export default function NotificationsPage() {
   const { t } = useTranslation();
-  const [filter, setFilter] = useState<Filter>('all');
+  // in the URL: Back from an order opened here restores the filter
+  const [filter, setFilter] = useQueryParam('filter', 'all', FILTERS);
   const notifications = useNotifications();
   const markAll = useMarkAllRead();
   const unread = notifications.data?.filter((n) => !n.read).length ?? 0;
 
   return (
     <div className="flex flex-col gap-4">
+      <BackButton />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <Tabs
           id="notifications"

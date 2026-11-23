@@ -1,4 +1,5 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { StrictMode } from 'react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, Link, RouterProvider } from 'react-router';
@@ -14,6 +15,22 @@ vi.mock('../src/features/companyRegistration/api', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   registerCompany: (values: { email: string }) => registerCompany(values),
 }));
+
+// reference lists (MW_003 A2): GET /api/reference/* answers from the fixtures
+vi.mock('../src/lib/apiClient', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/lib/apiClient')>();
+  const { referenceResponse } = await import('./referenceFixtures');
+  return {
+    ...actual,
+    apiRequest: async (method: string, path: string, options?: object) => {
+      const url = new URL(path, 'http://api.test');
+      if (method === 'GET' && url.pathname.startsWith('/reference/')) {
+        return referenceResponse(url.pathname.slice('/reference/'.length), url.searchParams);
+      }
+      return actual.apiRequest(method as never, path as never, options);
+    },
+  };
+});
 
 const { default: CompanyRegistrationPage } =
   await import('../src/features/companyRegistration/pages/CompanyRegistrationPage');
@@ -34,13 +51,17 @@ function renderWizard() {
       },
       { path: '/verify-email', element: <p>verify page</p> },
       { path: '/elsewhere', element: <p>elsewhere page</p> },
+      { path: '/', element: <p>home page</p> },
     ],
     { initialEntries: ['/signup/company'] },
   );
+  // StrictMode like main.tsx: the empty form once counted as "has data" only in development
   render(
-    <QueryClientProvider client={new QueryClient()}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
+    <StrictMode>
+      <QueryClientProvider client={new QueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </StrictMode>,
   );
   return router;
 }
@@ -48,13 +69,26 @@ function renderWizard() {
 const pdf = () => new File(['%PDF-1.7 test'], 'register.pdf', { type: 'application/pdf' });
 const next = (user: UserEvent) => user.click(screen.getByRole('button', { name: 'Next' }));
 
-async function fillAccount(user: UserEvent, activities: RegExp[]) {
+/** Picks the country, waits for its regions, then picks the region (both lists are async). */
+async function pickLocation(user: UserEvent, country: string, region: string, regionLabel: RegExp) {
+  await screen.findByRole('option', { name: 'Egypt' });
+  await user.selectOptions(screen.getByLabelText(/^Country(?! code)/), country);
+  const select = await screen.findByLabelText(regionLabel);
+  await waitFor(() => expect(select).toBeEnabled());
+  await user.selectOptions(select, region);
+}
+
+async function fillAccount(
+  user: UserEvent,
+  activities: RegExp[],
+  [country, region, regionLabel] = ['EG', 'EG-GZ', /^Governorate/] as [string, string, RegExp],
+) {
   await user.type(screen.getByLabelText(/Legal company name/), 'Nile Shipping');
   await user.type(screen.getByLabelText(/Representative full name/), 'Ahmed Hassan');
   await user.type(screen.getByLabelText(/Representative job title/), 'Owner');
   await user.type(screen.getByLabelText(/Business email/), 'Ops@Nile.com');
   await user.type(screen.getByLabelText(/Mobile phone/), '1012345678');
-  await user.selectOptions(screen.getByLabelText(/Governorate/), 'giza');
+  await pickLocation(user, country, region, regionLabel);
   await user.type(screen.getByLabelText(/City \/ Area/), 'Dokki');
   await user.type(screen.getByLabelText(/Street address/), '5 Tahrir Street');
   await user.type(screen.getByLabelText(/^Password/, { selector: 'input' }), 'Str0ng!pass');
@@ -168,8 +202,72 @@ describe('company registration wizard', () => {
     expect(sessionStorage.getItem('mirhalgo.pendingKind')).toBe('company');
   });
 
-  it('autosaves the text (never the password) and offers to continue', async () => {
+  it('country → region list, region label, phone code and legal rules (MW_003 A2)', async () => {
     const user = userEvent.setup();
+    renderWizard();
+    const dialCode = () => screen.getAllByLabelText('Country code')[0]!;
+
+    await pickLocation(user, 'SA', 'SA-01', /^Region/);
+    expect(dialCode()).toHaveValue('SA'); // the empty phone follows the country
+    expect(screen.getByRole('option', { name: 'Makkah' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Cairo' })).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText(/^Country(?! code)/), 'AE');
+    const emirate = await screen.findByLabelText(/^Emirate/);
+    expect(emirate).toHaveValue(''); // the previous selection is cleared
+    expect(dialCode()).toHaveValue('AE');
+
+    // a number already typed keeps its code
+    await user.type(screen.getByLabelText(/Mobile phone/), '501234567');
+    await user.selectOptions(screen.getByLabelText(/^Country(?! code)/), 'EG');
+    await screen.findByLabelText(/^Governorate/);
+    expect(dialCode()).toHaveValue('AE');
+  });
+
+  it('Saudi company: CR / VAT labels, document names and the 15-digit VAT rule', async () => {
+    const user = userEvent.setup();
+    renderWizard();
+    await fillAccount(user, [/^Other/], ['SA', 'SA-01', /^Region/]);
+    await user.type(screen.getByLabelText(/Describe the other activity/), 'Warehousing');
+    await next(user);
+
+    expect(screen.getByLabelText(/Commercial Registration number \(CR\)/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/VAT registration certificate/)).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/Commercial Registration number/), '1010123456');
+    const vat = screen.getByLabelText(/^VAT number/);
+    await user.type(vat, '123-456-789');
+    expect(vat).toHaveValue('123456789'); // no Egyptian mask: digits only
+    await next(user);
+    expect(screen.getByText('Enter the 15-digit VAT number')).toBeInTheDocument();
+  });
+
+  it('domestic coverage lists the regions of the company country', async () => {
+    const user = userEvent.setup();
+    renderWizard();
+    await fillAccount(user, [/^Domestic land shipping/], ['AE', 'AE-DU', /^Emirate/]);
+    await next(user);
+    expect(screen.getByRole('switch', { name: 'All emirates' })).toBeInTheDocument();
+    const covered = screen.getByRole('group', { name: /Covered emirates/ });
+    expect(within(covered).getByRole('checkbox', { name: 'Dubai' })).toBeInTheDocument();
+    expect(within(covered).queryByRole('checkbox', { name: 'Cairo' })).not.toBeInTheDocument();
+  });
+
+  it('restores a saved country + region once their lists have loaded', async () => {
+    localStorage.setItem(
+      'mirhalgo.companyDraft',
+      JSON.stringify({
+        savedAt: Date.now(),
+        values: { legalName: 'Gulf Co', country: 'SA', region: 'SA-02' },
+      }),
+    );
+    renderWizard();
+    expect(await screen.findByRole('option', { name: 'Makkah' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Country(?! code)/)).toHaveValue('SA');
+    expect(screen.getByLabelText(/^Region/)).toHaveValue('SA-02');
+  });
+
+  /** Types a company name + password, waits for the autosave, then "comes back" to the page. */
+  async function saveDraftAndReturn(user: UserEvent) {
     renderWizard();
     await user.type(screen.getByLabelText(/Legal company name/), 'Delta Cargo');
     await user.type(screen.getByLabelText(/^Password/, { selector: 'input' }), 'Str0ng!pass');
@@ -177,13 +275,61 @@ describe('company registration wizard', () => {
       expect(localStorage.getItem('mirhalgo.companyDraft')).toContain('Delta Cargo'),
     );
     expect(localStorage.getItem('mirhalgo.companyDraft')).not.toContain('Str0ng');
+    document.body.innerHTML = '';
+    return renderWizard();
+  }
+
+  it('no draft: no restored notice', () => {
+    renderWizard();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Legal company name/)).toHaveValue('');
+  });
+
+  it('autosaves the text (never the password) and restores it automatically', async () => {
+    const user = userEvent.setup();
+    await saveDraftAndReturn(user);
+    // no "Continue your application?" prompt: the draft is already back, with a subtle notice
+    expect(screen.queryByRole('heading', { name: /Continue/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('We restored your saved progress.');
+    expect(screen.getByLabelText(/Legal company name/)).toHaveValue('Delta Cargo');
+    expect(screen.getByLabelText(/^Password/, { selector: 'input' })).toHaveValue('');
+
+    // restoring is not an edit: the stored draft is unchanged
+    const stored = localStorage.getItem('mirhalgo.companyDraft');
+    await new Promise((resolve) => setTimeout(resolve, 700)); // > autosave delay
+    expect(localStorage.getItem('mirhalgo.companyDraft')).toBe(stored);
+
+    await user.click(screen.getByRole('button', { name: 'Dismiss this notice' }));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Legal company name/)).toHaveValue('Delta Cargo'); // data kept
+  });
+
+  it('"Start over" clears the draft and resets the form', async () => {
+    const user = userEvent.setup();
+    await saveDraftAndReturn(user);
+    await user.click(screen.getByRole('button', { name: 'Start over' }));
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    const name = screen.getByLabelText(/Legal company name/);
+    expect(name).toHaveValue('');
+    await waitFor(() => expect(name).toHaveFocus());
+    expect(localStorage.getItem('mirhalgo.companyDraft')).toBeNull();
+    // the reset itself never writes an (empty) draft back
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    expect(localStorage.getItem('mirhalgo.companyDraft')).toBeNull();
 
     document.body.innerHTML = '';
     renderWizard();
-    expect(screen.getByRole('heading', { name: 'Continue your application?' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(screen.getByLabelText(/Legal company name/)).toHaveValue('Delta Cargo');
-    expect(screen.getByLabelText(/^Password/, { selector: 'input' })).toHaveValue('');
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('"Start over" right after typing: the pending autosave does not bring the draft back', async () => {
+    const user = userEvent.setup();
+    await saveDraftAndReturn(user);
+    await user.type(screen.getByLabelText(/Representative full name/), 'Ahmed'); // save pending
+    await user.click(screen.getByRole('button', { name: 'Start over' }));
+    await new Promise((resolve) => setTimeout(resolve, 700)); // > autosave delay
+    expect(localStorage.getItem('mirhalgo.companyDraft')).toBeNull();
   });
 
   it('asks before leaving with unsaved changes', async () => {
@@ -191,7 +337,7 @@ describe('company registration wizard', () => {
     const router = renderWizard();
     await user.type(screen.getByLabelText(/Legal company name/), 'Delta Cargo');
     await user.click(screen.getByRole('link', { name: 'elsewhere' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Leave the registration?' });
+    const dialog = await screen.findByRole('dialog', { name: 'Leave the form?' });
     await user.click(within(dialog).getByRole('button', { name: 'Stay' }));
     expect(router.state.location.pathname).toBe('/signup/company');
 
@@ -200,5 +346,63 @@ describe('company registration wizard', () => {
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Leave' }),
     );
     await waitFor(() => expect(router.state.location.pathname).toBe('/elsewhere'));
+  });
+
+  it('"Back to home" in the header: leaves at once when empty (MW_003 A3)', async () => {
+    const user = userEvent.setup();
+    const router = renderWizard();
+    await user.click(screen.getByRole('link', { name: 'Back to home' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('"Back to home" after typing and clearing a field: leaves at once', async () => {
+    const user = userEvent.setup();
+    const router = renderWizard();
+    await user.type(screen.getByLabelText(/Legal company name/), 'Delta');
+    await user.clear(screen.getByLabelText(/Legal company name/));
+    await user.click(screen.getByRole('link', { name: 'Back to home' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('"Back to home" with a restored draft: the draft is data, so it asks first', async () => {
+    const user = userEvent.setup();
+    const first = renderWizard();
+    await user.type(screen.getByLabelText(/Legal company name/), 'Delta Cargo');
+    await waitFor(() =>
+      expect(localStorage.getItem('mirhalgo.companyDraft')).toContain('Delta Cargo'),
+    );
+    first.dispose();
+    cleanup();
+
+    renderWizard();
+    expect(await screen.findByText(/We restored your saved progress/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Legal company name/)).toHaveValue('Delta Cargo');
+    await user.click(screen.getByRole('link', { name: 'Back to home' }));
+    expect(await screen.findByRole('dialog', { name: 'Leave the form?' })).toHaveTextContent(
+      'Your draft is saved',
+    );
+  });
+
+  it('"Back to home" with data: "Your draft is saved", Stay keeps the data, Leave goes home', async () => {
+    const user = userEvent.setup();
+    const router = renderWizard();
+    await user.type(screen.getByLabelText(/Legal company name/), 'Delta Cargo');
+    await user.click(screen.getByRole('link', { name: 'Back to home' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Leave the form?' });
+    expect(dialog).toHaveTextContent('Your draft is saved');
+    await user.click(within(dialog).getByRole('button', { name: 'Stay' }));
+    expect(router.state.location.pathname).toBe('/signup/company');
+    expect(screen.getByLabelText(/Legal company name/)).toHaveValue('Delta Cargo');
+
+    await user.click(screen.getByRole('link', { name: 'Back to home' }));
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Leave' }),
+    );
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    await waitFor(() =>
+      expect(localStorage.getItem('mirhalgo.companyDraft')).toContain('Delta Cargo'),
+    );
   });
 });

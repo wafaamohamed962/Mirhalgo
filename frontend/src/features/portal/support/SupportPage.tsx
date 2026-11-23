@@ -6,6 +6,7 @@ import { LifeBuoy, Mail, MessageSquarePlus, Search } from 'lucide-react';
 import { Accordion, Button, EmptyState, QueryState } from '../../../components/ui';
 import { useDateFormat } from '../../../lib/dateFormat';
 import { SOCIAL_LINKS } from '../../../lib/navigation';
+import { useQuerySearch } from '../../../lib/useUrlState';
 import { useTickets } from '../../../services/api/queries';
 import { TicketStatusBadge } from '../components/StatusBadge';
 import { NewTicketModal } from './NewTicketModal';
@@ -16,7 +17,8 @@ const SUPPORT_EMAIL = 'mirhalgov1@gmail.com';
 
 function Faq() {
   const { t } = useTranslation();
-  const [query, setQuery] = useState('');
+  // ?q=: Back from a ticket restores the FAQ search (filtered locally, no debounce needed)
+  const { input: query, setInput: setQuery } = useQuerySearch('q');
   const items = useMemo(
     () =>
       FAQ_TOPICS.flatMap((topic) =>
