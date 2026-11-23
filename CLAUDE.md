@@ -1187,8 +1187,8 @@ scheduling and idempotency are built in-house.
       file named `MirhalGo-MG1001.pdf`. The files are kept in `test-results/` for a visual check.
   - Totals: shared 121, backend 123, frontend 117, E2E 57.
 - B6 committed as `3db811f`.
-- **Phase B7 (2026-11-23): real run + docs done; the deployed preview is still open** (not
-  committed yet).
+- **Phase B7 (2026-11-23): real run + docs done; the deployed preview is still open**
+  (committed as `bdeb058`).
   - **Real run through the UI, 14/14** (headless Chromium → `npm run dev:web` with mocks on, like
     the preview → local API → `mirhalgo_v1`). Script in the scratchpad (`b7-real-check.mjs`); run
     a copy placed in `frontend/` (`node --env-file=../backend/.env .b7.mjs`) and delete it.
@@ -1216,3 +1216,26 @@ scheduling and idempotency are built in-house.
   - Totals: shared 121, backend 123, frontend 118, E2E 57.
   - **Still open in B7:** the deployed preview (needs the developer's Render + static-host
     accounts) and Lighthouse there.
+- **Fix (2026-11-23, after B7): A3 "Back to home" asked on an empty form in development**
+  (reported by the developer; not committed yet).
+  - Production was fine, which is why the E2E passed.
+  - Cause 1: under React StrictMode, react-hook-form's form-level `formState.isDirty` turned
+    true right after mount while `dirtyFields` was empty and every value equal to its default.
+    So the leave dialog opened on an empty form on both sign-up pages.
+  - Fix: `hasChanges(formState.dirtyFields)` (`lib/forms.ts`) decides "the form has data"
+    for every leave guard and the Profile Save button: customer sign-up, company sign-up, the
+    New Request forms, Account › Profile. **Don't use `isDirty` for this.**
+  - Cause 2 (customer sign-up): `gender` / `acceptTerms` had no default, so after any edit
+    they counted as changed against `undefined`, and "typed then cleared" still asked. They now
+    default to `''` / `false`; the schema messages are unchanged.
+  - Copy unchanged. Company: "Leave the form? Your draft is saved on this device for 7 days…"
+    (the spec text plus what is not saved). Customer: "…The information you entered will be
+    lost." (no draft there, plan §5 item 6).
+  - Checked on the dev server (scratchpad `a3-probe.mjs`): AR / EN × 1280 / 360 px × both
+    pages. Empty → home; with data → dialog; Stay stays; typed + cleared → home; Leave → home
+    with the company draft kept; a restored draft asks.
+  - Tests: `signupCustomer.test.tsx` and `companyRegistration.test.tsx` now render in
+    `StrictMode` (+3 tests: typed and cleared ×2, restored draft asks). New
+    `test/forms.test.ts` covers `hasChanges`. The empty and cleared-form tests fail on the old
+    code.
+  - Totals: shared 121, backend 123, frontend 123, E2E 57.

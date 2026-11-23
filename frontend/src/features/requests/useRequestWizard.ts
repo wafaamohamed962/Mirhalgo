@@ -10,6 +10,7 @@ import {
   type UploadedFile,
 } from '@mirhalgo/shared';
 import { ApiRequestError, errorKey } from '../../lib/apiClient';
+import { hasChanges } from '../../lib/forms';
 import { useUnsavedChangesGuard } from '../../lib/useUnsavedChangesGuard';
 import { focusFirstError, useAutosave, useWizardSteps } from '../../lib/wizard';
 import { ordersApi } from '../../services/api/orders';
@@ -173,10 +174,13 @@ export function useRequestWizard(service: ServiceType, prefill: Prefill) {
 
   // ── submit (idempotent: one key per payload, reused for retries) ──────────
   const attempt = useRef<{ key: string; body: string } | null>(null);
-  const leaveGuard = useUnsavedChangesGuard(form.formState.isDirty && !submitted.current, {
-    title: t('portal.request.leave.title'),
-    description: t('portal.request.leave.text'),
-  });
+  const leaveGuard = useUnsavedChangesGuard(
+    hasChanges(form.formState.dirtyFields) && !submitted.current,
+    {
+      title: t('portal.request.leave.title'),
+      description: t('portal.request.leave.text'),
+    },
+  );
 
   const submit = async () => {
     const { order, issues } = validate();

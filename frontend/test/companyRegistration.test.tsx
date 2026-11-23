@@ -1,4 +1,5 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { StrictMode } from 'react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, Link, RouterProvider } from 'react-router';
@@ -54,10 +55,13 @@ function renderWizard() {
     ],
     { initialEntries: ['/signup/company'] },
   );
+  // StrictMode like main.tsx: the empty form once counted as "has data" only in development
   render(
-    <QueryClientProvider client={new QueryClient()}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
+    <StrictMode>
+      <QueryClientProvider client={new QueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </StrictMode>,
   );
   return router;
 }
@@ -350,6 +354,35 @@ describe('company registration wizard', () => {
     await user.click(screen.getByRole('link', { name: 'Back to home' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/'));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('"Back to home" after typing and clearing a field: leaves at once', async () => {
+    const user = userEvent.setup();
+    const router = renderWizard();
+    await user.type(screen.getByLabelText(/Legal company name/), 'Delta');
+    await user.clear(screen.getByLabelText(/Legal company name/));
+    await user.click(screen.getByRole('link', { name: 'Back to home' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('"Back to home" with a restored draft: the draft is data, so it asks first', async () => {
+    const user = userEvent.setup();
+    const first = renderWizard();
+    await user.type(screen.getByLabelText(/Legal company name/), 'Delta Cargo');
+    await waitFor(() =>
+      expect(localStorage.getItem('mirhalgo.companyDraft')).toContain('Delta Cargo'),
+    );
+    first.dispose();
+    cleanup();
+
+    renderWizard();
+    expect(await screen.findByText(/We restored your saved progress/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Legal company name/)).toHaveValue('Delta Cargo');
+    await user.click(screen.getByRole('link', { name: 'Back to home' }));
+    expect(await screen.findByRole('dialog', { name: 'Leave the form?' })).toHaveTextContent(
+      'Your draft is saved',
+    );
   });
 
   it('"Back to home" with data: "Your draft is saved", Stay keeps the data, Leave goes home', async () => {

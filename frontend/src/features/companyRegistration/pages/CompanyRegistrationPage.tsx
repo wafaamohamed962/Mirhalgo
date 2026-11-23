@@ -11,6 +11,7 @@ import { Alert, Button, Card, ProgressBar, Stepper, type Step } from '../../../c
 import { ServiceNotice } from '../../../components/ui/ServiceNotice';
 import { ApiRequestError, errorKey } from '../../../lib/apiClient';
 import { usePageMeta } from '../../../lib/usePageMeta';
+import { hasChanges } from '../../../lib/forms';
 import { useUnsavedChangesGuard } from '../../../lib/useUnsavedChangesGuard';
 import { useAutosave, useWizardSteps } from '../../../lib/wizard';
 import { setPendingVerification } from '../../auth/pendingVerification';
@@ -59,7 +60,7 @@ export default function CompanyRegistrationPage() {
     defaultValues: EMPTY_VALUES,
     resolver,
   });
-  const { isDirty } = form.formState;
+  const dirty = hasChanges(form.formState.dirtyFields);
   const activities = form.watch('activities');
 
   const visibleSteps = useMemo(
@@ -95,7 +96,7 @@ export default function CompanyRegistrationPage() {
   };
 
   // leaving with unsaved changes (MW_002 A1; "Back to home" in the header, MW_003 A3)
-  const leaveGuard = useUnsavedChangesGuard(isDirty, {
+  const leaveGuard = useUnsavedChangesGuard(dirty, {
     title: t('company.register.leave.title'),
     description: t('company.register.leave.text'),
   });

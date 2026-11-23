@@ -24,7 +24,7 @@ import {
   Select,
   Skeleton,
 } from '../../../components/ui';
-import { useZodForm } from '../../../lib/forms';
+import { hasChanges, useZodForm } from '../../../lib/forms';
 import { useUnsavedChangesGuard } from '../../../lib/useUnsavedChangesGuard';
 import { portalApi } from '../../../services/api/portal';
 import { keys, useApiMutation, useMe } from '../../../services/api/queries';
@@ -225,7 +225,8 @@ function ProfileForm({ me }: { me: Me }) {
   const [changing, setChanging] = useState<'email' | 'phone' | null>(null);
   const defaults = { firstName: me.firstName, lastName: me.lastName, gender: me.gender };
   const form = useZodForm(profileSchema, { defaultValues: defaults });
-  const { isDirty, errors } = form.formState;
+  const { errors } = form.formState;
+  const isDirty = hasChanges(form.formState.dirtyFields);
   const guard = useUnsavedChangesGuard(isDirty);
   const save = useApiMutation(portalApi.updateProfile, {
     setData: keys.me,

@@ -13,21 +13,28 @@ import {
   Select,
 } from '../../../components/ui';
 import { errorKey } from '../../../lib/apiClient';
-import { useZodForm } from '../../../lib/forms';
+import { hasChanges, useZodForm } from '../../../lib/forms';
 import { usePageMeta } from '../../../lib/usePageMeta';
 import { useUnsavedChangesGuard } from '../../../lib/useUnsavedChangesGuard';
 import { authApi } from '../api';
 import { AuthCard } from '../components/AuthCard';
 import { setPendingVerification } from '../pendingVerification';
 
-// gender / terms start unset: the placeholder option and an unchecked box
-const DEFAULTS: Partial<SignupInput> = {
+/**
+ * Every field has a default equal to what the page shows (gender: the placeholder option,
+ * terms: an unchecked box). Without one, react-hook-form compared '' / false with undefined and
+ * marked gender and terms as changed, so "Back to home" asked to confirm after the user typed and
+ * cleared a field (MW_003 A3). The schema still requires a gender and the box ticked.
+ */
+const DEFAULTS = {
   firstName: '',
   lastName: '',
   email: '',
   phone: '',
   password: '',
   confirmPassword: '',
+  gender: '' as SignupInput['gender'],
+  acceptTerms: false as SignupInput['acceptTerms'],
 };
 
 /** /signup/customer (spec 4.2) → POST /api/auth/signup → /verify-email. */
@@ -39,11 +46,11 @@ export default function SignupCustomerPage() {
     register,
     control,
     handleSubmit,
-    formState: { errors, isDirty },
+    formState: { errors, dirtyFields },
   } = useZodForm(signupSchema, { defaultValues: DEFAULTS });
 
   // "Back to home" (or any link) with data typed: confirm first (MW_003 A3). No draft here.
-  const leaveGuard = useUnsavedChangesGuard(isDirty, {
+  const leaveGuard = useUnsavedChangesGuard(hasChanges(dirtyFields), {
     title: t('auth.signup.leave.title'),
     description: t('auth.signup.leave.text'),
   });

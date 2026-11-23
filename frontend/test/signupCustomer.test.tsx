@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -17,10 +18,13 @@ function renderSignup() {
     ],
     { initialEntries: ['/signup/customer'] },
   );
+  // StrictMode like main.tsx: the empty form once counted as "has data" only in development
   render(
-    <QueryClientProvider client={new QueryClient()}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
+    <StrictMode>
+      <QueryClientProvider client={new QueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </StrictMode>,
   );
   return router;
 }
@@ -29,6 +33,17 @@ describe('customer sign-up: Back to home', () => {
   it('leaves at once when nothing was typed', async () => {
     const user = userEvent.setup();
     const router = renderSignup();
+    await user.click(screen.getByRole('link', { name: 'Back to home' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('leaves at once when a field was typed and cleared again (nothing left to lose)', async () => {
+    // regression: gender / terms had no default, so they counted as changed after any edit
+    const user = userEvent.setup();
+    const router = renderSignup();
+    await user.type(screen.getByLabelText(/First name/), 'Ali');
+    await user.clear(screen.getByLabelText(/First name/));
     await user.click(screen.getByRole('link', { name: 'Back to home' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/'));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
