@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, Navigate, RouterProvider } from 'react-router';
@@ -234,13 +235,16 @@ export function renderPortal(path: string) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
+  // StrictMode like main.tsx: effects run twice in development (a min-1 list once got 2 rows)
   render(
-    <QueryClientProvider client={queryClient}>
-      <AuthContext.Provider value={customer}>
-        <RouterProvider router={router} />
-        <Toaster />
-      </AuthContext.Provider>
-    </QueryClientProvider>,
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <AuthContext.Provider value={customer}>
+          <RouterProvider router={router} />
+          <Toaster />
+        </AuthContext.Provider>
+      </QueryClientProvider>
+    </StrictMode>,
   );
   return router;
 }

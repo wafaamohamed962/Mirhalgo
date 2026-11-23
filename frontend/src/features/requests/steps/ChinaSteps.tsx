@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import { useFieldArray, useFormContext, type FieldValues } from 'react-hook-form';
+import { useFormContext, type FieldValues } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2 } from 'lucide-react';
 import {
@@ -26,20 +25,19 @@ import {
   TextField,
   UploadField,
 } from '../components/fields';
-import { useFieldError, useLabel } from '../formContext';
+import { useFieldError, useLabel, useRepeatable } from '../formContext';
 import { useChoices, useCountryOptions, usePlaceOptions } from '../options';
+
+const EMPTY_VARIANT = { value: '', quantity: '' };
+const EMPTY_PRODUCT = { quantity: '1' };
 
 /** Colours or sizes of one product: {value, quantity}; the quantities must add up (spec B5). */
 function Variants({ product, kind }: { product: number; kind: 'colors' | 'sizes' }) {
   const { t } = useTranslation();
   const label = useLabel();
-  const { control } = useFormContext<FieldValues>();
   const name = `order.products.${product}.${kind}`;
-  const list = useFieldArray({ control, name });
+  const list = useRepeatable(name, EMPTY_VARIANT);
   const error = useFieldError(name);
-  useEffect(() => {
-    if (list.fields.length === 0) list.append({ value: '', quantity: '' }, { shouldFocus: false });
-  }, [list]);
   return (
     <div className="flex flex-col gap-2 sm:col-span-2">
       {list.fields.map((row, i) => (
@@ -79,13 +77,10 @@ function Variants({ product, kind }: { product: number; kind: 'colors' | 'sizes'
 function Products() {
   const { t, i18n } = useTranslation();
   const label = useLabel();
-  const { control, watch } = useFormContext<FieldValues>();
-  const products = useFieldArray({ control, name: 'order.products' });
+  const { watch } = useFormContext<FieldValues>();
+  const products = useRepeatable('order.products', EMPTY_PRODUCT);
   const values = (watch('order.products') ?? []) as FieldValues[];
   const error = useFieldError('order.products');
-  useEffect(() => {
-    if (products.fields.length === 0) products.append({ quantity: '1' }, { shouldFocus: false });
-  }, [products]);
   const sum = (list?: FieldValues[]) =>
     (list ?? []).reduce(
       (total, v) => total + (Number(toAsciiDigits(String(v.quantity ?? ''))) || 0),

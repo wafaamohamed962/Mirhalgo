@@ -334,6 +334,30 @@ describe('New Request forms (B5)', () => {
     expect(body.shipment).not.toHaveProperty('airService');
   });
 
+  it('a list shown again starts with exactly one row (StrictMode runs effects twice)', async () => {
+    // regression (B7 real run): FCL → LCL → FCL hides and re-shows the container groups; the
+    // "at least one row" effect ran twice in StrictMode and the Cargo step showed two groups
+    const user = userEvent.setup();
+    renderPortal('/app/new-request/international');
+    await stepIs(1, 6, 'Customer');
+    await user.click(main().getByRole('radio', { name: 'Individual' }));
+    await next(user);
+    await user.click(main().getByRole('radio', { name: 'Export' }));
+    await user.click(main().getByRole('radio', { name: 'Shipping only' }));
+    await user.click(main().getByRole('radio', { name: 'Sea' }));
+    await next(user);
+    await user.click(await main().findByRole('radio', { name: 'Full container (FCL)' }));
+    await user.click(main().getByRole('radio', { name: 'Part load (LCL)' }));
+    await user.click(main().getByRole('radio', { name: 'Full container (FCL)' }));
+    await pick(user, /^Origin country/, 'China');
+    await pick(user, /^Port of loading/, 'Shanghai');
+    await pick(user, /^Destination country/, 'Egypt');
+    await pick(user, /^Port of discharge/, 'Alexandria');
+    await next(user);
+    await stepIs(4, 6, 'Cargo');
+    expect(main().getAllByRole('combobox', { name: /^Container type/ })).toHaveLength(1);
+  });
+
   it('an unknown service goes back to the service list', async () => {
     renderPortal('/app/new-request/rocket');
     expect(await main().findByText('What do you want to ship?')).toBeInTheDocument();

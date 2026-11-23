@@ -8,6 +8,10 @@ Shipping marketplace built in Egypt.
   documents, email OTP, application status, full stack) · **B.** customer portal (`/app`:
   New Request, My Orders, Companies, Account, Notifications, Help & Support), frontend only on
   an MSW mock API whose shapes match the future real API.
+- **MW_003** ([spec](docs/MW_003.md), [PR notes](docs/MW_003-PR.md)): Arabic copy in MSA,
+  company country → region, "Back to home" · **New Request, full stack**: reference data,
+  request balance, server drafts + uploads, idempotent submit, 3 forms (international,
+  domestic, China), success screen with print and PDF.
 
 ```
 React SPA (Vercel / Netlify / Cloudflare Pages)
@@ -18,14 +22,15 @@ Node/Express API (Render, Frankfurt)  ── service-role key, SMTP, OTP logic
 Supabase (Central EU, Frankfurt): Auth + Postgres
 ```
 
-| Folder                        | What                                                                     |
-| ----------------------------- | ------------------------------------------------------------------------ |
-| `frontend`                    | Vite + React 18 + TypeScript + Tailwind v4, React Router, TanStack Query |
-| `frontend/src/mocks`          | MSW handlers + fixtures for the customer portal (MW_002 B)               |
-| `backend`                     | Express 4 API: auth, contact, company registration, own email OTP        |
-| `shared`                      | Zod schemas + types used by **both** web and api (`@mirhalgo/shared`)    |
-| `backend/supabase/migrations` | Database schema + RLS (the only way to change the schema)                |
-| `docs`                        | Spec, image credits                                                      |
+| Folder                           | What                                                                     |
+| -------------------------------- | ------------------------------------------------------------------------ |
+| `frontend`                       | Vite + React 18 + TypeScript + Tailwind v4, React Router, TanStack Query |
+| `frontend/src/mocks`             | MSW handlers + fixtures for the customer portal (MW_002 B)               |
+| `frontend/src/features/requests` | The New Request forms + success page (MW_003, real API)                  |
+| `backend`                        | Express 4 API: auth, contact, company registration, own email OTP        |
+| `shared`                         | Zod schemas + types used by **both** web and api (`@mirhalgo/shared`)    |
+| `backend/supabase/migrations`    | Database schema + RLS (the only way to change the schema)                |
+| `docs`                           | Spec, image credits                                                      |
 
 ## Requirements
 
@@ -47,13 +52,13 @@ Copy the blocks from [`.env.example`](.env.example) into two files. **Never comm
 
 **`frontend/.env`** (public, ends up in the browser bundle):
 
-| Variable                     | Value                                                                  |
-| ---------------------------- | ---------------------------------------------------------------------- |
-| `VITE_SUPABASE_URL`          | `https://wpcpxmwkihaismxbdxip.supabase.co`                             |
-| `VITE_SUPABASE_ANON_KEY`     | Supabase → Project Settings → API keys → **anon / publishable**        |
-| `VITE_API_URL`               | `http://localhost:4000` (prod: the Render URL)                         |
-| `VITE_USE_MOCKS`             | `true`: customer-portal data from the MSW mocks (until the API exists) |
-| `VITE_SHOW_COMPANY_IDENTITY` | `true` (default) · `false` hides company names in the directory        |
+| Variable                     | Value                                                                                              |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| `VITE_SUPABASE_URL`          | `https://wpcpxmwkihaismxbdxip.supabase.co`                                                         |
+| `VITE_SUPABASE_ANON_KEY`     | Supabase → Project Settings → API keys → **anon / publishable**                                    |
+| `VITE_API_URL`               | `http://localhost:4000` (prod: the Render URL)                                                     |
+| `VITE_USE_MOCKS`             | `true`: customer-portal data from the MSW mocks (until the API exists). New Request is always real |
+| `VITE_SHOW_COMPANY_IDENTITY` | `true` (default) · `false` hides company names in the directory                                    |
 
 **`backend/.env`** (secret, server only):
 
@@ -95,8 +100,29 @@ Dashboard settings (Authentication):
 The migrations also create the private Storage buckets `company-documents` (5 MB, PDF/JPG/PNG)
 and `company-logos` (2 MB), plus a restrictive policy: only the backend can read or write them.
 
-Unverified company applications older than 7 days can be removed (files, user, rows) with
-`npm run cleanup:companies -w backend` (not scheduled yet).
+The MW_003 migrations add:
+
+- **Reference data** (countries, regions, cities, ports, airports, container / truck types,
+  shipping lines, transit estimates), readable by everyone, written only by migrations. Truck
+  types, container types and shipping lines are **placeholder** lists (`-- PLACEHOLDER` in
+  `…20261122000003_reference_logistics.sql`) until the demo lists arrive.
+- **Request balance:** `customer_balances` + the append-only `balance_ledger` (5 on email
+  verification).
+- **Orders:** `order_drafts`, `order_uploads`, `orders` and their detail tables, plus the
+  `submit_order` function (one transaction).
+- The private bucket **`order-attachments`** (10 MB; PDF, DOC/DOCX, XLS/XLSX, CSV, JPG, PNG,
+  WEBP), backend only like the company buckets.
+
+**Cleanup** (MW_003 B3): the API runs it every hour while it is running (one instance at a time,
+through a lease row). It removes:
+
+- uploads never attached to a draft or an order, after 24 h;
+- drafts not saved for 30 days, with their files;
+- unverified company applications after 7 days.
+
+Run it by hand with `npm run cleanup -w backend` (companies only:
+`npm run cleanup:companies -w backend`). On a host that sleeps (Render free), also schedule
+`npm run cleanup -w backend` as a cron job.
 
 ## 4. Run (development)
 
@@ -126,6 +152,11 @@ function per future endpoint, typed with `@mirhalgo/shared/portal`). MSW answers
 logged-in user's `profiles` row through RLS (`services/api/ownProfile.ts`): first/last name,
 gender, email, phone. Only the avatar image is still mocked. Email/phone are read-only (the
 "Change email/phone" buttons are hidden until the real API supports it).
+**New Request is real** (MW_003), also with mocks on: the forms, drafts, uploads, orders,
+reference lists and `/me/summary` pass through MSW to the API (`onUnhandledFrame: 'bypass'`;
+real order references `MG…` pass through the mocked `/orders/:id`). My Orders, Companies and
+Account › Balance are still mocked, so a real order does not appear in My Orders yet.
+
 When the real API exists: implement the same endpoints, set `VITE_USE_MOCKS=false` and delete
 `src/mocks` (+ `public/mockServiceWorker.js`). Demo codes in the mocks: OTP `123456`
 (change email/phone, hidden for now), password `wrong` = error state.
@@ -149,6 +180,16 @@ When the real API exists: implement the same endpoints, set `VITE_USE_MOCKS=fals
   commercial register / tax number → `COMPANY_ALREADY_REGISTERED`.
 - Roles live in `app_metadata.role` (only the backend can write it); a company can never open
   the customer portal. A password reset signs out every session.
+- New Request (MW_003):
+  - Every authenticated call is checked with `supabase.auth.getUser`, so revoked sessions are
+    refused.
+  - The same Zod schema validates on both sides; the server recomputes every derived value.
+  - Order files are checked by content and never opened on the server. DOCX/XLSX with macros
+    are refused.
+  - Submit is one transaction with a balance lock and an `Idempotency-Key`: a double click or
+    two tabs never create two orders or spend twice.
+  - The ledger can't be changed or deleted, even by the service role.
+  - Storage paths and idempotency keys are never sent to clients.
 
 ## 7. Deploy
 

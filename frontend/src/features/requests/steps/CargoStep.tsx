@@ -1,5 +1,5 @@
-import { useEffect, type ReactNode } from 'react';
-import { useFieldArray, useFormContext, type FieldValues } from 'react-hook-form';
+import type { ReactNode } from 'react';
+import { useFormContext, type FieldValues } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2 } from 'lucide-react';
 import {
@@ -24,7 +24,7 @@ import {
   WeightField,
   YesNoField,
 } from '../components/fields';
-import { useFieldError, useLabel } from '../formContext';
+import { useFieldError, useLabel, useRepeatable } from '../formContext';
 import { useChoices, useTypeOptions } from '../options';
 
 type Kind = 'containers' | 'trucks' | 'ltl' | 'loose';
@@ -96,16 +96,6 @@ function GroupCard({
   );
 }
 
-function useGroups(name: string, empty: FieldValues) {
-  const { control } = useFormContext<FieldValues>();
-  const array = useFieldArray({ control, name });
-  // a list hidden and shown again starts with one row (min 1, spec B3)
-  useEffect(() => {
-    if (array.fields.length === 0) array.append(empty, { shouldFocus: false });
-  }, [array, empty]);
-  return array;
-}
-
 const EMPTY_GROUP = { count: '1' };
 const EMPTY_ITEM = { cartons: '1', weight: { unit: 'kg' } };
 
@@ -113,7 +103,7 @@ function ContainerGroups({ prices }: { prices: boolean }) {
   const { t, i18n } = useTranslation();
   const label = useLabel();
   const { watch } = useFormContext<FieldValues>();
-  const groups = useGroups('shipment.cargo.groups', EMPTY_GROUP);
+  const groups = useRepeatable('shipment.cargo.groups', EMPTY_GROUP);
   const types = useTypeOptions('container-types');
   const lines = useTypeOptions('shipping-lines');
   const total = ((watch('shipment.cargo.groups') ?? []) as FieldValues[]).reduce(
@@ -193,7 +183,7 @@ function TruckGroups() {
   const label = useLabel();
   const choices = useChoices();
   const { watch } = useFormContext<FieldValues>();
-  const groups = useGroups('shipment.cargo.groups', EMPTY_GROUP);
+  const groups = useRepeatable('shipment.cargo.groups', EMPTY_GROUP);
   const types = useTypeOptions('truck-types');
   const total = ((watch('shipment.cargo.groups') ?? []) as FieldValues[]).reduce(
     (sum, g) => sum + number(g.count),
@@ -268,7 +258,7 @@ function LooseItems({ air }: { air: boolean }) {
   const { t, i18n } = useTranslation();
   const label = useLabel();
   const { watch } = useFormContext<FieldValues>();
-  const items = useGroups('shipment.cargo.items', EMPTY_ITEM);
+  const items = useRepeatable('shipment.cargo.items', EMPTY_ITEM);
   const values = (watch('shipment.cargo.items') ?? []) as FieldValues[];
   const volume = (item: FieldValues) => {
     const d = item?.dimensions ?? {};

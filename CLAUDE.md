@@ -1186,4 +1186,33 @@ scheduling and idempotency are built in-house.
       hides the shell and buttons; `page.pdf()` = exactly 1 page; Download PDF = a real `%PDF`
       file named `MirhalGo-MG1001.pdf`. The files are kept in `test-results/` for a visual check.
   - Totals: shared 121, backend 123, frontend 117, E2E 57.
-- Next: B7 (real-backend run of every path, README, `docs/MW_003-PR.md`, deployed preview).
+- B6 committed as `3db811f`.
+- **Phase B7 (2026-11-23): real run + docs done; the deployed preview is still open** (not
+  committed yet).
+  - **Real run through the UI, 14/14** (headless Chromium → `npm run dev:web` with mocks on, like
+    the preview → local API → `mirhalgo_v1`). Script in the scratchpad (`b7-real-check.mjs`); run
+    a copy placed in `frontend/` (`node --env-file=../backend/.env .b7.mjs`) and delete it.
+    Cleanup always runs, even after a crash; test data deleted.
+    - All 8 form paths with DB checks after each submit. Balance 8 → 0, 8 consumptions.
+    - PDF download, another customer → "not found".
+    - Draft on a second device with its file, "Start over" removes both.
+    - Two tabs at balance 1 → one order + "no requests left".
+    - Orphan cleanup.
+    - The script logs in through the UI once. Other "devices" get a Supabase session written to
+      `localStorage` (repeated UI logins hit the 10 / 15 min limit).
+    - Stopping the `dev:api` task leaves its `node` child on :4000: stop it by PID.
+  - **Bug fixed (found by the real run):** a min-1 list shown again (container / truck groups,
+    loose items, products, colours / sizes) got 2 empty rows in development. React StrictMode ran
+    the "append one row" effect twice, and both runs read the stale `fields`. Production was not
+    affected. Now `useRepeatable` (`features/requests/formContext.ts`) checks the live form value.
+    The test harness `renderPortal` now renders in `StrictMode` like `main.tsx`. Regression test:
+    FCL → LCL → FCL leaves exactly one group; it fails without the fix.
+  - Noted, not changed: "Next" during an upload shows "required" for that file until the upload
+    ends. "X of 5" is a fixed total (spec), so it would be wrong after extra grants.
+  - Docs: `docs/MW_003-PR.md` (changes, assumptions 25–29 + plan defaults, differences from the
+    plan, MW_002 conflicts, tests, real run, bugs, open items, demo video notes). README: MW_003
+    summary, `order-attachments`, cleanup schedule, reference data / placeholders, New Request
+    always real with mocks on, security.
+  - Totals: shared 121, backend 123, frontend 118, E2E 57.
+  - **Still open in B7:** the deployed preview (needs the developer's Render + static-host
+    accounts) and Lighthouse there.
