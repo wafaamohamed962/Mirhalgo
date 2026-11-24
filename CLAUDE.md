@@ -1576,6 +1576,38 @@ Status: **plan approved (2026-11-24, answers in the plan). In progress.**
     - the A2 approved-company E2E opens the drawer to log out on mobile.
   - Bundle: main JS +0.2 kB, `CompanyLayout` chunk 8.6 kB.
   - Totals: shared 140, backend 146, frontend 178, E2E 89.
+  - Committed locally as `b669cd3` (tested manually by the developer).
+- **Phase B4 done (2026-11-24): Overview** (`features/companyPortal/pages/OverviewPage.tsx`).
+  - One request (`GET /company/dashboard`, the same query as the sidebar badges); a skeleton
+    while loading, `ErrorState` with retry.
+  - **6 KPI cards** (`<dl>`): submitted, accepted, rejected, completed orders, average
+    response time, on-time rate. Western digits via `formatNumber` (`companyFormat.ts`, the same
+    style as the money format); the unit is small next to the number; null → "—".
+  - **4 blocks** (`<section aria-label>`, a "View all" link where the spec has one):
+    - requests awaiting our offer (≤ 8): stripe, icon tile, id + "جديد", chip, date, and
+      **Submit offer** → `/company/requests?order=<id>&offer=new` (B5 opens the modal from the
+      URL); while suspended, an explanation and disabled buttons;
+    - our latest offers (5): id, order, total (`useOfferTotal`), status;
+    - inquiries awaiting reply (≤ 5): id + New + status, the question (plain text,
+      `line-clamp-2`), order + date → `/company/inquiries?inquiry=<id>`;
+    - recent activity (≤ 10, newest first): an icon per type + text
+      (`companyPortal.activity.*`; privacy on / off) + date and time.
+  - Each block has its own empty state.
+  - Status pills: the customer `StatusPill` / `StatusTone` are now exported
+    (`portal/components/StatusBadge.tsx`) and reused by
+    `companyPortal/components/StatusBadges.tsx` (offer, company order and inquiry statuses).
+  - Mobile fix found on screenshots: ids, chips and "View all" never wrap; the row text keeps
+    10rem (`basis-40`), so actions / totals / statuses move below it on phones.
+  - Router: `COMPANY_SECTIONS` holds a page loader per section (`SectionPage` until built).
+  - Tests:
+    - `test/company/overview.test.tsx` (9): KPIs (18 / 3 / 4 / 2, hours, 94 %), rows +
+      New + Submit offer links, opened items lose New, the block limits, a new offer shows
+      first + the activity text + the KPI, empty states, error + retry, suspended, Arabic
+      (Western digits, دولار / جنيه);
+    - `renderCompany` gained `companyFetch` (prepares mock state as the company);
+    - E2E: Overview in Arabic (6 KPIs, 4 blocks, New, Submit offer → the requests URL, no
+      overflow).
+  - Totals: shared 140, backend 146, frontend 187, E2E 91.
 
 **Open items (MW_004)**
 

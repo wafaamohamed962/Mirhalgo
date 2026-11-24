@@ -34,6 +34,66 @@
       "chinese_sites": "Chinese sites"
     },
     "new": "New",
-    "sectionSoon": "This section is being prepared."
+    "sectionSoon": "This section is being prepared.",
+    "submitOffer": "Submit offer",
+    "submitOfferFor": "Submit an offer on request {{id}}",
+    "onOrder": "On request {{id}}",
+    "suspended": "The platform administration has suspended offer submission for your account. Please contact support.",
+    "offerStatus": {
+      "under_review": "Under review",
+      "accepted": "Accepted",
+      "rejected": "Rejected"
+    },
+    "orderStatus": {
+      "open": "Accepting offers",
+      "awarded": "Offer accepted",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "inquiryStatus": {
+      "awaiting_reply": "Awaiting reply",
+      "replied": "Replied"
+    },
+    "overview": {
+      "kpis": {
+        "offersSubmitted": "Offers submitted",
+        "offersAccepted": "Offers accepted",
+        "offersRejected": "Offers rejected",
+        "completedOrders": "Completed orders",
+        "avgResponseHours": "Average response time",
+        "onTimeRate": "On-time delivery rate"
+      },
+      "viewAll": "View all",
+      "awaitingOffer": {
+        "title": "Requests awaiting our offer",
+        "empty": "No requests are waiting for an offer from us right now."
+      },
+      "latestOffers": {
+        "title": "Our latest offers",
+        "empty": "No offers submitted yet."
+      },
+      "inquiries": {
+        "title": "Inquiries awaiting reply",
+        "empty": "No inquiries are awaiting a reply."
+      },
+      "activity": {
+        "title": "Recent account activity",
+        "empty": "No account activity yet."
+      },
+      "hoursUnit": "h"
+    },
+    "activity": {
+      "offer_submitted": "Offer {{offerId}} was submitted on request {{orderId}}.",
+      "offer_updated": "Offer {{offerId}} on request {{orderId}} was edited.",
+      "offer_accepted": "Offer {{offerId}} on request {{orderId}} was accepted.",
+      "offer_rejected": "Offer {{offerId}} on request {{orderId}} was rejected.",
+      "inquiry_received": "Inquiry {{inquiryId}} arrived on request {{orderId}}.",
+      "inquiry_replied": "A reply was sent to inquiry {{inquiryId}}.",
+      "request_assigned": "The platform administration assigned request {{orderId}} to your company.",
+      "privacy_on": "Hiding our offers from competitor companies was turned on.",
+      "privacy_off": "Hiding our offers from competitor companies was turned off.",
+      "contact_updated": "The contact details were updated.",
+      "password_changed": "The password was changed."
+    }
   }
 }

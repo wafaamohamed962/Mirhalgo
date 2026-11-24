@@ -34,6 +34,66 @@
       "chinese_sites": "المواقع الصينية"
     },
     "new": "جديد",
-    "sectionSoon": "يجري إعداد هذا القسم."
+    "sectionSoon": "يجري إعداد هذا القسم.",
+    "submitOffer": "تقديم عرض",
+    "submitOfferFor": "تقديم عرض على الطلب {{id}}",
+    "onOrder": "على الطلب {{id}}",
+    "suspended": "تقديم العروض موقوف لحسابك من إدارة المنصة. يرجى التواصل مع الدعم.",
+    "offerStatus": {
+      "under_review": "قيد المراجعة",
+      "accepted": "مقبول",
+      "rejected": "مرفوض"
+    },
+    "orderStatus": {
+      "open": "يستقبل العروض",
+      "awarded": "تم قبول عرض",
+      "completed": "مكتمل",
+      "cancelled": "ملغى"
+    },
+    "inquiryStatus": {
+      "awaiting_reply": "بانتظار الرد",
+      "replied": "تم الرد"
+    },
+    "overview": {
+      "kpis": {
+        "offersSubmitted": "العروض المقدمة",
+        "offersAccepted": "العروض المقبولة",
+        "offersRejected": "العروض المرفوضة",
+        "completedOrders": "الطلبات المكتملة",
+        "avgResponseHours": "متوسط وقت الاستجابة",
+        "onTimeRate": "نسبة التسليم في الموعد"
+      },
+      "viewAll": "عرض الكل",
+      "awaitingOffer": {
+        "title": "طلبات بانتظار عرضنا",
+        "empty": "لا توجد طلبات بانتظار عرض منا حاليًا."
+      },
+      "latestOffers": {
+        "title": "أحدث عروضنا",
+        "empty": "لا توجد عروض مقدمة بعد."
+      },
+      "inquiries": {
+        "title": "استفسارات بانتظار الرد",
+        "empty": "لا توجد استفسارات بانتظار الرد."
+      },
+      "activity": {
+        "title": "النشاط الأخير على الحساب",
+        "empty": "لا يوجد نشاط على الحساب بعد."
+      },
+      "hoursUnit": "ساعة"
+    },
+    "activity": {
+      "offer_submitted": "تم تقديم العرض {{offerId}} على الطلب {{orderId}}.",
+      "offer_updated": "تم تعديل العرض {{offerId}} على الطلب {{orderId}}.",
+      "offer_accepted": "تم قبول العرض {{offerId}} على الطلب {{orderId}}.",
+      "offer_rejected": "تم رفض العرض {{offerId}} على الطلب {{orderId}}.",
+      "inquiry_received": "وصل الاستفسار {{inquiryId}} على الطلب {{orderId}}.",
+      "inquiry_replied": "تم إرسال الرد على الاستفسار {{inquiryId}}.",
+      "request_assigned": "أسندت إدارة المنصة الطلب {{orderId}} إلى شركتكم.",
+      "privacy_on": "تم تفعيل إخفاء عروضنا عن الشركات المنافسة.",
+      "privacy_off": "تم إلغاء إخفاء عروضنا عن الشركات المنافسة.",
+      "contact_updated": "تم تحديث بيانات التواصل.",
+      "password_changed": "تم تغيير كلمة المرور."
+    }
   }
 }

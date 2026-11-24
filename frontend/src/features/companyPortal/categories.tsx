@@ -32,7 +32,7 @@ export function CategoryChip({ category }: { category: ServiceCategory }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-3 py-1 text-caption font-semibold',
+        'inline-flex items-center rounded-full px-3 py-1 text-caption font-semibold whitespace-nowrap',
         CATEGORY_LOOK[category].tone,
       )}
     >

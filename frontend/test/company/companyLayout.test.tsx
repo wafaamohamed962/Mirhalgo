@@ -11,7 +11,7 @@ import { AuthContext, type AuthContextValue } from '../../src/features/auth/auth
 import { CategoryChip, CategoryIcon } from '../../src/features/companyPortal/categories';
 import { CATEGORY_LOOK, categoryStripe } from '../../src/features/companyPortal/categoryLook';
 import { clearSeen, useSeen } from '../../src/features/companyPortal/seen';
-import { useOfferTotal } from '../../src/features/companyPortal/useOfferTotal';
+import { useOfferTotal } from '../../src/features/companyPortal/companyFormat';
 import { useMoney } from '../../src/lib/money';
 import { renderCompany, resetCompanyMocks, server, signOut } from './renderCompany';
 

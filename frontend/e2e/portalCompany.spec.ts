@@ -51,6 +51,30 @@ test('Arabic by default: RTL, sidebar on the right with 3 badges (desktop) / a d
   }
 });
 
+test('Overview (Arabic): 6 KPIs, the 4 blocks, Submit offer leads into the requests page', async ({
+  page,
+}) => {
+  await page.goto('/company/overview');
+  const kpis = page.locator('dl > div');
+  await expect(kpis).toHaveCount(6, { timeout: 15_000 });
+  await expect(kpis.filter({ hasText: 'نسبة التسليم في الموعد' })).toContainText('94%');
+  for (const name of [
+    'طلبات بانتظار عرضنا',
+    'أحدث عروضنا',
+    'استفسارات بانتظار الرد',
+    'النشاط الأخير على الحساب',
+  ]) {
+    await expect(page.getByRole('region', { name })).toBeVisible();
+  }
+  const requests = page.getByRole('region', { name: 'طلبات بانتظار عرضنا' });
+  await expect(requests.getByText('جديد').first()).toBeVisible();
+  const submit = requests.getByRole('link', { name: /^تقديم عرض على الطلب MG\d+$/ }).first();
+  const id = (await submit.getAttribute('aria-label'))!.match(/MG\d+/)![0];
+  await submit.click();
+  await expect(page).toHaveURL(`/company/requests?order=${id}&offer=new`);
+  expect(await overflow(page)).toBeLessThanOrEqual(0);
+});
+
 for (const lang of ['ar', 'en'] as const) {
   test(`every section fits the screen (${lang}); Back on every section but Overview`, async ({
     page,

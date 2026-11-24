@@ -28,6 +28,15 @@ const ACCESS_TOKEN = [
   'sig',
 ].join('.');
 
+/** Calls the company mock API as the logged-in company (to prepare a test's state). */
+export async function companyFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await fetch(`http://api.test/api/company${path}`, {
+    ...init,
+    headers: { authorization: `Bearer ${ACCESS_TOKEN}`, 'content-type': 'application/json' },
+  });
+  return ((await response.json()) as { data: T }).data;
+}
+
 /** In-memory localStorage stand-in for the mock state (the page's localStorage stays free). */
 export function memoryStorage(): KeyValueStorage {
   const data = new Map<string, string>();

@@ -24,15 +24,21 @@ const portal = (path: string, title: string, load: () => Promise<{ default: Comp
   handle: { title } satisfies PortalHandle,
 });
 
-/** The 6 company portal sections (MW_004 B11); each title is `companyPortal.nav.<path>`. */
-const COMPANY_SECTIONS = [
-  'overview',
-  'requests',
-  'offers',
-  'competitors',
-  'inquiries',
-  'settings',
-] as const;
+type Load = () => Promise<{ default: ComponentType }>;
+const sectionPlaceholder: Load = () => import('../features/companyPortal/pages/SectionPage');
+
+/**
+ * The 6 company portal sections (MW_004 B11); each title is `companyPortal.nav.<path>`.
+ * Sections whose page is not built yet (B5–B10) show SectionPage (title + Back).
+ */
+const COMPANY_SECTIONS: ReadonlyArray<[path: string, load: Load]> = [
+  ['overview', () => import('../features/companyPortal/pages/OverviewPage')],
+  ['requests', sectionPlaceholder],
+  ['offers', sectionPlaceholder],
+  ['competitors', sectionPlaceholder],
+  ['inquiries', sectionPlaceholder],
+  ['settings', sectionPlaceholder],
+];
 
 /** Routes and access rules (spec 8.2 + MW_002 B9 + MW_004 A1). */
 export const router = createBrowserRouter([
@@ -156,10 +162,7 @@ export const router = createBrowserRouter([
                   Component: (await import('../features/companyPortal/layout/CompanyLayout'))
                     .CompanyLayout,
                 }),
-                // the section pages arrive in B4–B10; until then, SectionPage (title + Back)
-                children: COMPANY_SECTIONS.map((path) =>
-                  portal(path, path, () => import('../features/companyPortal/pages/SectionPage')),
-                ),
+                children: COMPANY_SECTIONS.map(([path, load]) => portal(path, path, load)),
               },
             ],
           },
