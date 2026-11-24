@@ -26,7 +26,7 @@ const block = async (name: string) =>
   within(await screen.findByRole('region', { name }, { timeout: 5000 }));
 const kpi = (label: string) => screen.getByText(label).closest('div')!;
 
-describe('Overview', () => {
+describe('Overview', { timeout: 20_000 }, () => {
   it('6 KPI cards computed from the data (Western digits, hours, percent)', async () => {
     renderOverview();
     await block('Requests awaiting our offer');

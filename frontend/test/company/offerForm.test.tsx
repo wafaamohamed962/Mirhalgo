@@ -29,7 +29,7 @@ const offerForm = async (name: string) => {
 };
 const ourOffers = () => companyFetch<CompanyOffer[]>('/offers');
 
-describe('offer form', () => {
+describe('offer form', { timeout: 20_000 }, () => {
   it('domestic (EGP only): total required, Arabic digits, sent → under review, the lists update', async () => {
     const user = userEvent.setup();
     const request = await openRequest('domestic_land');
@@ -152,7 +152,7 @@ describe('offer form', () => {
   });
 });
 
-describe('edit offer', () => {
+describe('edit offer', { timeout: 20_000 }, () => {
   it('prefilled; saved changes keep the offer under review', async () => {
     const user = userEvent.setup();
     const { OfferModal } = await import('../../src/features/companyPortal/offers/OfferModal');

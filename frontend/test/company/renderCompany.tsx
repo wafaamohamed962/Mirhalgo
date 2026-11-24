@@ -1,5 +1,5 @@
 import { StrictMode, type ReactNode } from 'react';
-import { render } from '@testing-library/react';
+import { configure, render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createMemoryRouter, Navigate, RouterProvider } from 'react-router';
 import { setupServer } from 'msw/node';
@@ -18,6 +18,11 @@ import { createCompanyHandlers } from '../../src/mocks/company/handlers';
  */
 
 export const ACCOUNT_ID = 'company-a';
+
+// The company UI tests are long flows (modals, typing, submit, cache refresh). Under the full
+// parallel run the 1 s default wait was too short (flaky); this applies to the company test
+// files only (each test file has its own module scope).
+configure({ asyncUtilTimeout: 5000 });
 export const server = setupServer();
 
 const b64 = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');

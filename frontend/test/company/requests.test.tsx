@@ -21,7 +21,7 @@ const renderRequests = (path = '/company/requests') =>
 const table = async () => within(await screen.findByRole('table', {}, { timeout: 5000 }));
 const row = async (id: string) => within((await table()).getByText(id).closest('tr')!);
 
-describe('Available requests', () => {
+describe('Available requests', { timeout: 20_000 }, () => {
   it('assigned requests, newest first, with every column', async () => {
     const requests = await companyFetch<CompanyRequest[]>('/requests');
     renderRequests();

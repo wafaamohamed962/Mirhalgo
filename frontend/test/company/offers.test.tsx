@@ -21,7 +21,7 @@ const groups = async () => {
 };
 const card = (id: string) => within(screen.getByText(id).closest('li')!);
 
-describe('Our submitted offers', () => {
+describe('Our submitted offers', { timeout: 20_000 }, () => {
   it('stats bar: total, under review, accepted, rejected', async () => {
     renderOffers();
     await groups();
