@@ -1328,6 +1328,13 @@ scheduling and idempotency are built in-house.
   - **Type-check note:** `npx tsc --noEmit -p .` in `frontend/` checks nothing (the root
     tsconfig only has references). Use `npx tsc -b` (what `npm run build` runs).
 
+## Before launch (checklist)
+
+- [ ] **Remove the demo company from production:**
+      `npm run seed:demo-company -w backend -- --remove --yes`, with the production env. Since
+      2026-11-24 the developer has decided to seed it into `mirhalgo_v1`, the only Supabase
+      project (MW_004 A3). Production keeps it only if the Team Lead approves.
+
 ## 16. MW_004: Company portal (frontend) + demo company login
 
 **Spec:** `docs/MW_004.md` (copied from the developer's spec folder on 2026-11-24). The
