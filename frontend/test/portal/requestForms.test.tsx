@@ -42,8 +42,10 @@ function serveDraft(formVersion: string, payload: Record<string, unknown>) {
   );
 }
 
+// the first step waits for the lazy form chunk: slower than findBy's 1 s default while the
+// whole suite runs in parallel
 const stepIs = (n: number, total: number, name: string) =>
-  main().findByText(`Step ${n} of ${total}: ${name}`);
+  main().findByText(`Step ${n} of ${total}: ${name}`, {}, { timeout: 5000 });
 
 /** Types `option` in a combobox and picks it (ports / airports also show their code). */
 async function pick(user: UserEvent, label: RegExp, option: string) {
@@ -92,7 +94,8 @@ async function fillDomestic(user: UserEvent) {
   await stepIs(6, 6, 'Review');
 }
 
-describe('New Request forms (B5)', () => {
+// long multi-step flows: more than the 5 s default under the full parallel run
+describe('New Request forms (B5)', { timeout: 20_000 }, () => {
   it('domestic LTL end to end: review summary, confirmation, idempotent submit, success page', async () => {
     const user = userEvent.setup();
     await fillDomestic(user);

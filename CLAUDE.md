@@ -1352,6 +1352,8 @@ Status: **plan approved (2026-11-24, answers in the plan). In progress.**
 
 **Rules to keep in mind**
 
+- **Git: commit locally after each phase. Do NOT push to GitHub and do NOT open a PR until the
+  developer says so** (they push everything at the end).
 - **The seed script must NOT be run against `mirhalgo_v1` until the developer confirms**
   (it is the only Supabase project). `DEMO_COMPANY_PASSWORD` comes from `backend/.env`: never
   printed, never committed.
@@ -1405,3 +1407,48 @@ Status: **plan approved (2026-11-24, answers in the plan). In progress.**
     - a customer opening `/company/*` lands on New Request.
   - The long international E2E got `test.slow()`: it timed out under the full parallel run.
   - Totals: shared 121, backend 131, frontend 149, E2E 81.
+  - Committed locally as `3b8e3e7` (tested manually by the developer).
+- **Phase A3 done (2026-11-24): demo company seed script. Written and tested, NOT run against
+  `mirhalgo_v1`** (waiting for the developer's OK).
+  - `backend/src/services/demoCompany.ts` + `scripts/seedDemoCompany.ts` →
+    `npm run seed:demo-company -w backend` (from `dist/`, so build first).
+  - It uses the same code as a real company sign-up:
+    - `companyRegistrationSchema` (password policy, phone, EG legal-number rules);
+    - two placeholder PDFs through `prepareFiles`;
+    - `createRegistration` → the RPC (now exported from `services/companies.ts`);
+    - then `confirmEmail` and `transition_application_status` → `approved` (actor
+      `system`, note "demo seed (MW_004)");
+    - no email is sent.
+  - The Arabic demo data lives in `backend/src/seed/demoCompany.json`: no Arabic is allowed in
+    backend code, and the file is covered by the `arabicCopy` deny-list.
+  - The alias "الناقل الذهبي" has no DB column; it lives in the Part B mock identity (plan Q4).
+  - Safety:
+    - without `--yes` it is a dry run that never reads or writes the DB;
+    - it prints the project ref;
+    - `NODE_ENV=production` is refused unless `--allow-production`;
+    - an existing demo account is only re-approved; the password changes only with
+      `--reset-password`;
+    - another account on that email (a customer, or a company with other legal numbers) is
+      never touched;
+    - a failure after the user is created deletes the user and its files;
+    - `--remove` deletes only the demo company;
+    - output shows the masked email only, never the password.
+  - Env: `DEMO_COMPANY_PASSWORD` (required to seed), optional `DEMO_COMPANY_EMAIL` /
+    `_PHONE` / `_CR` / `_TAX` (in `.env.example`, empty). Defaults:
+    `demo.company@mirhalgo.com`, `+201000000001`, `9990000001`, `999000001`.
+  - Tests: `backend/test/demoCompany.test.ts` (15). Also checked offline: the built script's
+    dry run and its error exits, with fake env, no `.env` and a non-existent project.
+  - README: "Demo company account (MW_004)" under Supabase setup.
+
+**Open items (MW_004)**
+
+- **Flaky E2E, investigate later:** `e2e/auth.spec.ts` "customer sign up → OTP → logged in →
+  customer portal → logout" (desktop) failed once with a `toBeVisible` timeout during a full
+  parallel run on 2026-11-24, then passed 6 of 6 times alone and in the next full run (1 failure in
+  7 runs). Probably a 5 s default wait under load (lazy chunks + session), like the redirect checks
+  fixed in MW_003.
+- **Load-related unit test flakiness (fixed in A3):** in `test/portal/requestForms.test.tsx` two
+  tests failed every time in the full parallel run, and passed 3 of 3 times alone. The first step
+  waits for the lazy form chunk, which took longer than `findBy`'s 1 s default. `stepIs` now
+  waits 5 s, and the describe block has a 20 s timeout. If another test flakes only in the full
+  run, check its waits first.

@@ -124,6 +124,42 @@ Run it by hand with `npm run cleanup -w backend` (companies only:
 `npm run cleanup:companies -w backend`). On a host that sleeps (Render free), also schedule
 `npm run cleanup -w backend` as a cron job.
 
+### Demo company account (MW_004)
+
+One approved demo company lets the team log in to the company portal from the normal `/login`
+page. **Development and staging only.** Production gets it only with the Team Lead's approval.
+
+- Company: "أليكس إكسبريس للشحن الدولي واللوجستيات", Egypt / Alexandria, international
+  shipping and customs.
+- Email `demo.company@mirhalgo.com`, phone `+201000000001`, commercial register `9990000001`,
+  tax number `999000001`. These are clearly fake values, but they are unique in the database:
+  override them with `DEMO_COMPANY_EMAIL` / `_PHONE` / `_CR` / `_TAX` if needed.
+- The password comes from **`DEMO_COMPANY_PASSWORD`** in `backend/.env`. It must meet the sign-up
+  password policy. Share it with the team privately and **never commit it**. The script never
+  prints it.
+
+The script uses the same code as a real company sign-up (shared schema, placeholder PDF
+documents checked like uploads, the `create_company_registration` function). It then verifies
+the email and moves the application to `approved` (actor `system`). It sends no email.
+
+```bash
+npm run build -w shared && npm run build -w backend   # the script runs from dist/
+npm run seed:demo-company -w backend                  # dry run: validates, touches nothing
+npm run seed:demo-company -w backend -- --yes         # creates (or re-approves) the account
+npm run seed:demo-company -w backend -- --yes --reset-password   # also sets the password again
+npm run seed:demo-company -w backend -- --remove --yes            # deletes it (rows + files)
+```
+
+- Without `--yes` it is a dry run: nothing is read from or written to the database.
+- It always prints the target Supabase project.
+- It refuses `NODE_ENV=production` unless `--allow-production` is given.
+- Running it again is safe:
+  - an existing demo account is only re-approved;
+  - its password changes only with `--reset-password`;
+  - an email that belongs to any other account (a customer, or a company with other legal
+    numbers) is never changed.
+- `--remove` deletes only that demo company.
+
 ## 4. Run (development)
 
 ```bash

@@ -43,7 +43,7 @@ function uniqueConflict(error: unknown): Conflict | null {
   return null;
 }
 
-async function assertLegalNumbersFree(app: CompanyRegistration, ignoreCompanyId?: string) {
+export async function assertLegalNumbersFree(app: CompanyRegistration, ignoreCompanyId?: string) {
   // normalised by the shared schema: digits, or A-Z/0-9/hyphen (UAE): safe inside the filter
   const { data, error } = await db
     .from('companies')
@@ -127,8 +127,11 @@ async function rollback(userId: string, stored: StoredFile[], ctx: Ctx, reason: 
 type CreateResult =
   { ok: true; userId: string; reference: string } | { ok: false; conflict: Conflict };
 
-/** Auth user → files → all rows in one transaction. Anything partial is rolled back. */
-async function createRegistration(
+/**
+ * Auth user → files → all rows in one transaction. Anything partial is rolled back. The
+ * application starts in `pending_verification` (the demo seed, MW_004 A3, moves it on).
+ */
+export async function createRegistration(
   app: CompanyRegistration,
   files: PreparedFile[],
   ctx: Ctx,
@@ -170,7 +173,11 @@ async function replaceablePendingRegistration(userId: string): Promise<StoredFil
     .maybeSingle();
   if (error) throw error;
   if (application?.status !== 'pending_verification') return null;
+  return listCompanyFiles(userId);
+}
 
+/** The stored documents of a company (bucket + path), to delete them. */
+async function listCompanyFiles(userId: string): Promise<StoredFile[]> {
   const docs = await db
     .from('company_documents')
     .select('storage_bucket, storage_path')
@@ -180,10 +187,15 @@ async function replaceablePendingRegistration(userId: string): Promise<StoredFil
 }
 
 /** Deletes an application completely: files first, then the user (rows cascade). */
-async function deleteRegistration(userId: string, files: StoredFile[]): Promise<boolean> {
+export async function deleteRegistration(userId: string, files: StoredFile[]): Promise<boolean> {
   if (!(await removeFiles(files))) return false; // keep the rows so a later run can retry
   await deleteUser(userId);
   return true;
+}
+
+/** Deletes a company with all its files (the demo seed's --remove, MW_004 A3). */
+export async function deleteCompany(userId: string): Promise<boolean> {
+  return deleteRegistration(userId, await listCompanyFiles(userId));
 }
 
 /** POST /api/companies/register. Returns the same neutral answer as customer signup. */

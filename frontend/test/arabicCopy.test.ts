@@ -20,6 +20,7 @@ const ARABIC_SOURCES = [
   'frontend/index.html',
   'frontend/src/mocks/fixtures.ts',
   'backend/src/i18n/ar.json',
+  'backend/src/seed/demoCompany.json',
 ];
 
 /**
