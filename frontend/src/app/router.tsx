@@ -25,19 +25,15 @@ const portal = (path: string, title: string, load: () => Promise<{ default: Comp
 });
 
 type Load = () => Promise<{ default: ComponentType }>;
-const sectionPlaceholder: Load = () => import('../features/companyPortal/pages/SectionPage');
 
-/**
- * The 6 company portal sections (MW_004 B11); each title is `companyPortal.nav.<path>`.
- * Sections whose page is not built yet (B5–B10) show SectionPage (title + Back).
- */
+/** The 6 company portal sections (MW_004 B11); each title is `companyPortal.nav.<path>`. */
 const COMPANY_SECTIONS: ReadonlyArray<[path: string, load: Load]> = [
   ['overview', () => import('../features/companyPortal/pages/OverviewPage')],
   ['requests', () => import('../features/companyPortal/pages/RequestsPage')],
   ['offers', () => import('../features/companyPortal/pages/OffersPage')],
   ['competitors', () => import('../features/companyPortal/pages/CompetitorsPage')],
   ['inquiries', () => import('../features/companyPortal/pages/InquiriesPage')],
-  ['settings', sectionPlaceholder],
+  ['settings', () => import('../features/companyPortal/pages/SettingsPage')],
 ];
 
 /** Routes and access rules (spec 8.2 + MW_002 B9 + MW_004 A1). */

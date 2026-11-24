@@ -8,7 +8,12 @@ import { vi } from 'vitest';
 import { Toaster } from '../../src/components/ui/Toast';
 import { AuthContext, type AuthContextValue } from '../../src/features/auth/authContext';
 import { CompanyLayout } from '../../src/features/companyPortal/layout/CompanyLayout';
-import SectionPage from '../../src/features/companyPortal/pages/SectionPage';
+import CompetitorsPage from '../../src/features/companyPortal/pages/CompetitorsPage';
+import InquiriesPage from '../../src/features/companyPortal/pages/InquiriesPage';
+import OffersPage from '../../src/features/companyPortal/pages/OffersPage';
+import OverviewPage from '../../src/features/companyPortal/pages/OverviewPage';
+import RequestsPage from '../../src/features/companyPortal/pages/RequestsPage';
+import SettingsPage from '../../src/features/companyPortal/pages/SettingsPage';
 import { createCompanyStore, type KeyValueStorage } from '../../src/mocks/company/db';
 import { createCompanyHandlers } from '../../src/mocks/company/handlers';
 
@@ -87,9 +92,17 @@ const company: AuthContextValue = {
   signedOut: false,
 };
 
-const SECTIONS = ['overview', 'requests', 'offers', 'competitors', 'inquiries', 'settings'];
+/** The real section pages (app/router.tsx loads the same ones lazily). */
+const PAGES: Record<string, ReactNode> = {
+  overview: <OverviewPage />,
+  requests: <RequestsPage />,
+  offers: <OffersPage />,
+  competitors: <CompetitorsPage />,
+  inquiries: <InquiriesPage />,
+  settings: <SettingsPage />,
+};
 
-/** The company portal at `path`; `pages` replaces a section's placeholder with its page. */
+/** The company portal at `path`; `pages` can replace a section's page (e.g. a lone modal). */
 export function renderCompany(path: string, pages: Record<string, ReactNode> = {}) {
   seedSession();
   const router = createMemoryRouter(
@@ -99,9 +112,9 @@ export function renderCompany(path: string, pages: Record<string, ReactNode> = {
         element: <CompanyLayout />,
         children: [
           { index: true, element: <Navigate to="overview" replace /> },
-          ...SECTIONS.map((section) => ({
+          ...Object.keys(PAGES).map((section) => ({
             path: section,
-            element: pages[section] ?? <SectionPage />,
+            element: pages[section] ?? PAGES[section],
             handle: { title: section },
           })),
         ],

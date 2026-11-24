@@ -54,6 +54,12 @@ export function assertConfigured(missingKeys: string[]) {
 export const flags = {
   useMocks: import.meta.env.VITE_USE_MOCKS === 'true',
   showCompanyIdentity: import.meta.env.VITE_SHOW_COMPANY_IDENTITY !== 'false',
+  /**
+   * Company portal demo tools (MW_004 spec B1/B9, plan Q11): "Reset demo data" and the
+   * suspension switch. Development, or a staging / preview build with VITE_DEMO_TOOLS=true;
+   * never in a production build without it.
+   */
+  demoTools: import.meta.env.DEV || import.meta.env.VITE_DEMO_TOOLS === 'true',
 };
 
 /** One clear console message at startup naming every missing variable. */
