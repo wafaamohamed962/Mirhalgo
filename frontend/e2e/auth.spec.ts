@@ -401,6 +401,7 @@ async function logIn(page: Page) {
 
 test('an approved company logs in from /login → Overview; customer URLs and the status page bounce; logout', async ({
   page,
+  isMobile,
 }) => {
   await mockSupabase(page, 'company', 'approved');
   await mockApi(page, {
@@ -425,7 +426,9 @@ test('an approved company logs in from /login → Overview; customer URLs and th
   await page.goto('/company/offers');
   await expect(page).toHaveURL('/company/offers');
 
-  await page.getByRole('button', { name: 'Log out' }).click();
+  // logout: in the sidebar (desktop) or the menu drawer (mobile, MW_004 B2)
+  if (isMobile) await page.getByRole('button', { name: 'Open the menu' }).click();
+  await page.getByRole('button', { name: 'Log out' }).filter({ visible: true }).click();
   await expect(page).toHaveURL('/');
   await page.goto('/company/overview');
   await expect(page).toHaveURL('/login', { timeout: 15_000 });

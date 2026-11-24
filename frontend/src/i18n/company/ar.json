@@ -1,0 +1,39 @@
+{
+  "companyPortal": {
+    "brand": "بوابة الشركات الشريكة",
+    "brandLine": "مرحال جو — بوابة الشركات الشريكة",
+    "mainNav": "بوابة الشركات",
+    "skipToContent": "انتقل إلى المحتوى",
+    "collapseSidebar": "طي القائمة الجانبية",
+    "expandSidebar": "توسيع القائمة الجانبية",
+    "openMenu": "فتح القائمة",
+    "menu": "القائمة",
+    "welcome": "مرحبًا بكم، {{name}}",
+    "accountStatus": {
+      "approved": "حساب مقبول"
+    },
+    "nav": {
+      "overview": "نظرة عامة",
+      "requests": "الطلبات المتاحة",
+      "offers": "عروضنا المقدمة",
+      "competitors": "عروض المنافسين",
+      "inquiries": "استفسارات العملاء",
+      "settings": "إعدادات الحساب"
+    },
+    "badges": {
+      "requests": "طلبات لم نقدم عليها عرضًا",
+      "offers": "عروض قيد المراجعة",
+      "inquiries": "استفسارات بانتظار الرد"
+    },
+    "categories": {
+      "sea": "الشحن البحري والتخليص الجمركي",
+      "international_land": "النقل البري الدولي",
+      "domestic_land": "النقل البري الداخلي",
+      "air": "الشحن الجوي",
+      "shein": "شي إن",
+      "chinese_sites": "المواقع الصينية"
+    },
+    "new": "جديد",
+    "sectionSoon": "يجري إعداد هذا القسم."
+  }
+}

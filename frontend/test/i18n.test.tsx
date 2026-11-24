@@ -7,6 +7,8 @@ import ar from '../src/i18n/ar.json';
 import en from '../src/i18n/en.json';
 import portalAr from '../src/i18n/portal/ar.json';
 import portalEn from '../src/i18n/portal/en.json';
+import companyAr from '../src/i18n/company/ar.json';
+import companyEn from '../src/i18n/company/en.json';
 
 type Tree = { [key: string]: string | Tree };
 
@@ -22,6 +24,10 @@ describe('i18n', () => {
 
   it('the customer-portal bundles (portal/*.json) have the same keys too', () => {
     expect(keys(portalAr).sort()).toEqual(keys(portalEn).sort());
+  });
+
+  it('the company-portal bundles (company/*.json) have the same keys too', () => {
+    expect(keys(companyAr).sort()).toEqual(keys(companyEn).sort());
   });
 
   it('has a translation for every shared validation message and API error code', async () => {

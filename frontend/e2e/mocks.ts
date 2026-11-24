@@ -194,6 +194,17 @@ export async function setLanguage(page: Page, language: 'ar' | 'en') {
   await page.addInitScript((lang) => localStorage.setItem('mirhalgo.lang', lang), language);
 }
 
+/**
+ * GET /api/me (the REAL API, MW_004 A1) on the build with MSW on: MSW does not handle it, so
+ * it goes through the service worker and is routed at the context level.
+ */
+export async function mockMeApi(page: Page, role: Role, companyStatus: CompanyStatus | null) {
+  await page.context().route('http://api.test/api/me', async (route) => {
+    if (route.request().method() === 'OPTIONS') return json(route, 204, {});
+    return json(route, 200, ok({ id: USER.id, role, emailVerified: true, companyStatus }));
+  });
+}
+
 /** What the New Request forms sent to the (mocked) real API, for assertions. */
 export type PortalApiState = {
   balance: { remaining: number; total: number };

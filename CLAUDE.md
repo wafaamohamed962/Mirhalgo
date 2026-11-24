@@ -1523,6 +1523,59 @@ Status: **plan approved (2026-11-24, answers in the plan). In progress.**
   - Fixed the B1 SHEIN test (it used `cartUrl` instead of `cartLink`, so the order never
     really parsed).
   - Totals: shared 140, backend 146, frontend 166, E2E 81.
+  - Committed locally as `12761f4`. **Decision (developer, 2026-11-24): editing an offer is
+    blocked too while offer submission is suspended.**
+- **Phase B3 done (2026-11-24): company portal shell.**
+  - **Shared portal frame** (`components/portal/`): `PortalShell` (skip link, collapsible
+    sidebar, sticky top bar, `main`), `SidebarLink` / `SidebarLogout`, `PortalDrawer`
+    (mobile, focus trap), `useSidebarCollapsed`, `usePortalTitle(navPrefix, brandKey)`.
+    The customer `PortalLayout` now uses them with the same markup and classes; its bottom
+    nav is unchanged. `PortalHandle` lives in `usePortalTitle` (re-exported by
+    `portal/layout/nav.ts`).
+  - **Accessibility fix (both portals):** a sidebar link with a count badge had no spaces in
+    its accessible name ("Available requests5requests…"). It now has an explicit
+    `aria-label`: label + count + meaning (it starts with the visible label).
+  - `features/companyPortal/layout/CompanyLayout`:
+    - sidebar: brand line, the 6 sections (`layout/nav.ts`), 3 badges from
+      `GET /company/dashboard` counts, and the company block (one-letter avatar from the
+      legal name, alias or legal name, login email) + Logout;
+    - top bar: a menu button (mobile), "مرحبًا بكم، {alias}", the "حساب مقبول" status from the
+      real `companyStatus` (blue-700 text 6.1:1 + a green check), `LanguageSwitch`;
+    - mobile: `PortalDrawer` with the sections, the status, the company block and Logout (no
+      bottom nav).
+  - Routes: `/company/*` sections under `CompanyLayout` with `handle.title` = the section id.
+    They render `pages/SectionPage` (header + "being prepared") until B4–B10. The A2
+    placeholder page is removed, and its copy moved to the company chunk.
+  - `components/common.tsx`: `CompanyPageHeader` (Back on every section but Overview, h1,
+    note, actions) and `NewBadge`.
+  - **Category system:** `categoryLook.ts` (`CATEGORY_LOOK` icon / tone / stripe,
+    `categoryStripe`) + `categories.tsx` (`CategoryIcon` tile, `CategoryChip`).
+    Icons: Ship, Truck, Van, Plane, ShoppingBag, Globe. **New tokens** (approved):
+    `amber-50/100/300/800`, `sky-50/800`, `red-50/700`, `gold-500` in `tokens.css` +
+    `@theme inline`. Chip text contrast is 5.9–7.1:1; the stripes are decorative.
+  - `seen.ts`: `useSeen()` → `isNew` / `markSeen` per account
+    (`mirhalgo.companySeen.v1.<userId>`, `useSyncExternalStore`, other tabs too). An offer is
+    stored with its status (a status change → new again). `clearSeen` is for the reset.
+  - **Money:** `lib/money.ts` `useMoney({ format })`. `'locale'` is the default and is
+    unchanged for the customer portal; `'plain'` gives Western digits + the currency name
+    (`money.USD|EUR|EGP`: دولار / يورو / جنيه). `useOfferTotal()` →
+    "1,000 دولار + 38,000 جنيه".
+  - Service layer `services/api/company.ts` (`companyApi`, incl. `demo.*`) +
+    `companyQueries.ts` (`companyKeys`, all under `['company']`, plus the query hooks).
+  - Copy: `i18n/company/{ar,en}.json`, its own chunk loaded by the layout; covered by the
+    key-parity and `arabicCopy` tests.
+  - Tests:
+    - `test/company/renderCompany.tsx` (harness: real layout over the mock API, StrictMode);
+    - `companyLayout.test.tsx` (12): sidebar order + badges, welcome / status / language /
+      logout, Back rules + document title, drawer + Esc, Arabic RTL, categories (only theme
+      colours), New store, money formats;
+    - E2E `e2e/portalCompany.spec.ts` (portal build, desktop + 360 px): Arabic RTL sidebar on
+      the right with badges / the mobile drawer, all 6 sections without overflow in AR + EN,
+      Back (previous section, else Overview), a customer URL bounces;
+    - `mockMeApi` in `e2e/mocks.ts`;
+    - the A2 approved-company E2E opens the drawer to log out on mobile.
+  - Bundle: main JS +0.2 kB, `CompanyLayout` chunk 8.6 kB.
+  - Totals: shared 140, backend 146, frontend 178, E2E 89.
 
 **Open items (MW_004)**
 

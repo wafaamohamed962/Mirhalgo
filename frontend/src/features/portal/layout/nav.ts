@@ -25,5 +25,5 @@ export const NOTIFICATIONS_NAV: PortalNavItem = {
   icon: Bell,
 };
 
-/** Route `handle` of every portal page: the top-bar title (`portal.nav.<title>` or a full key). */
-export type PortalHandle = { title: string };
+/** Route `handle` of every portal page (shared with the company portal). */
+export type { PortalHandle } from '../../../components/portal/usePortalTitle';

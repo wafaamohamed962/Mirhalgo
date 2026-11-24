@@ -17,14 +17,14 @@ const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({
   Component: (await load()).default,
 });
 
-/** A customer-portal page: lazy chunk + its top-bar title (MW_002 B9). */
+/** A portal page (customer MW_002 B9, company MW_004): lazy chunk + its title. */
 const portal = (path: string, title: string, load: () => Promise<{ default: ComponentType }>) => ({
   path,
   lazy: page(load),
   handle: { title } satisfies PortalHandle,
 });
 
-/** The 6 company portal sections (MW_004 B11). Their pages come in Part B. */
+/** The 6 company portal sections (MW_004 B11); each title is `companyPortal.nav.<path>`. */
 const COMPANY_SECTIONS = [
   'overview',
   'requests',
@@ -151,12 +151,16 @@ export const router = createBrowserRouter([
             element: <CompanyStatusRoute approved />,
             children: [
               { index: true, element: <Navigate to="overview" replace /> },
-              ...COMPANY_SECTIONS.map((path) => ({
-                path,
-                lazy: page(
-                  () => import('../features/companyPortal/pages/CompanyPortalPlaceholder'),
+              {
+                lazy: async () => ({
+                  Component: (await import('../features/companyPortal/layout/CompanyLayout'))
+                    .CompanyLayout,
+                }),
+                // the section pages arrive in B4–B10; until then, SectionPage (title + Back)
+                children: COMPANY_SECTIONS.map((path) =>
+                  portal(path, path, () => import('../features/companyPortal/pages/SectionPage')),
                 ),
-              })),
+              },
             ],
           },
           {

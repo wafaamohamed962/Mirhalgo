@@ -1,0 +1,39 @@
+{
+  "companyPortal": {
+    "brand": "Partner Companies Portal",
+    "brandLine": "MirhalGo — Partner Companies Portal",
+    "mainNav": "Company portal",
+    "skipToContent": "Skip to content",
+    "collapseSidebar": "Collapse the sidebar",
+    "expandSidebar": "Expand the sidebar",
+    "openMenu": "Open the menu",
+    "menu": "Menu",
+    "welcome": "Welcome, {{name}}",
+    "accountStatus": {
+      "approved": "Approved account"
+    },
+    "nav": {
+      "overview": "Overview",
+      "requests": "Available requests",
+      "offers": "Our submitted offers",
+      "competitors": "Competitor offers",
+      "inquiries": "Client inquiries",
+      "settings": "Account settings"
+    },
+    "badges": {
+      "requests": "requests without our offer",
+      "offers": "offers under review",
+      "inquiries": "inquiries awaiting reply"
+    },
+    "categories": {
+      "sea": "Sea freight & customs",
+      "international_land": "International land",
+      "domestic_land": "Domestic land",
+      "air": "Air freight",
+      "shein": "SHEIN",
+      "chinese_sites": "Chinese sites"
+    },
+    "new": "New",
+    "sectionSoon": "This section is being prepared."
+  }
+}

@@ -418,6 +418,11 @@
       "dismiss": "Dismiss this notice"
     }
   },
+  "money": {
+    "USD": "USD",
+    "EUR": "EUR",
+    "EGP": "EGP"
+  },
   "options": {
     "governorate": {
       "cairo": "Cairo",
@@ -680,12 +685,6 @@
       "approved": "Your company is approved. The company portal is coming soon.",
       "rejected": "Unfortunately your application was not approved. We emailed you the details.",
       "changes_requested": "Our team asked for some changes. We emailed you the details."
-    }
-  },
-  "companyPortal": {
-    "placeholder": {
-      "title": "Partner Companies Portal",
-      "text": "The portal sections are being prepared."
     }
   }
 }
