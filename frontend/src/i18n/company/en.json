@@ -208,6 +208,21 @@
       "rejectionReason": "Rejection reason",
       "empty": "You have not submitted any offers yet.",
       "noResults": "No offers match your search or filter."
+    },
+    "competitors": {
+      "note": "Competitor names are hidden, and companies that chose to hide their offers are not shown.",
+      "columns": {
+        "order": "Order ID",
+        "service": "Service",
+        "ours": "Our offer(s)",
+        "competitors": "Visible competitor offers",
+        "actions": "Compare"
+      },
+      "noOffer": "We have not submitted an offer yet",
+      "hidden": "+ Companies hiding their offers: {{count}}",
+      "compare": "Compare",
+      "compareFor": "Compare the prices on request {{id}}",
+      "empty": "No other company has offered on your requests yet."
     }
   }
 }

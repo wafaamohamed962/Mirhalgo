@@ -35,7 +35,7 @@ const COMPANY_SECTIONS: ReadonlyArray<[path: string, load: Load]> = [
   ['overview', () => import('../features/companyPortal/pages/OverviewPage')],
   ['requests', () => import('../features/companyPortal/pages/RequestsPage')],
   ['offers', () => import('../features/companyPortal/pages/OffersPage')],
-  ['competitors', sectionPlaceholder],
+  ['competitors', () => import('../features/companyPortal/pages/CompetitorsPage')],
   ['inquiries', sectionPlaceholder],
   ['settings', sectionPlaceholder],
 ];
