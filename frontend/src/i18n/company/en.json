@@ -142,6 +142,48 @@
         "date": "Date",
         "total": "Total"
       }
+    },
+    "offerForm": {
+      "title": "Submit an offer on request {{id}}",
+      "editTitle": "Edit offer {{id}}",
+      "intro": "Every template field is optional; the total cost is required. You can type the numbers in Arabic or English digits.",
+      "editNote": "An offer can be edited while it is under review, and it stays under review after saving.",
+      "optional": "(optional)",
+      "amount": "Amount",
+      "currency": "Currency",
+      "daysHint": "In days, from 1 to 365.",
+      "total": "Total cost",
+      "totalDualHint": "Enter the amount in a foreign currency, in Egyptian pounds, or both.",
+      "totalEgpHint": "Enter the total cost in Egyptian pounds.",
+      "foreignAmount": "Amount in a foreign currency",
+      "egpAmount": "Amount in Egyptian pounds",
+      "send": "Send offer",
+      "saveEdit": "Save changes",
+      "submitted": "Offer {{id}} was sent and is now under review.",
+      "updated": "The changes to offer {{id}} were saved.",
+      "leaveTitle": "Close the offer form?",
+      "leaveText": "The details you entered in this offer will not be saved.",
+      "fields": {
+        "oceanFreight": "Ocean freight",
+        "thc": "Terminal handling (THC)",
+        "blFee": "B/L fee",
+        "telexRelease": "Telex release",
+        "transitDays": "Transit time",
+        "freeDays": "Free time",
+        "departureDate": "Departure date",
+        "vehicleType": "Vehicle type",
+        "transportCost": "Transport cost",
+        "loadingDate": "Loading date",
+        "borderCrossing": "Border crossing",
+        "notes": "Notes",
+        "airFreightCost": "Air freight cost",
+        "airline": "Airline",
+        "flightDate": "Flight date",
+        "extraCharges": "Extra charges",
+        "weightCost": "Weight cost",
+        "productPurchaseCost": "Product purchase cost",
+        "shippingDays": "Shipping duration"
+      }
     }
   }
 }

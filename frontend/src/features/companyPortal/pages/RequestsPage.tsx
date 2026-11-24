@@ -15,6 +15,7 @@ import { CompanyPageHeader, NewBadge } from '../components/common';
 import { OrderDetailsModal } from '../components/OrderDetailsModal';
 import { SearchBox } from '../components/SearchBox';
 import { CompanyOrderStatusBadge } from '../components/StatusBadges';
+import { OfferModalRoute } from '../offers/OfferModalRoute';
 import { useSeen } from '../seen';
 import { useUrlModals } from '../urlModal';
 
@@ -194,6 +195,7 @@ export default function RequestsPage() {
   const { params, open, close } = useUrlModals();
   const orderId = params.get('order');
   const compareId = params.get('compare');
+  const offerFor = params.get('offer') === 'new' ? orderId : null;
 
   // search by order id or service type (the category name in the current language)
   const query = normalizeSearch(search);
@@ -240,13 +242,14 @@ export default function RequestsPage() {
         </QueryState>
       </div>
 
-      {orderId && (
+      {orderId && !offerFor && (
         <OrderDetailsModal
           orderId={orderId}
           onClose={() => close(['order'])}
           onSubmitOffer={suspended ? undefined : () => open({ offer: 'new' })}
         />
       )}
+      {offerFor && <OfferModalRoute orderId={offerFor} onClose={() => close(['order', 'offer'])} />}
       {compareId && <ComparisonModal orderId={compareId} onClose={() => close(['compare'])} />}
     </>
   );
