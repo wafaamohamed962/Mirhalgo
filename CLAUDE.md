@@ -24,7 +24,11 @@ merged into `main` and pushed** (GitHub `wafaamohamed962/Mirhalgo`).
   CRLF.
 - Start new work on a new branch from `main`.
 
-**Latest task: MW_003** (merged into `main`; spec `docs/MW_003.md`, plan
+**Current task: MW_004** (branch `feature/mw-004`; spec `docs/MW_004.md`, plan
+`docs/MW_004-plan.md`, see §16): role + company status routing, demo company seed script, and the
+company portal (frontend only, MSW). **Plan approved 2026-11-24; in progress.**
+
+**Previous task: MW_003** (merged into `main`; spec `docs/MW_003.md`, plan
 `docs/MW_003-plan.md`, see §15): fixes (Arabic MSA, company country → region, back button) + the
 full-stack New Request page + site-wide navigation (addition beyond the spec). Builds on
 MW_001/MW_002 rules.
@@ -1323,3 +1327,41 @@ scheduling and idempotency are built in-house.
   - Totals: shared 121, backend 123, frontend 135, E2E 71.
   - **Type-check note:** `npx tsc --noEmit -p .` in `frontend/` checks nothing (the root
     tsconfig only has references). Use `npx tsc -b` (what `npm run build` runs).
+
+## 16. MW_004: Company portal (frontend) + demo company login
+
+**Spec:** `docs/MW_004.md` (copied from the developer's spec folder on 2026-11-24). The
+`Company_vieww.html` demo it mentions is not available: the Team Lead confirmed the spec
+describes every feature. **Plan:** `docs/MW_004-plan.md` (checklist, phases, reuse, conflicts,
+open questions with defaults). **Branch:** `feature/mw-004` from `main`.
+Status: **plan approved (2026-11-24, answers in the plan). In progress.**
+
+**Scope**
+
+- **Part A (real backend):**
+  - one `/login`; the login response and a new `GET /api/me` return `role` + `companyStatus`;
+  - routing by role and status: customer → `/app/new-request`, approved company →
+    `/company/overview`, other company statuses → `/company/application-status` (moved from
+    `/application-status`, old URL redirects);
+  - cross-portal guards;
+  - a demo company seed script.
+- **Part B (frontend only, MSW):** `/company/*` portal with 6 sections (overview, available
+  requests, our offers, competitor offers, client inquiries, settings), offer templates per
+  shipping category, privacy filtering in the mock handlers, mock state persisted per account
+  in `localStorage`, "Reset demo data" (dev / staging only).
+
+**Rules to keep in mind**
+
+- **The seed script must NOT be run against `mirhalgo_v1` until the developer confirms**
+  (it is the only Supabase project). `DEMO_COMPANY_PASSWORD` comes from `backend/.env`: never
+  printed, never committed.
+- Privacy is enforced in the mock API, not the UI: no client contact fields, anonymised
+  competitors, hidden-offer companies counted only.
+- Reuse the customer portal's design system, layout and UI kit; `tokens.css` only; all copy in
+  i18n (formal MSA). No new libraries are planned. Any new category colour tokens need approval
+  (plan §6 Q8).
+- Conflicts with earlier work (plan §5):
+  - `homePath` / `backFallback` become status-aware;
+  - Back on every company section except Overview (the customer portal is unchanged);
+  - shared portal shell pieces are extracted from `PortalLayout`;
+  - the MSW `GET /me` mock must not shadow the real `GET /api/me`.
