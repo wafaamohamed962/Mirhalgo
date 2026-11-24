@@ -256,6 +256,24 @@ export async function registerCompany(
 }
 
 /**
+ * The company's application status (MW_004 A1: login + GET /api/me route by it). One row per
+ * company (`company_id` is unique); no row → null, which the client treats as not approved.
+ */
+export async function getCompanyStatus(userId: string): Promise<ApplicationStatus | null> {
+  const { data, error } = await db
+    .from('company_applications')
+    .select('status')
+    .eq('company_id', userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.status ?? null;
+}
+
+/** `companyStatus` for a role: only companies have one. */
+export const companyStatusFor = (userId: string, role: UserRole) =>
+  role === 'company' ? getCompanyStatus(userId) : Promise.resolve(null);
+
+/**
  * Called by POST /auth/verify-email for a company: pending_verification → pending_review,
  * then the confirmation email + the team notice (decision 12). Idempotent: verifying again
  * after a partial failure does not move the status twice or resend the emails.

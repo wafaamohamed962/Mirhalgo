@@ -15,7 +15,7 @@ import { logEvent } from '../lib/logger.js';
 import { createSignInClient } from '../lib/supabase.js';
 import { HttpError } from '../middleware/errorHandler.js';
 import { grantInitialBalance } from './balance.js';
-import { completeCompanyVerification } from './companies.js';
+import { companyStatusFor, completeCompanyVerification } from './companies.js';
 import { assertMailConfigured, mail } from './mail/index.js';
 import { issueOtp, otpSentResult, verifyOtp } from './otp.js';
 import {
@@ -176,9 +176,15 @@ export async function login(
     throw invalidCredentials();
   }
 
+  const companyStatus = await companyStatusFor(data.user.id, role);
   logEvent('login_success', ip, { userId: data.user.id, reason: role });
   const { access_token, refresh_token } = data.session;
-  return { status: 'authenticated', session: { access_token, refresh_token }, role };
+  return {
+    status: 'authenticated',
+    session: { access_token, refresh_token },
+    role,
+    companyStatus,
+  };
 }
 
 /** POST /auth/reset-password (spec 4.6). */
