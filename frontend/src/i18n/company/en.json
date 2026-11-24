@@ -184,6 +184,30 @@
         "productPurchaseCost": "Product purchase cost",
         "shippingDays": "Shipping duration"
       }
+    },
+    "offers": {
+      "note": "Offers can only be edited while under review. You can submit more than one offer on the same request.",
+      "stats": {
+        "all": "Total",
+        "under_review": "Under review",
+        "accepted": "Accepted",
+        "rejected": "Rejected"
+      },
+      "filterLabel": "Filter offers by status",
+      "search": "Search offers",
+      "searchPlaceholder": "Offer ID or order ID",
+      "groupLabel": "Our offers on request {{id}}",
+      "ourCount": "Our offers: {{count}}",
+      "orderDetails": "Order details",
+      "showDetails": "Show offer details",
+      "hideDetails": "Hide offer details",
+      "noDetails": "No template fields were filled in this offer.",
+      "inDays": "days",
+      "edit": "Edit offer",
+      "compare": "Compare prices",
+      "rejectionReason": "Rejection reason",
+      "empty": "You have not submitted any offers yet.",
+      "noResults": "No offers match your search or filter."
     }
   }
 }
