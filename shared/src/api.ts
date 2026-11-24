@@ -36,6 +36,12 @@ export const ERROR_CODES = [
   'UNAUTHORIZED',
   'FORBIDDEN',
   'NOT_FOUND',
+  // company portal (MW_004): offers blocked by the administration, an offer past review,
+  // a request no longer open, an inquiry already answered (a reply is final)
+  'OFFER_SUBMISSION_SUSPENDED',
+  'OFFER_NOT_EDITABLE',
+  'ORDER_NOT_OPEN',
+  'INQUIRY_ALREADY_REPLIED',
   'INTERNAL',
   'NETWORK_ERROR',
   // client-side: a required VITE_* variable is missing (see frontend/src/lib/env.ts)

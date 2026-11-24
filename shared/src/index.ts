@@ -17,3 +17,5 @@ export * from './portal.js';
 export * from './schemas/portal.js';
 export * from './schemas/drafts.js';
 export * from './schemas/orders.js';
+export * from './companyPortal.js';
+export * from './schemas/companyPortal.js';

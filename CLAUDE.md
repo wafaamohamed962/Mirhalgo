@@ -1446,6 +1446,42 @@ Status: **plan approved (2026-11-24, answers in the plan). In progress.**
   - Tests: `backend/test/demoCompany.test.ts` (15). Also checked offline: the built script's
     dry run and its error exits, with fake env, no `.env` and a non-existent project.
   - README: "Demo company account (MW_004)" under Supabase setup.
+  - **Seeded into `mirhalgo_v1` on 2026-11-24** with the developer's OK: `MG-C-2026-000022`,
+    approved, email verified, 2 placeholder PDFs. Login tested by the developer: `/company/overview`,
+    and `/app/*` redirects back. Remove it before launch (checklist at the top).
+- **Phase B1 done (2026-11-24): shared contract.**
+  - `shared/src/companyPortal.ts`:
+    - `SERVICE_CATEGORIES` (6) + `categoryOf(order)` (international by mode, domestic land,
+      China by source);
+    - `OFFER_TEMPLATES` (5), `TEMPLATE_OF`, `TOTAL_KIND` (dual / EGP only),
+      `FOREIGN_CURRENCIES`;
+    - statuses: company order `open | awarded | completed | cancelled`, offer
+      `under_review | accepted | rejected`, inquiry, offer submission;
+    - id patterns `OF-` / `IQ-` + 6 digits;
+    - every B12 response type: `CompanyAccount` (GET /company/me), `CompanyRequest(Details)`,
+      `CompanyOffer`, `CompetitorOffer` (a label number only), `CompetitorComparison`
+      (`hiddenCount`), `CompetitorRow`, `CompanyInquiry`, `ActivityEntry`,
+      `CompanyDashboard` (KPIs, sidebar counts, lists).
+    - Names that clashed with the customer portal were renamed: `CompanyAccount`,
+      `CompanyOfferStatus`, `COMPANY_OFFER_STATUSES`.
+  - **Privacy in one place: `toCompanyOrder(order)`.** It removes the whole `contact` block (name,
+    phone, WhatsApp, business name) and, for China, `delivery.receiverName` / `receiverPhone`.
+    Only `clientType` is kept. The delivery address stays (it is needed to quote).
+  - `shared/src/schemas/companyPortal.ts`:
+    - `offerSchemas` (one per template) + `offerInputSchema` (discriminated union);
+    - template fields are optional; cost lines are amount + currency and are not summed;
+    - days 1–365; dates today or later (`notPastDate`, exported from the order schema with
+      `numberInput`);
+    - total: dual = foreign (USD / EUR) and/or EGP, at least one; EGP only = required;
+    - amounts > 0 with Arabic digits and "٫"; untouched form lines are dropped;
+    - `inquiryReplySchema` (10–2000), `companyContactSchema`, `offerPrivacySchema`;
+    - the password form reuses `changePasswordSchema`.
+  - New error codes, translated: `OFFER_SUBMISSION_SUSPENDED`, `OFFER_NOT_EDITABLE`,
+    `ORDER_NOT_OPEN`, `INQUIRY_ALREADY_REPLIED`. New validation keys: `offerTotalRequired`,
+    `offerTextLength`, `offerLongTextLength`, `daysRange`, `replyLength`.
+  - Tests: `shared/test/companyPortal.test.ts` (19). The order fixtures moved to
+    `shared/test/orderFixtures.ts`, shared with `orders.test.ts`.
+  - Totals: shared 140, backend 146, frontend 150.
 
 **Open items (MW_004)**
 
