@@ -223,6 +223,33 @@
       "compare": "Compare",
       "compareFor": "Compare the prices on request {{id}}",
       "empty": "No other company has offered on your requests yet."
+    },
+    "inquiries": {
+      "note": "Every inquiry is linked automatically to its order and to our offer on it.",
+      "search": "Search inquiries",
+      "searchPlaceholder": "Order ID or inquiry ID",
+      "filterLabel": "Filter inquiries by status",
+      "filters": {
+        "all": "All",
+        "awaiting_reply": "Awaiting reply",
+        "replied": "Replied"
+      },
+      "open": "Open",
+      "openFor": "Open inquiry {{id}}",
+      "title": "Inquiry {{id}}",
+      "fullDetails": "View the full order details",
+      "ourOffers": "Our offers on this order",
+      "question": "The client’s question",
+      "reply": "Reply",
+      "replyHint": "The reply reaches the client through the platform administration and cannot be changed after sending.",
+      "send": "Send reply",
+      "sent": "The reply was sent.",
+      "ourReply": "Our reply",
+      "sentAt": "Sent on {{date}}",
+      "leaveTitle": "Close the inquiry without sending the reply?",
+      "leaveText": "The reply you wrote will not be saved.",
+      "empty": "No client inquiries yet.",
+      "noResults": "No inquiries match your search or filter."
     }
   }
 }
