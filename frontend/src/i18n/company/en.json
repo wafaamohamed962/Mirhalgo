@@ -94,6 +94,54 @@
       "privacy_off": "Hiding our offers from competitor companies was turned off.",
       "contact_updated": "The contact details were updated.",
       "password_changed": "The password was changed."
+    },
+    "templates": {
+      "sea": "Sea freight & customs",
+      "international_land": "International land",
+      "domestic_land": "Domestic land",
+      "air": "Air freight",
+      "china": "China purchasing & shipping"
+    },
+    "requests": {
+      "note": "Only requests that the platform administration has assigned to you, based on your approved activity category, appear here.",
+      "search": "Search requests",
+      "searchPlaceholder": "Order ID or service type",
+      "columns": {
+        "order": "Order ID",
+        "date": "Date",
+        "service": "Service",
+        "offers": "Offers on this order",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "youHave": "(you have {{count}})",
+      "compareOffers": "Compare the offers on request {{id}} ({{count}})",
+      "details": "Details",
+      "detailsFor": "Details of request {{id}}",
+      "submitAdditional": "Submit additional offer",
+      "empty": "No requests are assigned to you right now.",
+      "noResults": "No requests match your search."
+    },
+    "details": {
+      "title": "Request {{id}} details",
+      "privacy": "The client’s contact details are hidden. All communication goes through the platform after offer approval.",
+      "attachments": "Attachments"
+    },
+    "comparison": {
+      "title": "Price comparison — request {{id}}",
+      "ours": "Our offers",
+      "competitors": "Competitor offers",
+      "competitor": "Competitor company #{{n}}",
+      "noOurs": "We have not submitted an offer on this request yet.",
+      "noCompetitors": "No visible offers from other companies.",
+      "hidden": "+ Companies that chose to hide their offers: {{count}}",
+      "columns": {
+        "offer": "Offer",
+        "status": "Status",
+        "template": "Template",
+        "date": "Date",
+        "total": "Total"
+      }
     }
   }
 }

@@ -1,50 +1,21 @@
 import { useFormContext, type FieldValues } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Pencil } from 'lucide-react';
-import { ORDER_LIMITS, type LocalizedName, type ServiceType } from '@mirhalgo/shared';
+import { ORDER_LIMITS, type ServiceType } from '@mirhalgo/shared';
 import { Alert, Checkbox } from '../../../components/ui';
-import { localizedName, useReference } from '../../../services/api/reference';
 import { useMeSummary } from '../../../services/api/queries';
 import { TextField } from '../components/fields';
 import { useFieldError, useLabel } from '../formContext';
 import type { RequestStep } from '../model';
 import { summarize } from '../summary';
 import type { RequestWizard } from '../useRequestWizard';
-
-/** Names of every reference list the summary may show (all cached). */
-function useNames() {
-  const { i18n } = useTranslation();
-  const data = [
-    ['countries', useReference('countries').data],
-    ['regions', useReference('regions').data],
-    ['cities', useReference('cities').data],
-    ['ports', useReference('ports').data],
-    ['airports', useReference('airports').data],
-    ['container-types', useReference('container-types').data],
-    ['truck-types', useReference('truck-types').data],
-    ['shipping-lines', useReference('shipping-lines').data],
-  ] as const;
-  const maps = new Map(
-    data.map(([list, items]) => [
-      list as string,
-      new Map(
-        ((items ?? []) as Array<{ id?: string; code?: string; name: LocalizedName }>).map(
-          (item) => [item.id ?? item.code!, item.name],
-        ),
-      ),
-    ]),
-  );
-  return (list: string, id: string) => {
-    const name = maps.get(list)?.get(id);
-    return name && localizedName(name, i18n.language);
-  };
-}
+import { useReferenceNames } from '../useReferenceNames';
 
 /** Last step (spec B3 Step 6 / B5 Step 4): summary with Edit links, confirmation, balance. */
 export function ReviewStep({ service, wizard }: { service: ServiceType; wizard: RequestWizard }) {
   const { t, i18n } = useTranslation();
   const { register } = useFormContext<FieldValues>();
-  const names = useNames();
+  const names = useReferenceNames();
   const label = useLabel();
   const summary = useMeSummary().data;
   const confirmError = useFieldError('confirmAccuracy');

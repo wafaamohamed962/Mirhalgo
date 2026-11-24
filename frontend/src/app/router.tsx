@@ -33,7 +33,7 @@ const sectionPlaceholder: Load = () => import('../features/companyPortal/pages/S
  */
 const COMPANY_SECTIONS: ReadonlyArray<[path: string, load: Load]> = [
   ['overview', () => import('../features/companyPortal/pages/OverviewPage')],
-  ['requests', sectionPlaceholder],
+  ['requests', () => import('../features/companyPortal/pages/RequestsPage')],
   ['offers', sectionPlaceholder],
   ['competitors', sectionPlaceholder],
   ['inquiries', sectionPlaceholder],
