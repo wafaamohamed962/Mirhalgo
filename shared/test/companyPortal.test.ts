@@ -24,7 +24,7 @@ const shein = {
     source: 'shein',
     sheinSite: 'shein_sa',
     addMethod: 'cart_link',
-    cartUrl: 'https://shein.com/cart/1',
+    cartLink: 'https://shein.com/cart/1',
   },
   delivery: { ...chinaManual.delivery, shippingMethod: 'air' },
 };
@@ -57,10 +57,7 @@ describe('categories and templates', () => {
   });
 
   it('SHEIN has its own category but the China template', () => {
-    const parsed = orderSchema.safeParse(shein);
-    // the cart-link fixture may not satisfy every China rule; the category only needs the source
-    const value = (parsed.success ? parsed.data : { ...shein, service: 'china' }) as Order;
-    expect(categoryOf(value)).toBe('shein');
+    expect(categoryOf(order(shein))).toBe('shein');
     expect(TEMPLATE_OF.shein).toBe('china');
   });
 

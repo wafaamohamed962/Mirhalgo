@@ -1482,6 +1482,47 @@ Status: **plan approved (2026-11-24, answers in the plan). In progress.**
   - Tests: `shared/test/companyPortal.test.ts` (19). The order fixtures moved to
     `shared/test/orderFixtures.ts`, shared with `orders.test.ts`.
   - Totals: shared 140, backend 146, frontend 150.
+  - Committed locally as `269ba7e`.
+- **Phase B2 done (2026-11-24): mock data + mock API** (`frontend/src/mocks/company/`).
+  - `fixtures.ts`, formal Arabic, all fictional:
+    - 6 companies: ours (legal name + alias "الناقل الذهبي") + 5 competitors, 2 of which hide
+      their offers;
+    - 28 orders `MG1029`…`MG1002` over the 6 categories. Each is parsed with the shared
+      `orderSchema` and uses real reference ids (ports, airports, cities, container / truck
+      types), so B5 can show them with the New Request summary;
+    - order statuses `open` / `awarded` / `completed` / `cancelled`; 23 assigned to us, 5
+      to other companies only (we never see those);
+    - our offers (one order has two), competitor offers with consistent outcomes, 10 inquiries
+      (4 already replied), and the activity log derived from them;
+    - everything is dated relative to the first load; ids `OF-` / `IQ-` come from counters.
+  - `db.ts`: state per account (the user id from the Bearer token) in `localStorage`
+    `mirhalgo.companyDemo.v1.<userId>`. It is saved after every change and survives a reload.
+    A fixture change bumps `STATE_VERSION`. `reset()` is used by "Reset demo data".
+  - `handlers.ts`: the 14 spec B12 endpoints + 2 mock-only demo tools
+    (`POST /company/demo/reset`, `PATCH /company/demo/offer-submission`). 400 ms latency;
+    401 without a token, 403 for a non-company, like the real API.
+    - Privacy in the handlers: orders go through `toCompanyOrder`; competitor offers are
+      mapped to `{ label, status, template, createdAt, total }`; hidden companies are only in
+      `hiddenCount`; `offersCount` counts every offer.
+    - Rules: submit only on assigned `open` orders (409 `ORDER_NOT_OPEN`, 404 otherwise);
+      the template must be the order's; submit **and edit** are blocked while suspended (403);
+      edit only `under_review`, and it stays under review (409 `OFFER_NOT_EDITABLE`); a
+      reply is final (409 `INQUIRY_ALREADY_REPLIED`); bodies use the shared schemas
+      (400 `VALIDATION_ERROR`); the password "wrong" → 400 `INVALID_CREDENTIALS`.
+    - KPIs and badge counts are computed from the state. The average response time is the
+      hours from assignment to our first offer. The on-time rate is a fixture value (94).
+  - Registered in `mocks/browser.ts` next to the customer handlers (mock chunk ≈ 309 kB, was
+    ≈ 290 kB; loaded only with mocks on).
+  - The Arabic fixtures are covered by the `arabicCopy` deny-list.
+  - Tests: `frontend/test/company/companyMocks.test.ts` (15, node MSW server, raw
+    responses): fixtures valid; auth; **privacy over every endpoint** (no client contact value,
+    no competitor id / name / alias, no `contact` / `receiverName` / `receiverPhone` /
+    `companyId` key); hidden companies counted only; "#N" labels; unassigned orders 404;
+    KPIs / counts; submit / edit / refusals; reply once; settings; persistence per account
+    across a "reload"; reset.
+  - Fixed the B1 SHEIN test (it used `cartUrl` instead of `cartLink`, so the order never
+    really parsed).
+  - Totals: shared 140, backend 146, frontend 166, E2E 81.
 
 **Open items (MW_004)**
 
