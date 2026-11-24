@@ -8,6 +8,7 @@ const base64url = (value: object) => Buffer.from(JSON.stringify(value)).toString
 export const USER = { id: 'user-1', email: 'ali@example.com', firstName: 'Ali' };
 
 export type Role = 'customer' | 'company';
+export type CompanyStatus = 'pending_review' | 'approved' | 'changes_requested' | 'rejected';
 
 /** Unsigned JWT that supabase-js can decode (it only reads `exp` / `sub` client-side). */
 export const accessToken = (role: Role = 'customer') =>
@@ -90,8 +91,15 @@ export const PROFILE_ROW = {
   phone: '+201012345678',
 };
 
-/** Minimal Supabase Auth + PostgREST for a verified, logged-in user (a customer by default). */
-export async function mockSupabase(page: Page, role: Role = 'customer') {
+/**
+ * Minimal Supabase Auth + PostgREST for a verified, logged-in user (a customer by default).
+ * A company also gets its own application row (the status page reads it through RLS).
+ */
+export async function mockSupabase(
+  page: Page,
+  role: Role = 'customer',
+  companyStatus: CompanyStatus = 'pending_review',
+) {
   await page.context().route('http://supabase.test/**', async (route) => {
     const url = new URL(route.request().url());
     if (route.request().method() === 'OPTIONS') return json(route, 204, {});
@@ -101,20 +109,40 @@ export async function mockSupabase(page: Page, role: Role = 'customer') {
     if (url.pathname === '/auth/v1/logout') return route.fulfill({ status: 204 });
     // the portal reads (and updates) the user's own row: identity is real, not MSW (MW_002)
     if (url.pathname === '/rest/v1/profiles') return json(route, 200, PROFILE_ROW);
+    if (url.pathname === '/rest/v1/company_applications') {
+      return json(route, 200, {
+        reference_number: 'MG-C-2026-000123',
+        status: companyStatus,
+        submitted_at: '2026-11-21T10:00:00Z',
+        companies: { legal_name: 'Nile Freight' },
+      });
+    }
     return json(route, 404, {});
   });
 }
 
-export const loginSuccess: ApiHandler = () => ({
-  status: 200,
-  body: ok({
-    status: 'authenticated',
-    session: { access_token: ACCESS_TOKEN, refresh_token: 'refresh-token' },
-    role: 'customer',
-  }),
-});
+/** POST /auth/login for a verified account (MW_004 A1: role + company status). */
+export const loginAs =
+  (role: Role, companyStatus: CompanyStatus | null = null): ApiHandler =>
+  () => ({
+    status: 200,
+    body: ok({
+      status: 'authenticated',
+      session: { access_token: accessToken(role), refresh_token: 'refresh-token' },
+      role,
+      companyStatus: role === 'company' ? companyStatus : null,
+    }),
+  });
+export const loginSuccess = loginAs('customer');
 
-/** GET /api/me for the customer portal (the portal's other data is not mocked here). */
+/** GET /me (real API, MW_004 A1): what a stored session needs to be routed. */
+export const meAs =
+  (role: Role, companyStatus: CompanyStatus | null = null): ApiHandler =>
+  () => ({
+    status: 200,
+    body: ok({ id: USER.id, role, emailVerified: true, companyStatus }),
+  });
+
 /** GET /me/summary (real API since MW_003 B2): welcome name, balance, no drafts. */
 export const summary: ApiHandler = () => ({
   status: 200,
@@ -126,6 +154,7 @@ export const summary: ApiHandler = () => ({
   }),
 });
 
+/** GET /me/avatar (mocked customer avatar, MW_002 decision 22). */
 export const me: ApiHandler = () => ({
   status: 200,
   body: ok({

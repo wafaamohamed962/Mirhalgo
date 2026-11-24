@@ -39,7 +39,7 @@ export default function VerifyEmailPage() {
       const result = await login.mutateAsync({ identifier: email, password }).catch(() => null);
       if (result?.status === 'authenticated') {
         toast.success(t('auth.verify.success'));
-        return navigate(homePath(result.role), { replace: true });
+        return navigate(homePath(result.role, result.companyStatus), { replace: true });
       }
     }
     // password lost (page reload) or login failed: log in manually

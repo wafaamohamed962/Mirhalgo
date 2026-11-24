@@ -46,7 +46,7 @@ const send = <T>(method: 'POST' | 'PATCH' | 'DELETE', path: `/${string}`, body?:
  * avatar storage exists. The avatar is cosmetic: if it fails, initials are shown instead.
  */
 const mockedAvatar = () =>
-  get<Me>('/me').then(
+  get<Me>('/me/avatar').then(
     (me) => me.avatarUrl,
     () => null,
   );

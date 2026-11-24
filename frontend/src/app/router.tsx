@@ -2,11 +2,13 @@ import type { ComponentType } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router';
 import { PageLoader } from '../components/layout/PageLoader';
 import {
+  CompanyStatusRoute,
   GuestRoute,
   HomeRedirect,
   PendingVerificationRoute,
   ProtectedRoute,
 } from '../features/auth/guards';
+import { COMPANY_STATUS_PAGE } from '../features/auth/roles';
 import type { PortalHandle } from '../features/portal/layout/nav';
 import { RootLayout } from './RootLayout';
 
@@ -22,7 +24,17 @@ const portal = (path: string, title: string, load: () => Promise<{ default: Comp
   handle: { title } satisfies PortalHandle,
 });
 
-/** Routes and access rules (spec 8.2 + MW_002 B9). */
+/** The 6 company portal sections (MW_004 B11). Their pages come in Part B. */
+const COMPANY_SECTIONS = [
+  'overview',
+  'requests',
+  'offers',
+  'competitors',
+  'inquiries',
+  'settings',
+] as const;
+
+/** Routes and access rules (spec 8.2 + MW_002 B9 + MW_004 A1). */
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -130,14 +142,36 @@ export const router = createBrowserRouter([
         ],
       },
       {
+        // company portal (MW_004): verified companies only; approved ones get the portal,
+        // every other status only the application status page
+        path: '/company',
         element: <ProtectedRoute allow={['company']} />,
         children: [
           {
-            path: '/application-status',
-            lazy: page(() => import('../features/companyPortal/ApplicationStatusPage')),
+            element: <CompanyStatusRoute approved />,
+            children: [
+              { index: true, element: <Navigate to="overview" replace /> },
+              ...COMPANY_SECTIONS.map((path) => ({
+                path,
+                lazy: page(
+                  () => import('../features/companyPortal/pages/CompanyPortalPlaceholder'),
+                ),
+              })),
+            ],
+          },
+          {
+            element: <CompanyStatusRoute approved={false} />,
+            children: [
+              {
+                path: 'application-status',
+                lazy: page(() => import('../features/companyPortal/pages/ApplicationStatusPage')),
+              },
+            ],
           },
         ],
       },
+      // MW_002 URL of the status page (bookmarks): the guards above pick the right page
+      { path: '/application-status', element: <Navigate to={COMPANY_STATUS_PAGE} replace /> },
       { path: '*', lazy: page(() => import('../pages/NotFoundPage')) },
     ],
   },

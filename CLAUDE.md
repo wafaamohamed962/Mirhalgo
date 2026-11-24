@@ -1365,3 +1365,43 @@ Status: **plan approved (2026-11-24, answers in the plan). In progress.**
   - Back on every company section except Overview (the customer portal is unchanged);
   - shared portal shell pieces are extracted from `PortalLayout`;
   - the MSW `GET /me` mock must not shadow the real `GET /api/me`.
+
+**Progress**
+
+- **Phase A1 done (2026-11-24, `cfff2d2`).**
+  - The login response returns `companyStatus` next to `role` (`null` for customers and admins,
+    and for a company without an application row).
+  - `GET /api/me` (any role, `requireAuthenticated`) returns
+    `{ id, role, emailVerified, companyStatus }`.
+  - `requireAuth.ts` has one `authenticate(allow?)`; `requireRole`, `requireCustomer` and
+    `requireAuthenticated` are built on it.
+  - `getCompanyStatus` / `companyStatusFor` live in `services/companies.ts`.
+  - Shared types `CompanyStatus` and `MeResponse`. Backend tests 131.
+- **Phase A2 done (2026-11-24): routing by role and status.**
+  - `AuthProvider` holds `companyStatus` for company sessions only:
+    - from the login response (`signIn(tokens, companyStatus)`);
+    - else from `GET /api/me`, once per account;
+    - `loading` stays true until it is known;
+    - an unreachable API means "unknown", which routes to the status page, never the portal.
+  - `homePath(role, companyStatus)`: customer → `/app/new-request`; approved company →
+    `/company/overview` (`COMPANY_PORTAL_HOME`); other or unknown status →
+    `/company/application-status` (`COMPANY_STATUS_PAGE`).
+  - Guards: `ProtectedRoute allow` sends the wrong role to its own home.
+    `CompanyStatusRoute approved | approved={false}` splits the company routes. The old
+    `/application-status` redirects.
+  - `ApplicationStatusPage` moved to `features/companyPortal/pages/`.
+  - The 6 sections point to `CompanyPortalPlaceholder` until Part B.
+  - `backFallback` uses the company status, via `Viewer.companyStatus`.
+  - **Mock conflict fixed:** the mocked customer avatar read moved from `GET /me` to
+    `GET /me/avatar`, so MSW never shadows the real `GET /api/me`.
+  - Tests: `guards.test.tsx` (every role × status × portal URL), `backButton.test.tsx`
+    (company fallbacks), new `authCompanyStatus.test.tsx` (stored session waits for
+    `/api/me`, customers never call it, API down, login passes the status).
+  - E2E: `loginAs(role, status)`, `meAs(role, status)`, and `mockSupabase(page, role, status)`
+    returning the application row. New flows:
+    - an approved company logs in from `/login` → Overview, bounces from customer / status
+      URLs, logs out;
+    - pending / changes-requested / rejected companies land on the status page;
+    - a customer opening `/company/*` lands on New Request.
+  - The long international E2E got `test.slow()`: it timed out under the full parallel run.
+  - Totals: shared 121, backend 131, frontend 149, E2E 81.

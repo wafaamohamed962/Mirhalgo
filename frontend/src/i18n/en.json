@@ -48,6 +48,10 @@
     "applicationStatus": {
       "title": "Application status | MirhalGo",
       "description": "The status of your shipping company application."
+    },
+    "companyPortal": {
+      "title": "Partner Companies Portal | MirhalGo",
+      "description": "The MirhalGo portal for partner shipping companies."
     }
   },
   "lang": {
@@ -667,6 +671,12 @@
       "approved": "Your company is approved. The company portal is coming soon.",
       "rejected": "Unfortunately your application was not approved. We emailed you the details.",
       "changes_requested": "Our team asked for some changes. We emailed you the details."
+    }
+  },
+  "companyPortal": {
+    "placeholder": {
+      "title": "Partner Companies Portal",
+      "text": "The portal sections are being prepared."
     }
   }
 }

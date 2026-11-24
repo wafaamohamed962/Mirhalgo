@@ -13,7 +13,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: async (input: LoginInput) => {
       const result = await authApi.login(input);
-      if (result.status === 'authenticated') await signIn(result.session);
+      if (result.status === 'authenticated') await signIn(result.session, result.companyStatus);
       return result;
     },
   });

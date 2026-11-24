@@ -31,7 +31,11 @@ export function BackButton({ className }: { className?: string }) {
       void navigate(-1);
       return;
     }
-    const viewer = { isVerified: auth?.isVerified ?? false, role: auth?.role ?? null };
+    const viewer = {
+      isVerified: auth?.isVerified ?? false,
+      role: auth?.role ?? null,
+      companyStatus: auth?.companyStatus ?? null,
+    };
     // replace: the browser's own Back should not return to the page that was just left
     void navigate(backFallback(pathname, viewer), { replace: true });
   };

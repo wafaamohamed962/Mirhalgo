@@ -1,8 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   fail,
+  loginAs,
   loginSuccess,
   me,
+  meAs,
   mockApi,
   mockSupabase,
   ok,
@@ -36,7 +38,7 @@ test('customer sign up → OTP → logged in → customer portal → logout', as
         ? { status: 200, body: ok({ verified: true }) }
         : { status: 400, body: fail('OTP_INVALID') },
     '/auth/login': loginSuccess,
-    '/me': me,
+    '/me/avatar': me,
     '/me/summary': summary,
   });
 
@@ -93,7 +95,7 @@ test('login with phone; errors are generic', async ({ page }) => {
       body.password === PASSWORD
         ? loginSuccess(body)
         : { status: 401, body: fail('INVALID_CREDENTIALS') },
-    '/me': me,
+    '/me/avatar': me,
   });
 
   await page.goto('/login');
@@ -342,7 +344,7 @@ test('landing → login → portal: Back never returns to the login page', async
   page,
   isMobile,
 }) => {
-  await mockApi(page, { '/auth/login': loginSuccess, '/me': me, '/me/summary': summary });
+  await mockApi(page, { '/auth/login': loginSuccess, '/me/avatar': me, '/me/summary': summary });
   await page.goto('/');
   if (isMobile) await page.getByRole('button', { name: 'Open menu' }).click();
   await page
@@ -360,15 +362,17 @@ test('landing → login → portal: Back never returns to the login page', async
   await expect(page).toHaveURL('/');
 });
 
-test('a company opening a customer URL: its status page, and Back never offers a customer page', async ({
+test('a pending company opening a customer URL: its status page, and Back never offers a customer page', async ({
   page,
 }) => {
   await seedSession(page, 'company');
   await mockSupabase(page, 'company');
+  await mockApi(page, { '/me': meAs('company', 'pending_review') });
 
   // the role guard redirects (replace); opened directly, Back goes to a page a company can open
   await page.goto('/app/orders/ord_118');
-  await expect(page).toHaveURL('/application-status', { timeout: 15_000 });
+  await expect(page).toHaveURL('/company/application-status', { timeout: 15_000 });
+  await expect(page.getByText('Pending review')).toBeVisible();
   await page.getByRole('button', { name: 'Back to the previous page' }).click();
   await expect(page).toHaveURL('/');
 
@@ -377,5 +381,73 @@ test('a company opening a customer URL: its status page, and Back never offers a
   await page.goto('/nowhere');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await page.getByRole('button', { name: 'رجوع إلى الصفحة السابقة' }).click();
-  await expect(page).toHaveURL('/application-status');
+  await expect(page).toHaveURL('/company/application-status');
+
+  // the MW_002 URL still works, and the portal stays closed while not approved
+  await page.goto('/application-status');
+  await expect(page).toHaveURL('/company/application-status', { timeout: 15_000 });
+  await page.goto('/company/overview');
+  await expect(page).toHaveURL('/company/application-status', { timeout: 15_000 });
+});
+
+/* MW_004 A1: one /login for everyone, routed by role and company status. */
+
+async function logIn(page: Page) {
+  await page.goto('/login');
+  await page.getByLabel('Email or phone').fill(USER.email);
+  await page.getByRole('textbox', { name: 'Password', exact: true }).fill(PASSWORD);
+  await page.getByRole('button', { name: 'Log in' }).click();
+}
+
+test('an approved company logs in from /login → Overview; customer URLs and the status page bounce; logout', async ({
+  page,
+}) => {
+  await mockSupabase(page, 'company', 'approved');
+  await mockApi(page, {
+    '/auth/login': loginAs('company', 'approved'),
+    '/me': meAs('company', 'approved'),
+  });
+  await logIn(page);
+  await expect(page).toHaveURL('/company/overview');
+  // the login entry was replaced: Back does not return to /login
+  await page.goBack();
+  await expect(page).not.toHaveURL(/\/login/);
+
+  for (const path of [
+    '/app/new-request',
+    '/company/application-status',
+    '/company',
+    '/dashboard',
+  ]) {
+    await page.goto(path);
+    await expect(page).toHaveURL('/company/overview', { timeout: 15_000 });
+  }
+  await page.goto('/company/offers');
+  await expect(page).toHaveURL('/company/offers');
+
+  await page.getByRole('button', { name: 'Log out' }).click();
+  await expect(page).toHaveURL('/');
+  await page.goto('/company/overview');
+  await expect(page).toHaveURL('/login', { timeout: 15_000 });
+});
+
+for (const status of ['pending_review', 'changes_requested', 'rejected'] as const) {
+  test(`a ${status} company logs in from /login → the application status page`, async ({
+    page,
+  }) => {
+    await mockSupabase(page, 'company', status);
+    await mockApi(page, {
+      '/auth/login': loginAs('company', status),
+      '/me': meAs('company', status),
+    });
+    await logIn(page);
+    await expect(page).toHaveURL('/company/application-status');
+  });
+}
+
+test('a customer opening a company URL lands on New Request', async ({ page }) => {
+  await seedSession(page, 'customer');
+  await mockApi(page, { '/me/avatar': me, '/me/summary': summary });
+  await page.goto('/company/offers');
+  await expect(page).toHaveURL('/app/new-request', { timeout: 15_000 });
 });
