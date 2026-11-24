@@ -12,6 +12,11 @@ Shipping marketplace built in Egypt.
   company country → region, "Back to home" · **New Request, full stack**: reference data,
   request balance, server drafts + uploads, idempotent submit, 3 forms (international,
   domestic, China), success screen with print and PDF.
+- **MW_004** ([spec](docs/MW_004.md), [plan](docs/MW_004-plan.md), [PR notes](docs/MW_004-PR.md)):
+  one `/login` routed by role and company status (real `GET /api/me`) · a demo company seed
+  script · the **company portal** (`/company`: Overview, Available requests, Our submitted
+  offers, Competitor offers, Client inquiries, Account settings), frontend only on an MSW mock
+  API that enforces the privacy rules and keeps the demo data per account.
 
 ```
 React SPA (Vercel / Netlify / Cloudflare Pages)
@@ -22,15 +27,16 @@ Node/Express API (Render, Frankfurt)  ── service-role key, SMTP, OTP logic
 Supabase (Central EU, Frankfurt): Auth + Postgres
 ```
 
-| Folder                           | What                                                                     |
-| -------------------------------- | ------------------------------------------------------------------------ |
-| `frontend`                       | Vite + React 18 + TypeScript + Tailwind v4, React Router, TanStack Query |
-| `frontend/src/mocks`             | MSW handlers + fixtures for the customer portal (MW_002 B)               |
-| `frontend/src/features/requests` | The New Request forms + success page (MW_003, real API)                  |
-| `backend`                        | Express 4 API: auth, contact, company registration, own email OTP        |
-| `shared`                         | Zod schemas + types used by **both** web and api (`@mirhalgo/shared`)    |
-| `backend/supabase/migrations`    | Database schema + RLS (the only way to change the schema)                |
-| `docs`                           | Spec, image credits                                                      |
+| Folder                                | What                                                                     |
+| ------------------------------------- | ------------------------------------------------------------------------ |
+| `frontend`                            | Vite + React 18 + TypeScript + Tailwind v4, React Router, TanStack Query |
+| `frontend/src/mocks`                  | MSW handlers + fixtures for the customer portal (MW_002 B)               |
+| `frontend/src/features/requests`      | The New Request forms + success page (MW_003, real API)                  |
+| `frontend/src/features/companyPortal` | The company portal (MW_004), on `src/mocks/company`                      |
+| `backend`                             | Express 4 API: auth, contact, company registration, own email OTP        |
+| `shared`                              | Zod schemas + types used by **both** web and api (`@mirhalgo/shared`)    |
+| `backend/supabase/migrations`         | Database schema + RLS (the only way to change the schema)                |
+| `docs`                                | Spec, image credits                                                      |
 
 ## Requirements
 
@@ -52,13 +58,14 @@ Copy the blocks from [`.env.example`](.env.example) into two files. **Never comm
 
 **`frontend/.env`** (public, ends up in the browser bundle):
 
-| Variable                     | Value                                                                                              |
-| ---------------------------- | -------------------------------------------------------------------------------------------------- |
-| `VITE_SUPABASE_URL`          | `https://wpcpxmwkihaismxbdxip.supabase.co`                                                         |
-| `VITE_SUPABASE_ANON_KEY`     | Supabase → Project Settings → API keys → **anon / publishable**                                    |
-| `VITE_API_URL`               | `http://localhost:4000` (prod: the Render URL)                                                     |
-| `VITE_USE_MOCKS`             | `true`: customer-portal data from the MSW mocks (until the API exists). New Request is always real |
-| `VITE_SHOW_COMPANY_IDENTITY` | `true` (default) · `false` hides company names in the directory                                    |
+| Variable                     | Value                                                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `VITE_SUPABASE_URL`          | `https://wpcpxmwkihaismxbdxip.supabase.co`                                                                   |
+| `VITE_SUPABASE_ANON_KEY`     | Supabase → Project Settings → API keys → **anon / publishable**                                              |
+| `VITE_API_URL`               | `http://localhost:4000` (prod: the Render URL)                                                               |
+| `VITE_USE_MOCKS`             | `true`: customer-portal data from the MSW mocks (until the API exists). New Request is always real           |
+| `VITE_SHOW_COMPANY_IDENTITY` | `true` (default) · `false` hides company names in the directory                                              |
+| `VITE_DEMO_TOOLS`            | `true` on a staging / preview build: company portal demo tools (always on in development, off in production) |
 
 **`backend/.env`** (secret, server only):
 
@@ -192,6 +199,24 @@ gender, email, phone. Only the avatar image is still mocked. Email/phone are rea
 reference lists and `/me/summary` pass through MSW to the API (`onUnhandledFrame: 'bypass'`;
 real order references `MG…` pass through the mocked `/orders/:id`). My Orders, Companies and
 Account › Balance are still mocked, so a real order does not appear in My Orders yet.
+
+**Company portal mocks (MW_004):** `frontend/src/services/api/company.ts` (`companyApi`, one
+function per spec B12 endpoint, typed with `@mirhalgo/shared/companyPortal`). MSW answers them
+from `src/mocks/company` (fixtures: 6 fictional companies, 28 orders, offers, inquiries; 400 ms
+latency) and behaves like the future backend:
+
+- 401 without a session, 403 for a non-company account;
+- **privacy in the handlers:** orders never carry client contact data (`toCompanyOrder` in
+  `shared`), competitor offers come as "Competitor company #N" without id / name / alias, and
+  companies that hide their offers are only counted;
+- the rules: submit only on assigned open requests, with the order's template; edit only
+  while under review; submit and edit blocked while submission is suspended; one final reply
+  per inquiry.
+
+Changes are saved **per account in `localStorage`** (`mirhalgo.companyDemo.v1.<userId>`), so
+the demo survives a reload. Settings → **Demo tools** (dev, or `VITE_DEMO_TOOLS=true`): "Reset
+demo data" and a switch that simulates a suspension of offer submission. Role and company
+status are real (`GET /api/me`). The demo company login: see "Demo company account" above.
 
 When the real API exists: implement the same endpoints, set `VITE_USE_MOCKS=false` and delete
 `src/mocks` (+ `public/mockServiceWorker.js`). Demo codes in the mocks: OTP `123456`

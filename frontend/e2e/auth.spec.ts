@@ -66,7 +66,9 @@ test('customer sign up → OTP → logged in → customer portal → logout', as
   await fillCode(page, '123456'); // auto-submits when complete
 
   await expect(page).toHaveURL('/app/new-request');
-  await expect(page.getByRole('heading', { name: 'Welcome, Ali' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ali' })).toBeVisible({
+    timeout: 15_000,
+  });
   expect(calls.find((c) => c.path === '/auth/login')?.body).toEqual({
     identifier: USER.email,
     password: PASSWORD,
@@ -74,7 +76,9 @@ test('customer sign up → OTP → logged in → customer portal → logout', as
 
   // session persists across reloads (supabase-js persistSession)
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Welcome, Ali' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ali' })).toBeVisible({
+    timeout: 15_000,
+  }); // reload: session + summary under load
 
   // logged-in users visiting /login (or the MW_001 /dashboard URL) go to their home
   await page.goto('/login');

@@ -26,7 +26,7 @@ merged into `main` and pushed** (GitHub `wafaamohamed962/Mirhalgo`).
 
 **Current task: MW_004** (branch `feature/mw-004`; spec `docs/MW_004.md`, plan
 `docs/MW_004-plan.md`, see §16): role + company status routing, demo company seed script, and the
-company portal (frontend only, MSW). **Plan approved 2026-11-24; in progress.**
+company portal (frontend only, MSW). **A1–A3 and B1–B11 done (2026-11-24), committed locally, NOT pushed yet.**
 
 **Previous task: MW_003** (merged into `main`; spec `docs/MW_003.md`, plan
 `docs/MW_003-plan.md`, see §15): fixes (Arabic MSA, company country → region, back button) + the
@@ -1608,14 +1608,62 @@ Status: **plan approved (2026-11-24, answers in the plan). In progress.**
     - E2E: Overview in Arabic (6 KPIs, 4 blocks, New, Submit offer → the requests URL, no
       overflow).
   - Totals: shared 140, backend 146, frontend 187, E2E 91.
+  - Committed locally as `5c28bc3`.
+- **Phases B5–B11 done (2026-11-24, one local commit each, not pushed).** Details:
+  `docs/MW_004-PR.md`.
+  - **B5** `RequestsPage`:
+    - table on md+, cards on phones; search (id or localized service) in `?search=`;
+    - modals from the URL via `urlModal.ts` (`useUrlModals`: opening pushes with
+      `state.modal`, closing goes back, else `replace`);
+    - `OrderDetailsModal`: privacy notice, sections from the New Request `summarize` via
+      `useOrderSections` (loads the `i18n/portal` chunk for the labels), "—" when empty, file
+      names; it marks the request seen;
+    - `ComparisonModal`: ours, "Competitor company #N", hidden count;
+    - `useReferenceNames` moved out of `ReviewStep`.
+  - **B6** `offers/OfferModal` + `offerFormModel` + `OfferModalRoute` (`?order=&offer=new`):
+    - one RHF form validated by `offerSchemas[template]`; cost line = amount + currency;
+      dual / EGP total;
+    - suspended → `Alert` + disabled Send; a 403 refreshes the account;
+    - unsaved data → `ConfirmDialog` on close + `useUnsavedChangesGuard`;
+    - success → toast, `markSeen(offer, id, status)`, invalidate `['company']`.
+  - **B7** `OffersPage`:
+    - stats, `Tabs` filter `?status=` + `?search=`, groups by order (latest first);
+    - cards with a status stripe, "show details" (= opening, removes New;
+      `useOfferRows`), rejection reason;
+    - Edit (`?edit=`, under review only; old links explain), Compare (order has > 1 offer),
+      Order details (`?order=`).
+    - Plus a fix commit: `renderCompany` sets `configure({ asyncUtilTimeout: 5000 })` and the
+      company describes have 20 s timeouts (they flaked under the full parallel run).
+  - **B8** `CompetitorsPage`: rows, our totals or "not yet", visible + "+ hidden" counts, Compare.
+  - **B9** `InquiriesPage` + `inquiries/InquiryModal`:
+    - filter / search in the URL;
+    - order summary (first 3 non-customer rows + a link), our offers, the question (plain
+      text);
+    - one reply (10–2000), then read-only with its date; unsaved reply → confirm.
+  - **B10** `SettingsPage`:
+    - company data (read-only legal name + activity; contact email + `PhoneInput` →
+      `companyContactSchema`), privacy `Switch`, submission status pill, password
+      (`changePasswordSchema`, mocked);
+    - **demo tools** behind `flags.demoTools` (`DEV || VITE_DEMO_TOOLS === 'true'`): reset
+      (confirm → `demo.reset` + `clearSeen` + reset queries) and the suspension switch.
+      `.env.example` has `VITE_DEMO_TOOLS=`.
+    - `SectionPage` removed (every section has its page).
+  - **B11:**
+    - E2E `portalCompanyFlows.spec.ts`: submit → offers / log / reload / reset; Arabic
+      comparison + a final reply; the suspension switch. **Every `/api/company/*` response is
+      checked for client and competitor data.**
+    - The portal E2E build has `VITE_DEMO_TOOLS=true`.
+    - `test/company/noRawHtml.test.ts`.
+    - README (MW_004 summary, folder, `VITE_DEMO_TOOLS`, company mocks) and
+      `docs/MW_004-PR.md`.
+  - The customer sign-up E2E flake (open item) was the "Welcome, Ali" heading after a reload
+    (5 s default under load). It now waits 15 s; 8 of 8 passed on repeat.
+  - Totals: shared 140, backend 146, frontend 222, E2E 97.
 
 **Open items (MW_004)**
 
-- **Flaky E2E, investigate later:** `e2e/auth.spec.ts` "customer sign up → OTP → logged in →
-  customer portal → logout" (desktop) failed once with a `toBeVisible` timeout during a full
-  parallel run on 2026-11-24, then passed 6 of 6 times alone and in the next full run (1 failure in
-  7 runs). Probably a 5 s default wait under load (lazy chunks + session), like the redirect checks
-  fixed in MW_003.
+- **Flaky E2E (fixed in B11):** the customer sign-up test failed twice under the full parallel run: the
+  "Welcome, Ali" check after a reload used the 5 s default. It now waits 15 s.
 - **Load-related unit test flakiness (fixed in A3):** in `test/portal/requestForms.test.tsx` two
   tests failed every time in the full parallel run, and passed 3 of 3 times alone. The first step
   waits for the lazy form chunk, which took longer than `findBy`'s 1 s default. `stepIs` now

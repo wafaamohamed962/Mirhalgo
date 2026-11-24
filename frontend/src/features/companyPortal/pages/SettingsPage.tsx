@@ -165,10 +165,13 @@ function SubmissionStatus({ account }: { account: CompanyAccount }) {
   const allowed = account.offerSubmission === 'allowed';
   return (
     <Block title={t('companyPortal.settings.submission')}>
-      <StatusPill
-        tone={allowed ? 'success' : 'error'}
-        label={t(`companyPortal.settings.submissionStatus.${account.offerSubmission}`)}
-      />
+      {/* a wrapper keeps the pill its own size (the block is a column) */}
+      <div>
+        <StatusPill
+          tone={allowed ? 'success' : 'error'}
+          label={t(`companyPortal.settings.submissionStatus.${account.offerSubmission}`)}
+        />
+      </div>
       <p className="text-small text-muted">{t('companyPortal.settings.submissionNote')}</p>
     </Block>
   );
