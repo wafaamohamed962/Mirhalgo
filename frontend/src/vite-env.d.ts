@@ -9,6 +9,8 @@ interface ImportMetaEnv {
   readonly VITE_USE_MOCKS?: string;
   /** 'false' → the companies directory hides company names (decision 18, default true). */
   readonly VITE_SHOW_COMPANY_IDENTITY?: string;
+  /** MW_004: company portal demo tools on a staging / preview build ('true'). */
+  readonly VITE_DEMO_TOOLS?: string;
 }
 
 interface ImportMeta {

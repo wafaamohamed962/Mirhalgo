@@ -24,7 +24,11 @@ merged into `main` and pushed** (GitHub `wafaamohamed962/Mirhalgo`).
   CRLF.
 - Start new work on a new branch from `main`.
 
-**Latest task: MW_003** (merged into `main`; spec `docs/MW_003.md`, plan
+**Current task: MW_004** (branch `feature/mw-004`; spec `docs/MW_004.md`, plan
+`docs/MW_004-plan.md`, see §16): role + company status routing, demo company seed script, and the
+company portal (frontend only, MSW). **A1–A3 and B1–B11 done (2026-11-24), committed locally, NOT pushed yet.**
+
+**Previous task: MW_003** (merged into `main`; spec `docs/MW_003.md`, plan
 `docs/MW_003-plan.md`, see §15): fixes (Arabic MSA, company country → region, back button) + the
 full-stack New Request page + site-wide navigation (addition beyond the spec). Builds on
 MW_001/MW_002 rules.
@@ -1323,3 +1327,357 @@ scheduling and idempotency are built in-house.
   - Totals: shared 121, backend 123, frontend 135, E2E 71.
   - **Type-check note:** `npx tsc --noEmit -p .` in `frontend/` checks nothing (the root
     tsconfig only has references). Use `npx tsc -b` (what `npm run build` runs).
+
+## Before launch (checklist)
+
+- [ ] **Remove the demo company from production:**
+      `npm run seed:demo-company -w backend -- --remove --yes`, with the production env. Since
+      2026-11-24 the developer has decided to seed it into `mirhalgo_v1`, the only Supabase
+      project (MW_004 A3). Production keeps it only if the Team Lead approves.
+
+## 16. MW_004: Company portal (frontend) + demo company login
+
+**Spec:** `docs/MW_004.md` (copied from the developer's spec folder on 2026-11-24). The
+`Company_vieww.html` demo it mentions is not available: the Team Lead confirmed the spec
+describes every feature. **Plan:** `docs/MW_004-plan.md` (checklist, phases, reuse, conflicts,
+open questions with defaults). **Branch:** `feature/mw-004` from `main`.
+Status: **plan approved (2026-11-24, answers in the plan). In progress.**
+
+**Scope**
+
+- **Part A (real backend):**
+  - one `/login`; the login response and a new `GET /api/me` return `role` + `companyStatus`;
+  - routing by role and status: customer → `/app/new-request`, approved company →
+    `/company/overview`, other company statuses → `/company/application-status` (moved from
+    `/application-status`, old URL redirects);
+  - cross-portal guards;
+  - a demo company seed script.
+- **Part B (frontend only, MSW):** `/company/*` portal with 6 sections (overview, available
+  requests, our offers, competitor offers, client inquiries, settings), offer templates per
+  shipping category, privacy filtering in the mock handlers, mock state persisted per account
+  in `localStorage`, "Reset demo data" (dev / staging only).
+
+**Rules to keep in mind**
+
+- **Git: commit locally after each phase. Do NOT push to GitHub and do NOT open a PR until the
+  developer says so** (they push everything at the end).
+- **The seed script must NOT be run against `mirhalgo_v1` until the developer confirms**
+  (it is the only Supabase project). `DEMO_COMPANY_PASSWORD` comes from `backend/.env`: never
+  printed, never committed.
+- Privacy is enforced in the mock API, not the UI: no client contact fields, anonymised
+  competitors, hidden-offer companies counted only.
+- Reuse the customer portal's design system, layout and UI kit; `tokens.css` only; all copy in
+  i18n (formal MSA). No new libraries are planned. Any new category colour tokens need approval
+  (plan §6 Q8).
+- Conflicts with earlier work (plan §5):
+  - `homePath` / `backFallback` become status-aware;
+  - Back on every company section except Overview (the customer portal is unchanged);
+  - shared portal shell pieces are extracted from `PortalLayout`;
+  - the MSW `GET /me` mock must not shadow the real `GET /api/me`.
+
+**Progress**
+
+- **Phase A1 done (2026-11-24, `cfff2d2`).**
+  - The login response returns `companyStatus` next to `role` (`null` for customers and admins,
+    and for a company without an application row).
+  - `GET /api/me` (any role, `requireAuthenticated`) returns
+    `{ id, role, emailVerified, companyStatus }`.
+  - `requireAuth.ts` has one `authenticate(allow?)`; `requireRole`, `requireCustomer` and
+    `requireAuthenticated` are built on it.
+  - `getCompanyStatus` / `companyStatusFor` live in `services/companies.ts`.
+  - Shared types `CompanyStatus` and `MeResponse`. Backend tests 131.
+- **Phase A2 done (2026-11-24): routing by role and status.**
+  - `AuthProvider` holds `companyStatus` for company sessions only:
+    - from the login response (`signIn(tokens, companyStatus)`);
+    - else from `GET /api/me`, once per account;
+    - `loading` stays true until it is known;
+    - an unreachable API means "unknown", which routes to the status page, never the portal.
+  - `homePath(role, companyStatus)`: customer → `/app/new-request`; approved company →
+    `/company/overview` (`COMPANY_PORTAL_HOME`); other or unknown status →
+    `/company/application-status` (`COMPANY_STATUS_PAGE`).
+  - Guards: `ProtectedRoute allow` sends the wrong role to its own home.
+    `CompanyStatusRoute approved | approved={false}` splits the company routes. The old
+    `/application-status` redirects.
+  - `ApplicationStatusPage` moved to `features/companyPortal/pages/`.
+  - The 6 sections point to `CompanyPortalPlaceholder` until Part B.
+  - `backFallback` uses the company status, via `Viewer.companyStatus`.
+  - **Mock conflict fixed:** the mocked customer avatar read moved from `GET /me` to
+    `GET /me/avatar`, so MSW never shadows the real `GET /api/me`.
+  - Tests: `guards.test.tsx` (every role × status × portal URL), `backButton.test.tsx`
+    (company fallbacks), new `authCompanyStatus.test.tsx` (stored session waits for
+    `/api/me`, customers never call it, API down, login passes the status).
+  - E2E: `loginAs(role, status)`, `meAs(role, status)`, and `mockSupabase(page, role, status)`
+    returning the application row. New flows:
+    - an approved company logs in from `/login` → Overview, bounces from customer / status
+      URLs, logs out;
+    - pending / changes-requested / rejected companies land on the status page;
+    - a customer opening `/company/*` lands on New Request.
+  - The long international E2E got `test.slow()`: it timed out under the full parallel run.
+  - Totals: shared 121, backend 131, frontend 149, E2E 81.
+  - Committed locally as `3b8e3e7` (tested manually by the developer).
+- **Phase A3 done (2026-11-24): demo company seed script. Written and tested, NOT run against
+  `mirhalgo_v1`** (waiting for the developer's OK).
+  - `backend/src/services/demoCompany.ts` + `scripts/seedDemoCompany.ts` →
+    `npm run seed:demo-company -w backend` (from `dist/`, so build first).
+  - It uses the same code as a real company sign-up:
+    - `companyRegistrationSchema` (password policy, phone, EG legal-number rules);
+    - two placeholder PDFs through `prepareFiles`;
+    - `createRegistration` → the RPC (now exported from `services/companies.ts`);
+    - then `confirmEmail` and `transition_application_status` → `approved` (actor
+      `system`, note "demo seed (MW_004)");
+    - no email is sent.
+  - The Arabic demo data lives in `backend/src/seed/demoCompany.json`: no Arabic is allowed in
+    backend code, and the file is covered by the `arabicCopy` deny-list.
+  - The alias "الناقل الذهبي" has no DB column; it lives in the Part B mock identity (plan Q4).
+  - Safety:
+    - without `--yes` it is a dry run that never reads or writes the DB;
+    - it prints the project ref;
+    - `NODE_ENV=production` is refused unless `--allow-production`;
+    - an existing demo account is only re-approved; the password changes only with
+      `--reset-password`;
+    - another account on that email (a customer, or a company with other legal numbers) is
+      never touched;
+    - a failure after the user is created deletes the user and its files;
+    - `--remove` deletes only the demo company;
+    - output shows the masked email only, never the password.
+  - Env: `DEMO_COMPANY_PASSWORD` (required to seed), optional `DEMO_COMPANY_EMAIL` /
+    `_PHONE` / `_CR` / `_TAX` (in `.env.example`, empty). Defaults:
+    `demo.company@mirhalgo.com`, `+201000000001`, `9990000001`, `999000001`.
+  - Tests: `backend/test/demoCompany.test.ts` (15). Also checked offline: the built script's
+    dry run and its error exits, with fake env, no `.env` and a non-existent project.
+  - README: "Demo company account (MW_004)" under Supabase setup.
+  - **Seeded into `mirhalgo_v1` on 2026-11-24** with the developer's OK: `MG-C-2026-000022`,
+    approved, email verified, 2 placeholder PDFs. Login tested by the developer: `/company/overview`,
+    and `/app/*` redirects back. Remove it before launch (checklist at the top).
+- **Phase B1 done (2026-11-24): shared contract.**
+  - `shared/src/companyPortal.ts`:
+    - `SERVICE_CATEGORIES` (6) + `categoryOf(order)` (international by mode, domestic land,
+      China by source);
+    - `OFFER_TEMPLATES` (5), `TEMPLATE_OF`, `TOTAL_KIND` (dual / EGP only),
+      `FOREIGN_CURRENCIES`;
+    - statuses: company order `open | awarded | completed | cancelled`, offer
+      `under_review | accepted | rejected`, inquiry, offer submission;
+    - id patterns `OF-` / `IQ-` + 6 digits;
+    - every B12 response type: `CompanyAccount` (GET /company/me), `CompanyRequest(Details)`,
+      `CompanyOffer`, `CompetitorOffer` (a label number only), `CompetitorComparison`
+      (`hiddenCount`), `CompetitorRow`, `CompanyInquiry`, `ActivityEntry`,
+      `CompanyDashboard` (KPIs, sidebar counts, lists).
+    - Names that clashed with the customer portal were renamed: `CompanyAccount`,
+      `CompanyOfferStatus`, `COMPANY_OFFER_STATUSES`.
+  - **Privacy in one place: `toCompanyOrder(order)`.** It removes the whole `contact` block (name,
+    phone, WhatsApp, business name) and, for China, `delivery.receiverName` / `receiverPhone`.
+    Only `clientType` is kept. The delivery address stays (it is needed to quote).
+  - `shared/src/schemas/companyPortal.ts`:
+    - `offerSchemas` (one per template) + `offerInputSchema` (discriminated union);
+    - template fields are optional; cost lines are amount + currency and are not summed;
+    - days 1–365; dates today or later (`notPastDate`, exported from the order schema with
+      `numberInput`);
+    - total: dual = foreign (USD / EUR) and/or EGP, at least one; EGP only = required;
+    - amounts > 0 with Arabic digits and "٫"; untouched form lines are dropped;
+    - `inquiryReplySchema` (10–2000), `companyContactSchema`, `offerPrivacySchema`;
+    - the password form reuses `changePasswordSchema`.
+  - New error codes, translated: `OFFER_SUBMISSION_SUSPENDED`, `OFFER_NOT_EDITABLE`,
+    `ORDER_NOT_OPEN`, `INQUIRY_ALREADY_REPLIED`. New validation keys: `offerTotalRequired`,
+    `offerTextLength`, `offerLongTextLength`, `daysRange`, `replyLength`.
+  - Tests: `shared/test/companyPortal.test.ts` (19). The order fixtures moved to
+    `shared/test/orderFixtures.ts`, shared with `orders.test.ts`.
+  - Totals: shared 140, backend 146, frontend 150.
+  - Committed locally as `269ba7e`.
+- **Phase B2 done (2026-11-24): mock data + mock API** (`frontend/src/mocks/company/`).
+  - `fixtures.ts`, formal Arabic, all fictional:
+    - 6 companies: ours (legal name + alias "الناقل الذهبي") + 5 competitors, 2 of which hide
+      their offers;
+    - 28 orders `MG1029`…`MG1002` over the 6 categories. Each is parsed with the shared
+      `orderSchema` and uses real reference ids (ports, airports, cities, container / truck
+      types), so B5 can show them with the New Request summary;
+    - order statuses `open` / `awarded` / `completed` / `cancelled`; 23 assigned to us, 5
+      to other companies only (we never see those);
+    - our offers (one order has two), competitor offers with consistent outcomes, 10 inquiries
+      (4 already replied), and the activity log derived from them;
+    - everything is dated relative to the first load; ids `OF-` / `IQ-` come from counters.
+  - `db.ts`: state per account (the user id from the Bearer token) in `localStorage`
+    `mirhalgo.companyDemo.v1.<userId>`. It is saved after every change and survives a reload.
+    A fixture change bumps `STATE_VERSION`. `reset()` is used by "Reset demo data".
+  - `handlers.ts`: the 14 spec B12 endpoints + 2 mock-only demo tools
+    (`POST /company/demo/reset`, `PATCH /company/demo/offer-submission`). 400 ms latency;
+    401 without a token, 403 for a non-company, like the real API.
+    - Privacy in the handlers: orders go through `toCompanyOrder`; competitor offers are
+      mapped to `{ label, status, template, createdAt, total }`; hidden companies are only in
+      `hiddenCount`; `offersCount` counts every offer.
+    - Rules: submit only on assigned `open` orders (409 `ORDER_NOT_OPEN`, 404 otherwise);
+      the template must be the order's; submit **and edit** are blocked while suspended (403);
+      edit only `under_review`, and it stays under review (409 `OFFER_NOT_EDITABLE`); a
+      reply is final (409 `INQUIRY_ALREADY_REPLIED`); bodies use the shared schemas
+      (400 `VALIDATION_ERROR`); the password "wrong" → 400 `INVALID_CREDENTIALS`.
+    - KPIs and badge counts are computed from the state. The average response time is the
+      hours from assignment to our first offer. The on-time rate is a fixture value (94).
+  - Registered in `mocks/browser.ts` next to the customer handlers (mock chunk ≈ 309 kB, was
+    ≈ 290 kB; loaded only with mocks on).
+  - The Arabic fixtures are covered by the `arabicCopy` deny-list.
+  - Tests: `frontend/test/company/companyMocks.test.ts` (15, node MSW server, raw
+    responses): fixtures valid; auth; **privacy over every endpoint** (no client contact value,
+    no competitor id / name / alias, no `contact` / `receiverName` / `receiverPhone` /
+    `companyId` key); hidden companies counted only; "#N" labels; unassigned orders 404;
+    KPIs / counts; submit / edit / refusals; reply once; settings; persistence per account
+    across a "reload"; reset.
+  - Fixed the B1 SHEIN test (it used `cartUrl` instead of `cartLink`, so the order never
+    really parsed).
+  - Totals: shared 140, backend 146, frontend 166, E2E 81.
+  - Committed locally as `12761f4`. **Decision (developer, 2026-11-24): editing an offer is
+    blocked too while offer submission is suspended.**
+- **Phase B3 done (2026-11-24): company portal shell.**
+  - **Shared portal frame** (`components/portal/`): `PortalShell` (skip link, collapsible
+    sidebar, sticky top bar, `main`), `SidebarLink` / `SidebarLogout`, `PortalDrawer`
+    (mobile, focus trap), `useSidebarCollapsed`, `usePortalTitle(navPrefix, brandKey)`.
+    The customer `PortalLayout` now uses them with the same markup and classes; its bottom
+    nav is unchanged. `PortalHandle` lives in `usePortalTitle` (re-exported by
+    `portal/layout/nav.ts`).
+  - **Accessibility fix (both portals):** a sidebar link with a count badge had no spaces in
+    its accessible name ("Available requests5requests…"). It now has an explicit
+    `aria-label`: label + count + meaning (it starts with the visible label).
+  - `features/companyPortal/layout/CompanyLayout`:
+    - sidebar: brand line, the 6 sections (`layout/nav.ts`), 3 badges from
+      `GET /company/dashboard` counts, and the company block (one-letter avatar from the
+      legal name, alias or legal name, login email) + Logout;
+    - top bar: a menu button (mobile), "مرحبًا بكم، {alias}", the "حساب مقبول" status from the
+      real `companyStatus` (blue-700 text 6.1:1 + a green check), `LanguageSwitch`;
+    - mobile: `PortalDrawer` with the sections, the status, the company block and Logout (no
+      bottom nav).
+  - Routes: `/company/*` sections under `CompanyLayout` with `handle.title` = the section id.
+    They render `pages/SectionPage` (header + "being prepared") until B4–B10. The A2
+    placeholder page is removed, and its copy moved to the company chunk.
+  - `components/common.tsx`: `CompanyPageHeader` (Back on every section but Overview, h1,
+    note, actions) and `NewBadge`.
+  - **Category system:** `categoryLook.ts` (`CATEGORY_LOOK` icon / tone / stripe,
+    `categoryStripe`) + `categories.tsx` (`CategoryIcon` tile, `CategoryChip`).
+    Icons: Ship, Truck, Van, Plane, ShoppingBag, Globe. **New tokens** (approved):
+    `amber-50/100/300/800`, `sky-50/800`, `red-50/700`, `gold-500` in `tokens.css` +
+    `@theme inline`. Chip text contrast is 5.9–7.1:1; the stripes are decorative.
+  - `seen.ts`: `useSeen()` → `isNew` / `markSeen` per account
+    (`mirhalgo.companySeen.v1.<userId>`, `useSyncExternalStore`, other tabs too). An offer is
+    stored with its status (a status change → new again). `clearSeen` is for the reset.
+  - **Money:** `lib/money.ts` `useMoney({ format })`. `'locale'` is the default and is
+    unchanged for the customer portal; `'plain'` gives Western digits + the currency name
+    (`money.USD|EUR|EGP`: دولار / يورو / جنيه). `useOfferTotal()` →
+    "1,000 دولار + 38,000 جنيه".
+  - Service layer `services/api/company.ts` (`companyApi`, incl. `demo.*`) +
+    `companyQueries.ts` (`companyKeys`, all under `['company']`, plus the query hooks).
+  - Copy: `i18n/company/{ar,en}.json`, its own chunk loaded by the layout; covered by the
+    key-parity and `arabicCopy` tests.
+  - Tests:
+    - `test/company/renderCompany.tsx` (harness: real layout over the mock API, StrictMode);
+    - `companyLayout.test.tsx` (12): sidebar order + badges, welcome / status / language /
+      logout, Back rules + document title, drawer + Esc, Arabic RTL, categories (only theme
+      colours), New store, money formats;
+    - E2E `e2e/portalCompany.spec.ts` (portal build, desktop + 360 px): Arabic RTL sidebar on
+      the right with badges / the mobile drawer, all 6 sections without overflow in AR + EN,
+      Back (previous section, else Overview), a customer URL bounces;
+    - `mockMeApi` in `e2e/mocks.ts`;
+    - the A2 approved-company E2E opens the drawer to log out on mobile.
+  - Bundle: main JS +0.2 kB, `CompanyLayout` chunk 8.6 kB.
+  - Totals: shared 140, backend 146, frontend 178, E2E 89.
+  - Committed locally as `b669cd3` (tested manually by the developer).
+- **Phase B4 done (2026-11-24): Overview** (`features/companyPortal/pages/OverviewPage.tsx`).
+  - One request (`GET /company/dashboard`, the same query as the sidebar badges); a skeleton
+    while loading, `ErrorState` with retry.
+  - **6 KPI cards** (`<dl>`): submitted, accepted, rejected, completed orders, average
+    response time, on-time rate. Western digits via `formatNumber` (`companyFormat.ts`, the same
+    style as the money format); the unit is small next to the number; null → "—".
+  - **4 blocks** (`<section aria-label>`, a "View all" link where the spec has one):
+    - requests awaiting our offer (≤ 8): stripe, icon tile, id + "جديد", chip, date, and
+      **Submit offer** → `/company/requests?order=<id>&offer=new` (B5 opens the modal from the
+      URL); while suspended, an explanation and disabled buttons;
+    - our latest offers (5): id, order, total (`useOfferTotal`), status;
+    - inquiries awaiting reply (≤ 5): id + New + status, the question (plain text,
+      `line-clamp-2`), order + date → `/company/inquiries?inquiry=<id>`;
+    - recent activity (≤ 10, newest first): an icon per type + text
+      (`companyPortal.activity.*`; privacy on / off) + date and time.
+  - Each block has its own empty state.
+  - Status pills: the customer `StatusPill` / `StatusTone` are now exported
+    (`portal/components/StatusBadge.tsx`) and reused by
+    `companyPortal/components/StatusBadges.tsx` (offer, company order and inquiry statuses).
+  - Mobile fix found on screenshots: ids, chips and "View all" never wrap; the row text keeps
+    10rem (`basis-40`), so actions / totals / statuses move below it on phones.
+  - Router: `COMPANY_SECTIONS` holds a page loader per section (`SectionPage` until built).
+  - Tests:
+    - `test/company/overview.test.tsx` (9): KPIs (18 / 3 / 4 / 2, hours, 94 %), rows +
+      New + Submit offer links, opened items lose New, the block limits, a new offer shows
+      first + the activity text + the KPI, empty states, error + retry, suspended, Arabic
+      (Western digits, دولار / جنيه);
+    - `renderCompany` gained `companyFetch` (prepares mock state as the company);
+    - E2E: Overview in Arabic (6 KPIs, 4 blocks, New, Submit offer → the requests URL, no
+      overflow).
+  - Totals: shared 140, backend 146, frontend 187, E2E 91.
+  - Committed locally as `5c28bc3`.
+- **Phases B5–B11 done (2026-11-24, one local commit each, not pushed).** Details:
+  `docs/MW_004-PR.md`.
+  - **B5** `RequestsPage`:
+    - table on md+, cards on phones; search (id or localized service) in `?search=`;
+    - modals from the URL via `urlModal.ts` (`useUrlModals`: opening pushes with
+      `state.modal`, closing goes back, else `replace`);
+    - `OrderDetailsModal`: privacy notice, sections from the New Request `summarize` via
+      `useOrderSections` (loads the `i18n/portal` chunk for the labels), "—" when empty, file
+      names; it marks the request seen;
+    - `ComparisonModal`: ours, "Competitor company #N", hidden count;
+    - `useReferenceNames` moved out of `ReviewStep`.
+  - **B6** `offers/OfferModal` + `offerFormModel` + `OfferModalRoute` (`?order=&offer=new`):
+    - one RHF form validated by `offerSchemas[template]`; cost line = amount + currency;
+      dual / EGP total;
+    - suspended → `Alert` + disabled Send; a 403 refreshes the account;
+    - unsaved data → `ConfirmDialog` on close + `useUnsavedChangesGuard`;
+    - success → toast, `markSeen(offer, id, status)`, invalidate `['company']`.
+  - **B7** `OffersPage`:
+    - stats, `Tabs` filter `?status=` + `?search=`, groups by order (latest first);
+    - cards with a status stripe, "show details" (= opening, removes New;
+      `useOfferRows`), rejection reason;
+    - Edit (`?edit=`, under review only; old links explain), Compare (order has > 1 offer),
+      Order details (`?order=`).
+    - Plus a fix commit: `renderCompany` sets `configure({ asyncUtilTimeout: 5000 })` and the
+      company describes have 20 s timeouts (they flaked under the full parallel run).
+  - **B8** `CompetitorsPage`: rows, our totals or "not yet", visible + "+ hidden" counts, Compare.
+  - **B9** `InquiriesPage` + `inquiries/InquiryModal`:
+    - filter / search in the URL;
+    - order summary (first 3 non-customer rows + a link), our offers, the question (plain
+      text);
+    - one reply (10–2000), then read-only with its date; unsaved reply → confirm.
+  - **B10** `SettingsPage`:
+    - company data (read-only legal name + activity; contact email + `PhoneInput` →
+      `companyContactSchema`), privacy `Switch`, submission status pill, password
+      (`changePasswordSchema`, mocked);
+    - **demo tools** behind `flags.demoTools` (`DEV || VITE_DEMO_TOOLS === 'true'`): reset
+      (confirm → `demo.reset` + `clearSeen` + reset queries) and the suspension switch.
+      `.env.example` has `VITE_DEMO_TOOLS=`.
+    - `SectionPage` removed (every section has its page).
+  - **B11:**
+    - E2E `portalCompanyFlows.spec.ts`: submit → offers / log / reload / reset; Arabic
+      comparison + a final reply; the suspension switch. **Every `/api/company/*` response is
+      checked for client and competitor data.**
+    - The portal E2E build has `VITE_DEMO_TOOLS=true`.
+    - `test/company/noRawHtml.test.ts`.
+    - README (MW_004 summary, folder, `VITE_DEMO_TOOLS`, company mocks) and
+      `docs/MW_004-PR.md`.
+  - The customer sign-up E2E flake (open item) was the "Welcome, Ali" heading after a reload
+    (5 s default under load). It now waits 15 s; 8 of 8 passed on repeat.
+  - Totals: shared 140, backend 146, frontend 222, E2E 97.
+- **Fixes after review (2026-11-25, reported by the developer):**
+  - **Small vertical scrollbar next to the tabs (Inquiries).** `overflow-x: auto` on the tab
+    list makes `overflow-y` auto too, and the active tab's 1 px underline made the content 1 px
+    taller than the box. Shared `Tabs` now has `overflow-y-hidden` (every tab list).
+  - **The greeting showed "الذهبى" (no dots).** The source is the dotted "ي" (U+064A)
+    everywhere. `truncate` clips to the line box, and at the heading size it cut the dots
+    under the final "ي". The greeting and the customer top-bar title now have `py-1`.
+    **Rule: large Arabic text with `truncate` (or any `overflow-hidden`) needs vertical room.**
+  - E2E: the portal Back test, the portal walk-through and the company submit flow have
+    `test.slow()` (each ~13–14 s alone, past 30 s under the full run on a slower day).
+  - A full run that failed with "element not found" on many pages at once was the network
+    changing mid-run (`net::ERR_NETWORK_CHANGED` in the trace), not the code: run it again.
+
+**Open items (MW_004)**
+
+- **Flaky E2E (fixed in B11):** the customer sign-up test failed twice under the full parallel run: the
+  "Welcome, Ali" check after a reload used the 5 s default. It now waits 15 s.
+- **Load-related unit test flakiness (fixed in A3):** in `test/portal/requestForms.test.tsx` two
+  tests failed every time in the full parallel run, and passed 3 of 3 times alone. The first step
+  waits for the lazy form chunk, which took longer than `findBy`'s 1 s default. `stepIs` now
+  waits 5 s, and the describe block has a 20 s timeout. If another test flakes only in the full
+  run, check its waits first.

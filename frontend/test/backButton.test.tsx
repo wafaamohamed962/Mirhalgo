@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createBrowserRouter, Link, RouterProvider } from 'react-router';
 import { describe, expect, it } from 'vitest';
-import type { UserRole } from '@mirhalgo/shared';
+import type { CompanyStatus, UserRole } from '@mirhalgo/shared';
 import { BackButton } from '../src/components/ui';
 import { AuthContext, type AuthContextValue } from '../src/features/auth/authContext';
 import { backFallback } from '../src/features/auth/roles';
@@ -17,12 +17,17 @@ import { useUnsavedChangesGuard } from '../src/lib/useUnsavedChangesGuard';
 
 type Who = 'guest' | UserRole;
 
-function auth(who: Who, loading = false): AuthContextValue {
+function auth(
+  who: Who,
+  loading = false,
+  companyStatus: CompanyStatus | null = null,
+): AuthContextValue {
   return {
     session: null,
     loading,
     isVerified: who !== 'guest',
     role: who === 'guest' ? null : who,
+    companyStatus,
     signIn: async () => {},
     signOut: async () => {},
     signedOut: false,
@@ -48,7 +53,12 @@ const withBack = (text: string) => (
 );
 
 /** Opens `path` as the first page of a fresh tab (no in-app history), as `who`. */
-function renderAt(path: string, who: Who = 'customer', loading = false) {
+function renderAt(
+  path: string,
+  who: Who = 'customer',
+  loading = false,
+  companyStatus: CompanyStatus | null = null,
+) {
   window.history.replaceState(null, '', path);
   const router = createBrowserRouter([
     {
@@ -64,14 +74,16 @@ function renderAt(path: string, who: Who = 'customer', loading = false) {
     { path: '/app/orders/:id', element: withBack('order details') },
     { path: '/app/support/form', element: <FormPage /> },
     { path: '/app/new-request', element: <p>new request</p> },
-    { path: '/application-status', element: withBack('application status') },
+    { path: '/company/application-status', element: withBack('application status') },
+    { path: '/company/overview', element: <p>company overview</p> },
+    { path: '/company/offers', element: withBack('company offers') },
     { path: '/login', element: withBack('login') },
     { path: '/', element: <p>landing</p> },
     { path: '*', element: withBack('not found') },
   ]);
   render(
     <StrictMode>
-      <AuthContext.Provider value={auth(who, loading)}>
+      <AuthContext.Provider value={auth(who, loading, companyStatus)}>
         <RouterProvider router={router} />
       </AuthContext.Provider>
     </StrictMode>,
@@ -111,13 +123,23 @@ describe('BackButton', () => {
     ['guest on an auth page', 'guest', '/login', '/'],
     ['guest on a missing page', 'guest', '/nowhere', '/'],
     ['customer on a missing page', 'customer', '/nowhere', '/app/new-request'],
-    ['company on a missing page', 'company', '/nowhere', '/application-status'],
-    ['company on its status page', 'company', '/application-status', '/'],
+    ['pending company on a missing page', 'company', '/nowhere', '/company/application-status'],
+    ['pending company on its status page', 'company', '/company/application-status', '/'],
   ] as const)('fallback by role / auth: %s → %s', async (_, who, path, parent) => {
     const user = userEvent.setup();
-    const router = renderAt(path, who);
+    const router = renderAt(path, who, false, who === 'company' ? 'pending_review' : null);
     await user.click(await screen.findByRole('button', { name: 'Back to the previous page' }));
     await waitFor(() => expect(router.state.location.pathname).toBe(parent));
+  });
+
+  it.each([
+    ['a company section', '/company/offers'],
+    ['a missing page', '/nowhere'],
+  ])('an approved company on %s → Overview (MW_004)', async (_, path) => {
+    const user = userEvent.setup();
+    const router = renderAt(path, 'company', false, 'approved');
+    await user.click(await screen.findByRole('button', { name: 'Back to the previous page' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/company/overview'));
   });
 
   it('while the session is still loading, a page opened directly waits (no guest fallback)', async () => {
@@ -171,7 +193,14 @@ describe('backFallback (the page / parent map)', () => {
 
   it('never a page the viewer cannot open', () => {
     // a company (or a guest) is never sent into the customer portal
-    expect(backFallback('/app/orders/ord_1', company)).toBe('/application-status');
+    expect(backFallback('/app/orders/ord_1', company)).toBe('/company/application-status');
+    expect(backFallback('/app/orders/ord_1', { ...company, companyStatus: 'approved' })).toBe(
+      '/company/overview',
+    );
+    // a company that is not approved is never sent into its portal
+    expect(backFallback('/company/offers', { ...company, companyStatus: 'rejected' })).toBe(
+      '/company/application-status',
+    );
     expect(backFallback('/app/orders/ord_1', guest)).toBe('/');
     // a sign-up waiting for its code is still a guest
     expect(backFallback('/verify-email', { isVerified: false, role: 'customer' })).toBe('/');

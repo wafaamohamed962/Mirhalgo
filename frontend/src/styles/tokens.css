@@ -23,6 +23,22 @@
   --error: #dc2626;
   --error-hover: #b91c1c; /* danger button hover ("darker red") */
 
+  /*
+   * Service categories (MW_004 B2, approved by the developer): tile background + text/icon
+   * colour (contrast 5.9–7.1:1, AA) + a side stripe (decorative: the icon and the chip text
+   * also name the category). Sea uses blue-50 / blue-700 / blue-600, international land the
+   * warning amber as its stripe.
+   */
+  --amber-50: #fffbeb; /* domestic land tile */
+  --amber-100: #fef3c7; /* international land tile */
+  --amber-300: #fcd34d; /* domestic land stripe ("lighter amber") */
+  --amber-800: #92400e; /* land text + icons (6.4–6.8:1 on the tiles) */
+  --sky-50: #f0f9ff; /* air tile */
+  --sky-800: #075985; /* air text + icons (7.1:1) */
+  --red-50: #fef2f2; /* SHEIN / Chinese sites tile */
+  --red-700: #b91c1c; /* SHEIN / Chinese sites text + icons (5.9:1) */
+  --gold-500: #ca8a04; /* SHEIN / Chinese sites stripe ("red / gold") */
+
   /* social brand colors (spec 3.5: "Social icons keep their brand colors") */
   --brand-facebook: #1877f2;
   --brand-whatsapp: #25d366;

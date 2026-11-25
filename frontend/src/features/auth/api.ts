@@ -2,6 +2,7 @@ import type {
   ForgotPasswordInput,
   LoginInput,
   LoginResult,
+  MeResponse,
   OtpSentResult,
   ResendOtpInput,
   ResetPasswordInput,
@@ -9,7 +10,7 @@ import type {
   VerifyEmailInput,
   VerifyEmailResult,
 } from '@mirhalgo/shared';
-import { apiPost } from '../../lib/apiClient';
+import { apiPost, apiRequest } from '../../lib/apiClient';
 
 /** Auth endpoints (spec section 7). Bodies are validated with the same shared schemas server-side. */
 export const authApi = {
@@ -20,4 +21,6 @@ export const authApi = {
   forgotPassword: (input: ForgotPasswordInput) =>
     apiPost<OtpSentResult>('/auth/forgot-password', input),
   resetPassword: (input: ResetPasswordInput) => apiPost<null>('/auth/reset-password', input),
+  /** The logged-in user's role + company status (MW_004 A1). Real API, never mocked. */
+  me: () => apiRequest<MeResponse>('GET', '/me', { auth: true }),
 };

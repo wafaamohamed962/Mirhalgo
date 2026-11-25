@@ -1,0 +1,302 @@
+{
+  "companyPortal": {
+    "brand": "Partner Companies Portal",
+    "brandLine": "MirhalGo — Partner Companies Portal",
+    "mainNav": "Company portal",
+    "skipToContent": "Skip to content",
+    "collapseSidebar": "Collapse the sidebar",
+    "expandSidebar": "Expand the sidebar",
+    "openMenu": "Open the menu",
+    "menu": "Menu",
+    "welcome": "Welcome, {{name}}",
+    "accountStatus": {
+      "approved": "Approved account"
+    },
+    "nav": {
+      "overview": "Overview",
+      "requests": "Available requests",
+      "offers": "Our submitted offers",
+      "competitors": "Competitor offers",
+      "inquiries": "Client inquiries",
+      "settings": "Account settings"
+    },
+    "badges": {
+      "requests": "requests without our offer",
+      "offers": "offers under review",
+      "inquiries": "inquiries awaiting reply"
+    },
+    "categories": {
+      "sea": "Sea freight & customs",
+      "international_land": "International land",
+      "domestic_land": "Domestic land",
+      "air": "Air freight",
+      "shein": "SHEIN",
+      "chinese_sites": "Chinese sites"
+    },
+    "new": "New",
+    "submitOffer": "Submit offer",
+    "submitOfferFor": "Submit an offer on request {{id}}",
+    "onOrder": "On request {{id}}",
+    "suspended": "The platform administration has suspended offer submission for your account. Please contact support.",
+    "offerStatus": {
+      "under_review": "Under review",
+      "accepted": "Accepted",
+      "rejected": "Rejected"
+    },
+    "orderStatus": {
+      "open": "Accepting offers",
+      "awarded": "Offer accepted",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "inquiryStatus": {
+      "awaiting_reply": "Awaiting reply",
+      "replied": "Replied"
+    },
+    "overview": {
+      "kpis": {
+        "offersSubmitted": "Offers submitted",
+        "offersAccepted": "Offers accepted",
+        "offersRejected": "Offers rejected",
+        "completedOrders": "Completed orders",
+        "avgResponseHours": "Average response time",
+        "onTimeRate": "On-time delivery rate"
+      },
+      "viewAll": "View all",
+      "awaitingOffer": {
+        "title": "Requests awaiting our offer",
+        "empty": "No requests are waiting for an offer from us right now."
+      },
+      "latestOffers": {
+        "title": "Our latest offers",
+        "empty": "No offers submitted yet."
+      },
+      "inquiries": {
+        "title": "Inquiries awaiting reply",
+        "empty": "No inquiries are awaiting a reply."
+      },
+      "activity": {
+        "title": "Recent account activity",
+        "empty": "No account activity yet."
+      },
+      "hoursUnit": "h"
+    },
+    "activity": {
+      "offer_submitted": "Offer {{offerId}} was submitted on request {{orderId}}.",
+      "offer_updated": "Offer {{offerId}} on request {{orderId}} was edited.",
+      "offer_accepted": "Offer {{offerId}} on request {{orderId}} was accepted.",
+      "offer_rejected": "Offer {{offerId}} on request {{orderId}} was rejected.",
+      "inquiry_received": "Inquiry {{inquiryId}} arrived on request {{orderId}}.",
+      "inquiry_replied": "A reply was sent to inquiry {{inquiryId}}.",
+      "request_assigned": "The platform administration assigned request {{orderId}} to your company.",
+      "privacy_on": "Hiding our offers from competitor companies was turned on.",
+      "privacy_off": "Hiding our offers from competitor companies was turned off.",
+      "contact_updated": "The contact details were updated.",
+      "password_changed": "The password was changed."
+    },
+    "templates": {
+      "sea": "Sea freight & customs",
+      "international_land": "International land",
+      "domestic_land": "Domestic land",
+      "air": "Air freight",
+      "china": "China purchasing & shipping"
+    },
+    "requests": {
+      "note": "Only requests that the platform administration has assigned to you, based on your approved activity category, appear here.",
+      "search": "Search requests",
+      "searchPlaceholder": "Order ID or service type",
+      "columns": {
+        "order": "Order ID",
+        "date": "Date",
+        "service": "Service",
+        "offers": "Offers on this order",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "youHave": "(you have {{count}})",
+      "compareOffers": "Compare the offers on request {{id}} ({{count}})",
+      "details": "Details",
+      "detailsFor": "Details of request {{id}}",
+      "submitAdditional": "Submit additional offer",
+      "empty": "No requests are assigned to you right now.",
+      "noResults": "No requests match your search."
+    },
+    "details": {
+      "title": "Request {{id}} details",
+      "privacy": "The client’s contact details are hidden. All communication goes through the platform after offer approval.",
+      "attachments": "Attachments"
+    },
+    "comparison": {
+      "title": "Price comparison — request {{id}}",
+      "ours": "Our offers",
+      "competitors": "Competitor offers",
+      "competitor": "Competitor company #{{n}}",
+      "noOurs": "We have not submitted an offer on this request yet.",
+      "noCompetitors": "No visible offers from other companies.",
+      "hidden": "+ Companies that chose to hide their offers: {{count}}",
+      "columns": {
+        "offer": "Offer",
+        "status": "Status",
+        "template": "Template",
+        "date": "Date",
+        "total": "Total"
+      }
+    },
+    "offerForm": {
+      "title": "Submit an offer on request {{id}}",
+      "editTitle": "Edit offer {{id}}",
+      "intro": "Every template field is optional; the total cost is required. You can type the numbers in Arabic or English digits.",
+      "editNote": "An offer can be edited while it is under review, and it stays under review after saving.",
+      "optional": "(optional)",
+      "amount": "Amount",
+      "currency": "Currency",
+      "daysHint": "In days, from 1 to 365.",
+      "total": "Total cost",
+      "totalDualHint": "Enter the amount in a foreign currency, in Egyptian pounds, or both.",
+      "totalEgpHint": "Enter the total cost in Egyptian pounds.",
+      "foreignAmount": "Amount in a foreign currency",
+      "egpAmount": "Amount in Egyptian pounds",
+      "send": "Send offer",
+      "saveEdit": "Save changes",
+      "submitted": "Offer {{id}} was sent and is now under review.",
+      "updated": "The changes to offer {{id}} were saved.",
+      "leaveTitle": "Close the offer form?",
+      "leaveText": "The details you entered in this offer will not be saved.",
+      "fields": {
+        "oceanFreight": "Ocean freight",
+        "thc": "Terminal handling (THC)",
+        "blFee": "B/L fee",
+        "telexRelease": "Telex release",
+        "transitDays": "Transit time",
+        "freeDays": "Free time",
+        "departureDate": "Departure date",
+        "vehicleType": "Vehicle type",
+        "transportCost": "Transport cost",
+        "loadingDate": "Loading date",
+        "borderCrossing": "Border crossing",
+        "notes": "Notes",
+        "airFreightCost": "Air freight cost",
+        "airline": "Airline",
+        "flightDate": "Flight date",
+        "extraCharges": "Extra charges",
+        "weightCost": "Weight cost",
+        "productPurchaseCost": "Product purchase cost",
+        "shippingDays": "Shipping duration"
+      }
+    },
+    "offers": {
+      "note": "Offers can only be edited while under review. You can submit more than one offer on the same request.",
+      "stats": {
+        "all": "Total",
+        "under_review": "Under review",
+        "accepted": "Accepted",
+        "rejected": "Rejected"
+      },
+      "filterLabel": "Filter offers by status",
+      "search": "Search offers",
+      "searchPlaceholder": "Offer ID or order ID",
+      "groupLabel": "Our offers on request {{id}}",
+      "ourCount": "Our offers: {{count}}",
+      "orderDetails": "Order details",
+      "showDetails": "Show offer details",
+      "hideDetails": "Hide offer details",
+      "noDetails": "No template fields were filled in this offer.",
+      "inDays": "days",
+      "edit": "Edit offer",
+      "compare": "Compare prices",
+      "rejectionReason": "Rejection reason",
+      "empty": "You have not submitted any offers yet.",
+      "noResults": "No offers match your search or filter."
+    },
+    "competitors": {
+      "note": "Competitor names are hidden, and companies that chose to hide their offers are not shown.",
+      "columns": {
+        "order": "Order ID",
+        "service": "Service",
+        "ours": "Our offer(s)",
+        "competitors": "Visible competitor offers",
+        "actions": "Compare"
+      },
+      "noOffer": "We have not submitted an offer yet",
+      "hidden": "+ Companies hiding their offers: {{count}}",
+      "compare": "Compare",
+      "compareFor": "Compare the prices on request {{id}}",
+      "empty": "No other company has offered on your requests yet."
+    },
+    "inquiries": {
+      "note": "Every inquiry is linked automatically to its order and to our offer on it.",
+      "search": "Search inquiries",
+      "searchPlaceholder": "Order ID or inquiry ID",
+      "filterLabel": "Filter inquiries by status",
+      "filters": {
+        "all": "All",
+        "awaiting_reply": "Awaiting reply",
+        "replied": "Replied"
+      },
+      "open": "Open",
+      "openFor": "Open inquiry {{id}}",
+      "title": "Inquiry {{id}}",
+      "fullDetails": "View the full order details",
+      "ourOffers": "Our offers on this order",
+      "question": "The client’s question",
+      "reply": "Reply",
+      "replyHint": "The reply reaches the client through the platform administration and cannot be changed after sending.",
+      "send": "Send reply",
+      "sent": "The reply was sent.",
+      "ourReply": "Our reply",
+      "sentAt": "Sent on {{date}}",
+      "leaveTitle": "Close the inquiry without sending the reply?",
+      "leaveText": "The reply you wrote will not be saved.",
+      "empty": "No client inquiries yet.",
+      "noResults": "No inquiries match your search or filter."
+    },
+    "settings": {
+      "company": "Company data",
+      "legalName": "Legal name",
+      "activity": "Activity type",
+      "activities": {
+        "international": "International shipping",
+        "domestic": "Domestic transport",
+        "china": "China purchasing & shipping",
+        "other": "Other activity"
+      },
+      "scopes": {
+        "shipping": "shipping",
+        "customs": "customs clearance",
+        "both": "shipping & customs clearance"
+      },
+      "contactEmail": "Contact email",
+      "contactPhone": "Contact phone",
+      "contactNote": "The platform administration uses these contact details with you. They do not change your login email.",
+      "save": "Save",
+      "contactSaved": "The contact details were saved.",
+      "privacy": "Offer privacy",
+      "hideOffers": "Hide our offers from competitor companies",
+      "privacyNote": "Your offers stay fully visible to the platform administration and the client. Competitor companies only see how many companies hide their offers.",
+      "privacyOn": "Your offers are now hidden from competitor companies.",
+      "privacyOff": "Your offers are now visible to competitor companies, without your company name.",
+      "submission": "Offer submission status",
+      "submissionStatus": {
+        "allowed": "Allowed",
+        "suspended": "Suspended"
+      },
+      "submissionNote": "The platform administration controls this status. Please contact support about it.",
+      "password": "Password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm the new password",
+      "changePassword": "Change password",
+      "passwordChanged": "The password was changed.",
+      "demo": {
+        "title": "Demo tools",
+        "note": "These tools appear in development and staging only.",
+        "suspend": "Simulate a suspension of offer submission",
+        "suspendNote": "Shows the suspended state the platform administration can set.",
+        "reset": "Reset demo data",
+        "resetTitle": "Reset the demo data?",
+        "resetText": "Every change you made on this account is deleted and the data returns to its first state.",
+        "resetDone": "The demo data was reset."
+      }
+    }
+  }
+}

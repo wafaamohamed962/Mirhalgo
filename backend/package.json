@@ -10,7 +10,8 @@
     "lint": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "cleanup:companies": "node --env-file-if-exists=.env dist/scripts/cleanupCompanyRegistrations.js",
-    "cleanup": "node --env-file-if-exists=.env dist/scripts/cleanup.js"
+    "cleanup": "node --env-file-if-exists=.env dist/scripts/cleanup.js",
+    "seed:demo-company": "node --env-file-if-exists=.env dist/scripts/seedDemoCompany.js"
   },
   "dependencies": {
     "@mirhalgo/shared": "*",

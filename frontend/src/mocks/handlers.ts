@@ -65,8 +65,9 @@ export function createHandlers(db: MockDb, { latency = 400 }: { latency?: number
   return [
     // ── profile & quota ─────────────────────────────────────────────────────
     // The identity itself comes from the real profiles row (services/api/ownProfile.ts):
-    // GET /me only provides the mocked avatar, and name/gender updates go to Supabase.
-    http.get(api('/me'), async () => (await wait(), ok(db.me))),
+    // GET /me/avatar only provides the mocked avatar, and name/gender updates go to Supabase.
+    // GET /me is the REAL API (role + company status, MW_004 A1), so it is never mocked.
+    http.get(api('/me/avatar'), async () => (await wait(), ok(db.me))),
     http.post(api('/me/avatar'), async ({ request }) => {
       await wait();
       db.me.avatarUrl = (await body<{ dataUrl: string }>(request)).dataUrl;

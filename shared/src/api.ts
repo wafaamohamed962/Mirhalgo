@@ -36,6 +36,12 @@ export const ERROR_CODES = [
   'UNAUTHORIZED',
   'FORBIDDEN',
   'NOT_FOUND',
+  // company portal (MW_004): offers blocked by the administration, an offer past review,
+  // a request no longer open, an inquiry already answered (a reply is final)
+  'OFFER_SUBMISSION_SUSPENDED',
+  'OFFER_NOT_EDITABLE',
+  'ORDER_NOT_OPEN',
+  'INQUIRY_ALREADY_REPLIED',
   'INTERNAL',
   'NETWORK_ERROR',
   // client-side: a required VITE_* variable is missing (see frontend/src/lib/env.ts)
@@ -51,11 +57,32 @@ export type OtpSentResult = { email: string; cooldownSeconds: number };
 /**
  * POST /api/auth/login. Correct password + unverified email → a fresh OTP was sent and
  * the client goes to /verify-email (spec 4.4). The email is returned because the user
- * may have logged in with their phone. `role` routes the client (MW_002 A6).
+ * may have logged in with their phone. `role` and `companyStatus` route the client
+ * (MW_002 A6, MW_004 A1).
  */
 export type LoginResult =
-  | { status: 'authenticated'; session: SessionTokens; role: UserRole }
+  | {
+      status: 'authenticated';
+      session: SessionTokens;
+      role: UserRole;
+      companyStatus: CompanyStatus | null;
+    }
   | { status: 'verification_required'; email: string };
+
+/**
+ * A company's application status (MW_004 A1): `approved` opens the company portal, any other
+ * value shows the application status page. `null` for customers and admins, and for a company
+ * without an application row (treated as not approved).
+ */
+export type CompanyStatus = ApplicationStatus;
+
+/** GET /api/me (MW_004 A1): who the logged-in user is, for routing. Any role. */
+export type MeResponse = {
+  id: string;
+  role: UserRole;
+  emailVerified: boolean;
+  companyStatus: CompanyStatus | null;
+};
 
 /**
  * POST /api/auth/verify-email. A company gets its application reference (MW_002 A2):

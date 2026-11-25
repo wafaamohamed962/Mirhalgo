@@ -55,7 +55,8 @@ export default defineConfig({
       url: `http://localhost:${PORTAL_PORT}`,
       reuseExistingServer: false,
       timeout: 180_000,
-      env: { ...env, VITE_USE_MOCKS: 'true' },
+      // like the preview: mocks on, and the company portal demo tools (MW_004)
+      env: { ...env, VITE_USE_MOCKS: 'true', VITE_DEMO_TOOLS: 'true' },
     },
   ],
 });

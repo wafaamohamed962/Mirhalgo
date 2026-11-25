@@ -2,11 +2,13 @@ import type { ComponentType } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router';
 import { PageLoader } from '../components/layout/PageLoader';
 import {
+  CompanyStatusRoute,
   GuestRoute,
   HomeRedirect,
   PendingVerificationRoute,
   ProtectedRoute,
 } from '../features/auth/guards';
+import { COMPANY_STATUS_PAGE } from '../features/auth/roles';
 import type { PortalHandle } from '../features/portal/layout/nav';
 import { RootLayout } from './RootLayout';
 
@@ -15,14 +17,26 @@ const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({
   Component: (await load()).default,
 });
 
-/** A customer-portal page: lazy chunk + its top-bar title (MW_002 B9). */
+/** A portal page (customer MW_002 B9, company MW_004): lazy chunk + its title. */
 const portal = (path: string, title: string, load: () => Promise<{ default: ComponentType }>) => ({
   path,
   lazy: page(load),
   handle: { title } satisfies PortalHandle,
 });
 
-/** Routes and access rules (spec 8.2 + MW_002 B9). */
+type Load = () => Promise<{ default: ComponentType }>;
+
+/** The 6 company portal sections (MW_004 B11); each title is `companyPortal.nav.<path>`. */
+const COMPANY_SECTIONS: ReadonlyArray<[path: string, load: Load]> = [
+  ['overview', () => import('../features/companyPortal/pages/OverviewPage')],
+  ['requests', () => import('../features/companyPortal/pages/RequestsPage')],
+  ['offers', () => import('../features/companyPortal/pages/OffersPage')],
+  ['competitors', () => import('../features/companyPortal/pages/CompetitorsPage')],
+  ['inquiries', () => import('../features/companyPortal/pages/InquiriesPage')],
+  ['settings', () => import('../features/companyPortal/pages/SettingsPage')],
+];
+
+/** Routes and access rules (spec 8.2 + MW_002 B9 + MW_004 A1). */
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -130,14 +144,37 @@ export const router = createBrowserRouter([
         ],
       },
       {
+        // company portal (MW_004): verified companies only; approved ones get the portal,
+        // every other status only the application status page
+        path: '/company',
         element: <ProtectedRoute allow={['company']} />,
         children: [
           {
-            path: '/application-status',
-            lazy: page(() => import('../features/companyPortal/ApplicationStatusPage')),
+            element: <CompanyStatusRoute approved />,
+            children: [
+              { index: true, element: <Navigate to="overview" replace /> },
+              {
+                lazy: async () => ({
+                  Component: (await import('../features/companyPortal/layout/CompanyLayout'))
+                    .CompanyLayout,
+                }),
+                children: COMPANY_SECTIONS.map(([path, load]) => portal(path, path, load)),
+              },
+            ],
+          },
+          {
+            element: <CompanyStatusRoute approved={false} />,
+            children: [
+              {
+                path: 'application-status',
+                lazy: page(() => import('../features/companyPortal/pages/ApplicationStatusPage')),
+              },
+            ],
           },
         ],
       },
+      // MW_002 URL of the status page (bookmarks): the guards above pick the right page
+      { path: '/application-status', element: <Navigate to={COMPANY_STATUS_PAGE} replace /> },
       { path: '*', lazy: page(() => import('../pages/NotFoundPage')) },
     ],
   },

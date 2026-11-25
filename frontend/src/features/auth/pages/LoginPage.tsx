@@ -37,7 +37,8 @@ export default function LoginPage() {
     login.mutate(input, {
       onSuccess: (result) => {
         if (result.status === 'authenticated') {
-          return navigate(homePath(result.role), { replace: true }); // by role (MW_002 A6)
+          // by role + company status (MW_002 A6, MW_004 A1)
+          return navigate(homePath(result.role, result.companyStatus), { replace: true });
         }
         // right password, unverified email: a fresh code was sent (spec 4.4)
         setPendingVerification(result.email, input.password);

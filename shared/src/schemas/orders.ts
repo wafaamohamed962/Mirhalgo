@@ -51,7 +51,7 @@ const need = (ctx: z.RefinementCtx, value: unknown, path: (string | number)[]) =
 // ── field helpers ─────────────────────────────────────────────────────────────
 
 /** A number typed in a form (Arabic / Persian digits, "٫" decimal separator) or sent as JSON. */
-const numberInput = (value: unknown) => {
+export const numberInput = (value: unknown) => {
   if (typeof value !== 'string') return value;
   const text = toAsciiDigits(value.trim()).replace(/\u066B/g, '.');
   return text === '' ? undefined : Number(text);
@@ -124,10 +124,12 @@ const dimensions = z
 /** "YYYY-MM-DD" today in Cairo (the ready date is checked against it on both sides). */
 export const cairoToday = (now = new Date()) =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(now);
-const readyDate = z
+/** "YYYY-MM-DD", today (Cairo) or later. Also the company offer dates (MW_004 B1). */
+export const notPastDate = z
   .string(required())
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'validation.required')
   .refine((date) => date >= cairoToday(), 'validation.readyDate');
+const readyDate = notPastDate;
 
 // ── Step 1: contact (prefilled, editable) ────────────────────────────────────
 

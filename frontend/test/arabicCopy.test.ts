@@ -17,9 +17,12 @@ const read = (file: string) => readFileSync(join(root, file), 'utf8');
 const ARABIC_SOURCES = [
   'frontend/src/i18n/ar.json',
   'frontend/src/i18n/portal/ar.json',
+  'frontend/src/i18n/company/ar.json',
   'frontend/index.html',
   'frontend/src/mocks/fixtures.ts',
+  'frontend/src/mocks/company/fixtures.ts',
   'backend/src/i18n/ar.json',
+  'backend/src/seed/demoCompany.json',
 ];
 
 /**

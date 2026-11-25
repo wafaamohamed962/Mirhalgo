@@ -19,6 +19,9 @@ const calls = {
   refreshUnverifiedCustomer: vi.fn(),
   complete: vi.fn(async () => ({ referenceNumber: 'MG-C-2026-000001', status: 'pending_review' })),
   grant: vi.fn(async (_id: string) => 5),
+  companyStatus: vi.fn(async (_id: string, role: string) =>
+    role === 'company' ? 'approved' : null,
+  ),
 };
 
 vi.mock('../src/lib/supabase.js', () => ({
@@ -38,7 +41,10 @@ vi.mock('../src/services/otp.js', () => ({
   issueOtp: vi.fn(),
   verifyOtp: async () => 'user-1',
 }));
-vi.mock('../src/services/companies.js', () => ({ completeCompanyVerification: calls.complete }));
+vi.mock('../src/services/companies.js', () => ({
+  completeCompanyVerification: calls.complete,
+  companyStatusFor: calls.companyStatus,
+}));
 vi.mock('../src/services/balance.js', () => ({ grantInitialBalance: calls.grant }));
 vi.mock('../src/services/mail/index.js', () => ({
   assertMailConfigured: () => {},
@@ -60,13 +66,23 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('login role (decision 3)', () => {
-  it('returns the role from app_metadata', async () => {
+describe('login role (decision 3) + company status (MW_004 A1)', () => {
+  it('returns the role from app_metadata, and a company its application status', async () => {
     state.signIn = signedIn({ role: 'company' });
     expect(await auth.login({ identifier, password: 'x' }, {})).toEqual({
       status: 'authenticated',
       session,
       role: 'company',
+      companyStatus: 'approved',
+    });
+    expect(calls.companyStatus).toHaveBeenCalledWith('user-1', 'company');
+  });
+
+  it('customer: companyStatus is null', async () => {
+    state.signIn = signedIn({ role: 'customer' });
+    expect(await auth.login({ identifier, password: 'x' }, {})).toMatchObject({
+      role: 'customer',
+      companyStatus: null,
     });
   });
 

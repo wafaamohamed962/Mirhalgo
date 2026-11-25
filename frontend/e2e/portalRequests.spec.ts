@@ -175,6 +175,9 @@ for (const lang of ['ar', 'en'] as const) {
     test('international · sea FCL · customs · hazardous with MSDS · invoice', async ({
       page,
     }, testInfo) => {
+      // the longest flow (6 steps, uploads, reload, print, PDF): ~15 s alone, past the 30 s
+      // default under the full parallel run
+      test.slow();
       const api = await mockPortalApi(page, { drafts: false });
       const f = formDriver(page, lang);
       const n = NAMES[lang];

@@ -48,6 +48,10 @@
     "applicationStatus": {
       "title": "Application status | MirhalGo",
       "description": "The status of your shipping company application."
+    },
+    "companyPortal": {
+      "title": "Partner Companies Portal | MirhalGo",
+      "description": "The MirhalGo portal for partner shipping companies."
     }
   },
   "lang": {
@@ -296,7 +300,12 @@
     "productNameOrUrl": "Enter the product link or its name",
     "quantitiesMustMatch": "The quantities must add up to the product quantity",
     "readyDate": "Choose today or a later date",
-    "wholeNumber": "Enter a whole number"
+    "wholeNumber": "Enter a whole number",
+    "offerTotalRequired": "Enter the total in a foreign currency, in Egyptian pounds, or both.",
+    "offerTextLength": "This can be up to 100 characters.",
+    "offerLongTextLength": "This can be up to 500 characters.",
+    "daysRange": "Enter a number of days from 1 to 365.",
+    "replyLength": "Your reply must be 10 to 2000 characters."
   },
   "errors": {
     "VALIDATION_ERROR": "Please check the highlighted fields.",
@@ -315,6 +324,10 @@
     "UNAUTHORIZED": "Please log in again.",
     "FORBIDDEN": "You don't have access to this.",
     "NOT_FOUND": "Not found.",
+    "OFFER_SUBMISSION_SUSPENDED": "Submitting offers is suspended for your account. Please contact support.",
+    "OFFER_NOT_EDITABLE": "This offer can no longer be edited. Only offers under review can be edited.",
+    "ORDER_NOT_OPEN": "This request no longer accepts offers.",
+    "INQUIRY_ALREADY_REPLIED": "This inquiry has already been answered.",
     "INTERNAL": "Something went wrong. Please try again.",
     "NETWORK_ERROR": "Can't reach the server. Check your connection and try again.",
     "CONFIG_MISSING": "This feature is not available right now because the app is not fully configured. Please try again later.",
@@ -404,6 +417,11 @@
       "startOver": "Start over",
       "dismiss": "Dismiss this notice"
     }
+  },
+  "money": {
+    "USD": "USD",
+    "EUR": "EUR",
+    "EGP": "EGP"
   },
   "options": {
     "governorate": {

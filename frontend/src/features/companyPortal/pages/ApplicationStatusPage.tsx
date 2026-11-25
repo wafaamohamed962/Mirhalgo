@@ -2,13 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { CircleCheck, CircleX, Clock, FilePen, type LucideIcon } from 'lucide-react';
 import type { ApplicationStatus } from '@mirhalgo/shared';
-import { SimpleLayout } from '../../components/layout/SimpleLayout';
-import { Alert, Badge, Card, Spinner } from '../../components/ui';
-import { supabase } from '../../lib/supabase';
-import { usePageMeta } from '../../lib/usePageMeta';
-import { cn } from '../../lib/utils';
-import { LogoutButton } from '../auth/components/LogoutButton';
-import { useAuth } from '../auth/hooks/useAuth';
+import { SimpleLayout } from '../../../components/layout/SimpleLayout';
+import { Alert, Badge, Card, Spinner } from '../../../components/ui';
+import { supabase } from '../../../lib/supabase';
+import { usePageMeta } from '../../../lib/usePageMeta';
+import { cn } from '../../../lib/utils';
+import { LogoutButton } from '../../auth/components/LogoutButton';
+import { useAuth } from '../../auth/hooks/useAuth';
 
 type Application = {
   reference_number: string;
@@ -37,8 +37,9 @@ const LOOK: Record<ApplicationStatus, { icon: LucideIcon; tone: string }> = {
 };
 
 /**
- * /application-status: what a company sees after login until the company portal exists
- * (MW_002 A6): its application status (pending / approved / rejected).
+ * /company/application-status (moved from /application-status in MW_004): what a company
+ * whose application is not approved sees after login
+ * (MW_002 A6, MW_004 A1): pending review, changes requested or rejected.
  */
 export default function ApplicationStatusPage() {
   const { t, i18n } = useTranslation();
