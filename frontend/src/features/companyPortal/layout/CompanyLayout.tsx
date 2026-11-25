@@ -105,7 +105,8 @@ export function CompanyLayout() {
           >
             <Menu aria-hidden="true" className="size-6" />
           </button>
-          <p className="min-w-0 flex-1 truncate text-base font-semibold text-heading sm:text-h3">
+          {/* py-1: `truncate` clips to the line box, which cut the dots under a final "ي" */}
+          <p className="min-w-0 flex-1 truncate py-1 text-base font-semibold text-heading sm:text-h3">
             {account && t('companyPortal.welcome', { name: account.alias ?? account.legalName })}
           </p>
           {companyStatus === 'approved' && (

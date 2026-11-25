@@ -1659,6 +1659,18 @@ Status: **plan approved (2026-11-24, answers in the plan). In progress.**
   - The customer sign-up E2E flake (open item) was the "Welcome, Ali" heading after a reload
     (5 s default under load). It now waits 15 s; 8 of 8 passed on repeat.
   - Totals: shared 140, backend 146, frontend 222, E2E 97.
+- **Fixes after review (2026-11-25, reported by the developer):**
+  - **Small vertical scrollbar next to the tabs (Inquiries).** `overflow-x: auto` on the tab
+    list makes `overflow-y` auto too, and the active tab's 1 px underline made the content 1 px
+    taller than the box. Shared `Tabs` now has `overflow-y-hidden` (every tab list).
+  - **The greeting showed "الذهبى" (no dots).** The source is the dotted "ي" (U+064A)
+    everywhere. `truncate` clips to the line box, and at the heading size it cut the dots
+    under the final "ي". The greeting and the customer top-bar title now have `py-1`.
+    **Rule: large Arabic text with `truncate` (or any `overflow-hidden`) needs vertical room.**
+  - E2E: the portal Back test, the portal walk-through and the company submit flow have
+    `test.slow()` (each ~13–14 s alone, past 30 s under the full run on a slower day).
+  - A full run that failed with "element not found" on many pages at once was the network
+    changing mid-run (`net::ERR_NETWORK_CHANGED` in the trace), not the code: run it again.
 
 **Open items (MW_004)**
 

@@ -48,7 +48,12 @@ export function Tabs<V extends string>({
       ref={listRef}
       role="tablist"
       aria-label={label}
-      className={cn('flex gap-1 overflow-x-auto border-b border-slate-200', className)}
+      // overflow-y-hidden: with overflow-x auto, the 1 px of the active tab's underline made the
+      // list scroll vertically too (a small scrollbar next to the tabs)
+      className={cn(
+        'flex gap-1 overflow-x-auto overflow-y-hidden border-b border-slate-200',
+        className,
+      )}
     >
       {items.map((item) => {
         const selected = item.value === value;

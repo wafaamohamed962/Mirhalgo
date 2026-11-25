@@ -116,7 +116,8 @@ export function PortalLayout() {
       }
       header={
         <>
-          <h1 className="min-w-0 flex-1 truncate text-h3">{title}</h1>
+          {/* py-1: `truncate` clips to the line box, which cut Arabic dots below the baseline */}
+          <h1 className="min-w-0 flex-1 truncate py-1 text-h3">{title}</h1>
           <OrderSearch />
           <NotificationBell />
           <UserMenu />

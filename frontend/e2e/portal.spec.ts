@@ -82,6 +82,7 @@ test('no horizontal overflow on any portal page', async ({ page }) => {
 });
 
 test('walk through every section with the mock data', async ({ page, isMobile }) => {
+  test.slow(); // every portal section (~14 s alone)
   await setLanguage(page, 'en');
   await page.goto('/app/new-request');
   await expect(page.getByText('Remaining requests: 3 of 5')).toBeVisible();
@@ -126,6 +127,8 @@ test('"Back" on portal detail pages: previous page, else the logical parent', as
   page,
   isMobile,
 }) => {
+  // visits 4 detail pages + their parents: ~12 s alone, past the 30 s default under the full run
+  test.slow();
   await setLanguage(page, 'en');
   const back = page.getByRole('button', { name: 'Back to the previous page' });
 

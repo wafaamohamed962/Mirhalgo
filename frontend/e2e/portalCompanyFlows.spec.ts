@@ -54,6 +54,7 @@ test.beforeEach(async ({ page }) => {
 test('submit an offer → offers, badges and the log follow; it survives a reload; Reset demo data', async ({
   page,
 }) => {
+  test.slow(); // the longest company flow (~14 s alone): past the 30 s default under the full run
   const bodies = recordCompanyResponses(page);
   await setLanguage(page, 'en');
   await page.goto('/company/requests?search=Domestic%20land');
